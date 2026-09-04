@@ -69,6 +69,23 @@
             app:argType="long" />
     </fragment>
 
+    <fragment
+        android:id="@+id/chatConversationFragment"
+        android:name="com.cs426.learningmocha.ui.chat.ChatConversationFragment"
+        android:label="@string/nav_chat">
+        <argument
+            android:name="sessionId"
+            app:argType="long" />
+    </fragment>
+    <fragment
+        android:id="@+id/reviewChangesFragment"
+        android:name="com.cs426.learningmocha.ui.review.ReviewChangesFragment"
+        android:label="@string/review_title">
+        <argument
+            android:name="messageId"
+            app:argType="long" />
+    </fragment>
+
     <action
         android:id="@+id/action_global_open_post"
         app:destination="@id/postReaderFragment" />
@@ -84,4 +101,10 @@
     <action
         android:id="@+id/action_global_tag"
         app:destination="@id/tagDetailFragment" />
+    <action
+        android:id="@+id/action_global_chat_conversation"
+        app:destination="@id/chatConversationFragment" />
+    <action
+        android:id="@+id/action_global_review_changes"
+        app:destination="@id/reviewChangesFragment" />
 </navigation>

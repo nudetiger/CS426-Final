@@ -53,8 +53,17 @@ interface NodeDao {
     @Query("SELECT * FROM nodes WHERE type = 'POST' AND favorite = 1 ORDER BY updatedAt DESC")
     fun observeFavorites(): Flow<List<Node>>
 
+    @Query("SELECT * FROM nodes WHERE title = :title COLLATE NOCASE LIMIT 1")
+    suspend fun findByTitle(title: String): Node?
+
     @Query("SELECT * FROM nodes WHERE type = 'POST' AND title = :title COLLATE NOCASE LIMIT 1")
     suspend fun findPostByTitle(title: String): Node?
+
+    @Query("SELECT * FROM nodes WHERE parentId IS NULL ORDER BY orderIndex ASC, title ASC")
+    suspend fun getRoots(): List<Node>
+
+    @Query("SELECT * FROM nodes WHERE parentId = :parentId ORDER BY orderIndex ASC, title ASC")
+    suspend fun getChildren(parentId: Long): List<Node>
 
     @Query("SELECT * FROM nodes WHERE type = 'POST' ORDER BY title COLLATE NOCASE")
     suspend fun getPosts(): List<Node>

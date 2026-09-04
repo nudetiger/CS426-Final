@@ -28,6 +28,10 @@ class TreeRepository(private val db: AppDatabase) {
 
     suspend fun getNode(id: Long): Node? = dao.getById(id)
 
+    suspend fun findByTitle(title: String): Node? = dao.findByTitle(title)
+
+    suspend fun allNodes(): List<Node> = dao.getAll()
+
     suspend fun breadcrumbs(parentId: Long?): List<Node> {
         if (parentId == null) return emptyList()
         val chain = ArrayList<Node>()

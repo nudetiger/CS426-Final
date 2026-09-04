@@ -15,6 +15,7 @@ data class RowItem(
 
 class RowAdapter(
     private val onClick: (RowItem) -> Unit,
+    private val onLongClick: ((RowItem) -> Boolean)? = null,
 ) : ListAdapter<RowItem, RowAdapter.Holder>(Diff) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
@@ -23,14 +24,19 @@ class RowAdapter(
     }
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
-        holder.bind(getItem(position), onClick)
+        holder.bind(getItem(position), onClick, onLongClick)
     }
 
     class Holder(private val binding: ItemHomeRowBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(item: RowItem, onClick: (RowItem) -> Unit) {
+        fun bind(
+            item: RowItem,
+            onClick: (RowItem) -> Unit,
+            onLongClick: ((RowItem) -> Boolean)?,
+        ) {
             binding.rowTitle.text = item.title
             binding.rowCaption.text = item.caption
             binding.root.setOnClickListener { onClick(item) }
+            binding.root.setOnLongClickListener { onLongClick?.invoke(item) ?: false }
         }
     }
 

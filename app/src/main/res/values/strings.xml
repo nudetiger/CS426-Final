@@ -12,6 +12,30 @@
     <!-- Phase 3–4 placeholders -->
     <string name="search_subtitle">Full-text search across titles, content, tags and dictionary.</string>
     <string name="chat_subtitle">AI learning assistant (Answer · Suggest · Modify · Organize) lands in Phase 3.</string>
+    <string name="chat_tagline">Answer · Suggest · Modify · Organize</string>
+    <string name="chat_empty">No conversations yet. Tap + to ask Mocha.</string>
+    <string name="chat_conversation_empty">Ask anything about your library, or switch to Modify to generate posts.</string>
+    <string name="chat_offline">AI unavailable — your library still works.</string>
+    <string name="chat_input_hint">Message Mocha…</string>
+    <string name="chat_send">Send</string>
+    <string name="chat_mode_answer">Answer</string>
+    <string name="chat_mode_suggest">Suggest</string>
+    <string name="chat_mode_modify">Modify</string>
+    <string name="chat_mode_organize">Organize</string>
+    <string name="chat_review_action">Review changes</string>
+    <string name="chat_applied">Applied</string>
+    <string name="chat_discarded">Discarded</string>
+    <string name="chat_retry_action">Retry</string>
+    <string name="chat_delete_title">Delete this chat?</string>
+    <string name="chat_delete_message">Messages in this conversation will be removed from this device.</string>
+    <string name="cd_new_chat">New chat</string>
+
+    <string name="review_title">Review changes</string>
+    <string name="review_apply">Apply selected</string>
+    <string name="review_discard">Discard all</string>
+    <string name="review_expand">Preview</string>
+    <string name="review_empty">No actions in this proposal.</string>
+    <string name="review_undone">Undone</string>
     <string name="settings_subtitle">Theme, backend URL and backup / export / import land in Phase 4.</string>
 
     <!-- Home -->

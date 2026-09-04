@@ -89,6 +89,9 @@ interface KnowledgeDao {
     )
     suspend fun postsWithTag(tagId: Long): List<Node>
 
+    @Query("SELECT * FROM tags ORDER BY name COLLATE NOCASE")
+    suspend fun allTags(): List<Tag>
+
     @Query("SELECT * FROM tags WHERE name LIKE :like ORDER BY name COLLATE NOCASE")
     suspend fun tagsNamedLike(like: String): List<Tag>
 

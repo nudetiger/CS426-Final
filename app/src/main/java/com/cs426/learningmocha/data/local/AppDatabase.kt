@@ -7,8 +7,11 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.cs426.learningmocha.data.local.dao.ChatDao
 import com.cs426.learningmocha.data.local.dao.KnowledgeDao
 import com.cs426.learningmocha.data.local.dao.NodeDao
+import com.cs426.learningmocha.data.local.entity.ChatMessage
+import com.cs426.learningmocha.data.local.entity.ChatSession
 import com.cs426.learningmocha.data.local.entity.DictionaryEntry
 import com.cs426.learningmocha.data.local.entity.Link
 import com.cs426.learningmocha.data.local.entity.Node
@@ -27,14 +30,17 @@ import com.cs426.learningmocha.data.local.entity.Tag
         DictionaryEntry::class,
         ResourceItem::class,
         PostFts::class,
+        ChatSession::class,
+        ChatMessage::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(NodeConverters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun nodeDao(): NodeDao
     abstract fun knowledgeDao(): KnowledgeDao
+    abstract fun chatDao(): ChatDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -125,12 +131,42 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `chat_sessions` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `createdAt` INTEGER NOT NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `chat_messages` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `sessionId` INTEGER NOT NULL,
+                        `role` TEXT NOT NULL,
+                        `text` TEXT NOT NULL,
+                        `actionsJson` TEXT,
+                        `status` TEXT NOT NULL,
+                        FOREIGN KEY(`sessionId`) REFERENCES `chat_sessions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_chat_messages_sessionId` ON `chat_messages` (`sessionId`)",
+                )
+            }
+        }
+
         fun build(context: Context): AppDatabase {
             return Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "learning_mocha.db",
-            ).addMigrations(MIGRATION_1_2).build()
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
         }
     }
 }

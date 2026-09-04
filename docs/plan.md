@@ -357,7 +357,7 @@ PostReader + PostEditor (markdown + preview), Home hub with recents. Seed sample
 - `fragment_post_reader.xml` relies on Material's transitive ConstraintLayout — builds fine;
   leave it (ponytail), but don't add more ConstraintLayout screens without the explicit dep.
 
-### Phase 3 — AI (~6 h)
+### Phase 3 — AI ✅ (~6 h)
 Backend `/v1/chat`; chat UI + local sessions; context tools; action protocol + validator +
 transaction executor; ReviewChanges screen; modes Answer/Suggest/Modify/Organize;
 learning-path generation; AI post generation with preview.
@@ -383,6 +383,50 @@ learning-path generation; AI post generation with preview.
 ### Phase 4 — Polish (~4 h)
 Backup/export/import; settings (theme toggle, backend URL); all empty/error/offline states;
 dark theme pass; tablet width pass; notification backup reminder; performance pass.
+
+**Prep notes from the Phase 3 implementation (reviewed 2026-09-04):**
+- **`data/prefs/` and `backup/` are still empty directories** — all of Phase 4's storage work
+  is greenfield. `androidTest/` is empty too (see the migration test below).
+- **Backend URL setting needs an indirection.** `LearningMochaApp.chatRepository` is a
+  `by lazy` val holding one Retrofit instance built from `ApiClient.DEFAULT_BASE_URL`
+  (`http://10.0.2.2:8787/`). A user-editable URL should be an OkHttp interceptor that rewrites
+  the host from `SettingsStore` per request — swapping the lazy repository at runtime would
+  strand in-flight calls and any collected Flow. Cleartext is already allowed in the manifest.
+- **Backup scope decision: chat history is NOT exported.** The `.mocha.json` envelope covers
+  `nodes, links, tags, post_tags, dictionary, resources` + settings; `chat_sessions`/
+  `chat_messages` are session scratch, and exporting them would leak conversation text into a
+  file the privacy section (§22) promises stays local. `posts_fts` is never exported — it is a
+  content-backed FTS4 index; rebuild it after import.
+- **Import must not write DAOs directly.** Go through `PostRepository`/`TreeRepository` (or
+  re-run `KnowledgeSync` afterwards) so links/tags/YouTube reindexing stays consistent —
+  same rule that governs `ActionExecutor` (AGENTS.md rule 2).
+- **Remaining list states**: `ListStateBinder` is wired in Home, Reader, Editor and Review.
+  Still to audit for loading/empty/error/offline: Browse, Search, Chat list, ChatConversation,
+  Dictionary, Favorites, TagDetail. The offline banner pattern to copy is in ChatConversation.
+- **Instrumented migration test is now the only untested critical path**: `room-testing` is
+  already a declared `androidTestImplementation` dep and schemas `1/2/3.json` are all exported,
+  so a `MigrationTestHelper` run of 1→2→3 is cheap. `MIGRATION_2_3` was verified by hand
+  against `3.json` (columns, FK, index all match) but never executed.
+- **Decide R8 keep rules before Phase 5 flips `minifyEnabled`.** Gson reflects over
+  `Envelope`, `KbAction`, `ContextQuery` and the `net/` DTOs; without keep rules the AI
+  protocol fails *silently* (fields deserialize to null → every envelope looks like a plain
+  answer). This is the single most likely way the release APK differs from debug.
+- **Notification reminder**: `POST_NOTIFICATIONS` is already in the manifest, but it is a
+  runtime permission on API 33+ — request it, don't assume it.
+- **Undo limits to document in the report** (§14 promised "before-images", these are the real
+  semantics): the snapshot is in-memory, per-batch, single-level, and restores
+  title/content/status/tags/favorite/parent for *touched* posts only. `delete_post` is
+  deliberately not undoable — deletion cascades to children and resurrecting the subtree is
+  out of scope. The review screen only offers Undo after an Apply.
+
+**Deviations from this plan introduced in Phase 3 (plan text left as-is, code is the truth):**
+- Context rounds are capped at 4 in `ChatRepository.complete`, not 3 (§11). Only the most
+  recent round's tool results are forwarded; earlier rounds survive as assistant turns.
+- `create_post` with no `status` defaults to `READING`, not `NONE`.
+- `ActionValidator` resolves titles created *earlier in the same batch*, not just live DB rows.
+  Required because `backend/prompts.js` tells the model to address posts by `postTitle`, so
+  "create post → tag it → add a term to it" is the normal shape of a learning-path batch.
+- SSE streaming stayed out of scope (Appendix E), as expected.
 
 ### Phase 5 — Deliverables (~4 h, **start no later than ~6 h before deadline**)
 Signed release APK (API 24+, install-tested on emulator/device); `report.pdf` (10–30 pages:

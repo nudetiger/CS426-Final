@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mocha_cream"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/mocha_header_bg"
+        android:gravity="center_vertical"
+        android:minHeight="@dimen/header_min_height"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/space_xs"
+        android:paddingEnd="@dimen/space_s">
+
+        <ImageButton
+            android:id="@+id/review_back"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_back"
+            android:src="@drawable/ic_back" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/review_title"
+            android:textAppearance="@style/TextAppearance.Mocha.Title"
+            android:textColor="@color/mocha_brown" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/review_summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/space_m"
+        android:paddingTop="@dimen/space_m"
+        android:paddingEnd="@dimen/space_m"
+        android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+    <TextView
+        android:id="@+id/review_errors"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/space_m"
+        android:paddingTop="@dimen/space_s"
+        android:paddingEnd="@dimen/space_m"
+        android:textAppearance="@style/TextAppearance.Mocha.Caption"
+        android:textColor="@color/mocha_error"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/review_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingStart="@dimen/space_s"
+            android:paddingEnd="@dimen/space_s" />
+
+        <include
+            android:id="@+id/list_state"
+            layout="@layout/view_list_state" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/mocha_header_bg"
+        android:orientation="horizontal"
+        android:padding="@dimen/space_s">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/review_discard"
+            style="@style/Widget.Mocha.ToolbarButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/review_discard" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/review_apply"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/review_apply" />
+    </LinearLayout>
+</LinearLayout>

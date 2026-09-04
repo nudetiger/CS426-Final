@@ -9,6 +9,7 @@ import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeType
 import com.cs426.learningmocha.data.local.entity.ResourceItem
+import com.cs426.learningmocha.data.local.entity.ResourceType
 import com.cs426.learningmocha.data.local.entity.Tag
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -169,16 +170,9 @@ class PostRepository(private val db: AppDatabase) {
         KnowledgeSync.addTerm(db, postId, term, definition, meaningVi)
     }
 
-    suspend fun titleToId(): Map<String, Long> =
-        dao.getPosts().associate { it.title.lowercase() to it.id }
+    suspend fun findPostByTitle(title: String): Node? = dao.findPostByTitle(title)
 
-    suspend fun touch(id: Long) {
-        val node = dao.getById(id) ?: return
-        if (node.type != NodeType.POST) return
-        dao.update(node.copy(updatedAt = System.currentTimeMillis()))
-    }
-
-    private suspend fun related(postId: Long, limit: Int = 5): List<Node> {
+    suspend fun related(postId: Long, limit: Int = 5): List<Node> {
         val scores = HashMap<Long, Int>()
         for (tag in knowledge.tagsForPost(postId)) {
             for (node in knowledge.postsWithTag(tag.id)) {
@@ -199,4 +193,73 @@ class PostRepository(private val db: AppDatabase) {
             .take(limit)
             .mapNotNull { dao.getById(it.key) }
     }
+
+    suspend fun updatePost(
+        id: Long,
+        title: String? = null,
+        content: String? = null,
+        status: LearningStatus? = null,
+        tagNames: List<String>? = null,
+    ) {
+        val node = dao.getById(id) ?: return
+        val tags = tagNames ?: knowledge.tagsForPost(id).map { it.name }
+        savePost(
+            id = id,
+            title = title ?: node.title,
+            content = content ?: node.content.orEmpty(),
+            status = status ?: node.status,
+            tagNames = tags,
+            terms = emptyList(),
+        )
+    }
+
+    suspend fun addTag(postId: Long, name: String) {
+        val current = knowledge.tagsForPost(postId).map { it.name }
+        KnowledgeSync.replaceTags(db, postId, current + name)
+    }
+
+    suspend fun removeTag(postId: Long, name: String) {
+        val current = knowledge.tagsForPost(postId).map { it.name }
+            .filter { !it.equals(name, ignoreCase = true) }
+        KnowledgeSync.replaceTags(db, postId, current)
+    }
+
+    suspend fun addWikiLink(fromId: Long, toTitle: String) {
+        val node = dao.getById(fromId) ?: return
+        val needle = "[[${toTitle.trim()}]]"
+        val content = node.content.orEmpty()
+        if (content.contains(needle, ignoreCase = true)) return
+        val next = if (content.isBlank()) needle else "$content\n\n$needle"
+        dao.update(node.copy(content = next, updatedAt = System.currentTimeMillis()))
+        KnowledgeSync.reindex(db, fromId, next)
+    }
+
+    suspend fun removeWikiLink(fromId: Long, toTitle: String) {
+        val node = dao.getById(fromId) ?: return
+        val pattern = Regex("\\[\\[\\s*" + Regex.escape(toTitle.trim()) + "\\s*]]", RegexOption.IGNORE_CASE)
+        val next = pattern.replace(node.content.orEmpty(), "")
+        dao.update(node.copy(content = next, updatedAt = System.currentTimeMillis()))
+        KnowledgeSync.reindex(db, fromId, next)
+    }
+
+    suspend fun addResource(postId: Long, type: ResourceType, title: String, url: String) {
+        knowledge.insertResource(
+            ResourceItem(
+                postId = postId,
+                type = type,
+                title = title.ifBlank { type.name },
+                url = url,
+            ),
+        )
+    }
+
+    suspend fun titleToId(): Map<String, Long> =
+        dao.getPosts().associate { it.title.lowercase() to it.id }
+
+    suspend fun touch(id: Long) {
+        val node = dao.getById(id) ?: return
+        if (node.type != NodeType.POST) return
+        dao.update(node.copy(updatedAt = System.currentTimeMillis()))
+    }
+
 }
