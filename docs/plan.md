@@ -337,7 +337,7 @@ PostReader + PostEditor (markdown + preview), Home hub with recents. Seed sample
 ("Getting Started") on first launch.
 *Checkpoint: app installs, 4+ connected screens, persistent data — rubric-safe.*
 
-### Phase 2 — Knowledge features (~5 h)
+### Phase 2 — Knowledge features ✅ (~5 h)
 `links` + `[[wiki-link]]` parser + backlinks + related; tags; favorites; status; dictionary
 (global + per-post, reader popup); resources (YouTube cards); FTS4 search + filters.
 
@@ -361,6 +361,24 @@ PostReader + PostEditor (markdown + preview), Home hub with recents. Seed sample
 Backend `/v1/chat`; chat UI + local sessions; context tools; action protocol + validator +
 transaction executor; ReviewChanges screen; modes Answer/Suggest/Modify/Organize;
 learning-path generation; AI post generation with preview.
+
+**Prep notes from the Phase 2 implementation (reviewed 2026-09-04):**
+- **Chat persistence → DB v3**: add `chat_sessions`/`chat_messages` (plan §5) as
+  `MIGRATION_2_3` following the `MIGRATION_1_2` pattern; schema export is already on.
+- **Networking is ready**: Retrofit/OkHttp/Gson present since Phase 0. Base URL constant
+  `http://10.0.2.2:8787` for emulator (Settings toggle lands in Phase 4).
+- **Backend is protocol-complete** (`prompts.js` documents the full action schema) — it only
+  needs `DEEPSEEK_API_KEY` in `backend/.env` to run. Test the app against a *down* backend
+  too: the offline banner is graded UX.
+- **ActionExecutor must reuse repositories** (`PostRepository.createPost/savePost`,
+  `TreeRepository.move/rename/delete`) so `KnowledgeSync` reindexing (links/tags/YouTube)
+  stays consistent — never call DAOs directly (AGENTS.md rule 2).
+- **Context tools map 1:1 onto existing code**: `search_posts`→SearchRepository,
+  `get_post`/`list_children`→NodeDao, `get_backlinks`→KnowledgeDao, `search_dictionary`→
+  KnowledgeDao, `get_tags`→KnowledgeDao, `get_related`→PostRepository.related.
+- **kbIndex builder**: indented title tree from `NodeDao.getAll()`, cap ~4 KB.
+- **Reuse UI machinery**: ListState, ChipBar, RowAdapter, and `WikiMarkdown`/Markwon for
+  rendering AI markdown in chat bubbles and the review screen.
 
 ### Phase 4 — Polish (~4 h)
 Backup/export/import; settings (theme toggle, backend URL); all empty/error/offline states;

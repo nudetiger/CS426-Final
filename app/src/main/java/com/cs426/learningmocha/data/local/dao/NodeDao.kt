@@ -50,6 +50,18 @@ interface NodeDao {
     @Query("SELECT * FROM nodes WHERE type IN ('BRANCH', 'FOLDER') ORDER BY title ASC")
     suspend fun getContainers(): List<Node>
 
+    @Query("SELECT * FROM nodes WHERE type = 'POST' AND favorite = 1 ORDER BY updatedAt DESC")
+    fun observeFavorites(): Flow<List<Node>>
+
+    @Query("SELECT * FROM nodes WHERE type = 'POST' AND title = :title COLLATE NOCASE LIMIT 1")
+    suspend fun findPostByTitle(title: String): Node?
+
+    @Query("SELECT * FROM nodes WHERE type = 'POST' ORDER BY title COLLATE NOCASE")
+    suspend fun getPosts(): List<Node>
+
+    @Query("SELECT * FROM nodes WHERE type IN ('POST', 'BRANCH') AND title LIKE :like ORDER BY title COLLATE NOCASE LIMIT 30")
+    suspend fun titlesLike(like: String): List<Node>
+
     @Query("SELECT COALESCE(MAX(orderIndex), -1) FROM nodes WHERE parentId IS NULL")
     suspend fun maxOrderRoot(): Int
 

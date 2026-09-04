@@ -20,6 +20,7 @@ data class HomeUiState(
     val postCount: Int = 0,
     val continueReading: List<Node> = emptyList(),
     val recents: List<Node> = emptyList(),
+    val favorites: List<Node> = emptyList(),
     val branches: List<Node> = emptyList(),
     val errorMessage: String? = null,
 )
@@ -32,16 +33,19 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val uiState: StateFlow<HomeUiState> = combine(
         app.postRepository.observeContinueReading(8),
         app.postRepository.observeRecentPosts(12),
+        app.postRepository.observeFavorites(),
         app.treeRepository.observeRootBranches(),
         app.postRepository.observePostCount(),
-    ) { continueReading, recents, branches, postCount ->
-        val empty = continueReading.isEmpty() && recents.isEmpty() && branches.isEmpty()
+    ) { continueReading, recents, favorites, branches, postCount ->
+        val empty = continueReading.isEmpty() && recents.isEmpty() &&
+            favorites.isEmpty() && branches.isEmpty()
         HomeUiState(
             listState = if (empty) ListState.EMPTY else ListState.CONTENT,
             greetingRes = greetingRes,
             postCount = postCount,
             continueReading = continueReading,
             recents = recents,
+            favorites = favorites,
             branches = branches,
         )
     }.catch { error ->

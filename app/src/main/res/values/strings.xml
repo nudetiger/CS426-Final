@@ -9,8 +9,8 @@
     <string name="nav_chat">AI</string>
     <string name="nav_settings">Settings</string>
 
-    <!-- Phase 2–4 placeholders -->
-    <string name="search_subtitle">Full-text search across titles, content, tags and dictionary lands in Phase 2.</string>
+    <!-- Phase 3–4 placeholders -->
+    <string name="search_subtitle">Full-text search across titles, content, tags and dictionary.</string>
     <string name="chat_subtitle">AI learning assistant (Answer · Suggest · Modify · Organize) lands in Phase 3.</string>
     <string name="settings_subtitle">Theme, backend URL and backup / export / import land in Phase 4.</string>
 
@@ -24,6 +24,8 @@
     <string name="home_section_continue">Continue reading</string>
     <string name="home_section_recents">Recent posts</string>
     <string name="home_section_branches">Branches</string>
+    <string name="home_section_favorites">Favorites</string>
+    <string name="home_favorites_empty">Star a post while reading to pin it here.</string>
     <string name="home_empty">Your library is empty. Open Browse to create a branch.</string>
     <string name="home_continue_empty">Nothing in progress — open a post to start reading.</string>
 
@@ -42,8 +44,10 @@
     <string name="browse_type_branch">Branch</string>
     <string name="browse_type_folder">Folder</string>
     <string name="browse_type_post">Post</string>
+    <string name="status_none">None</string>
     <string name="status_reading">Reading</string>
     <string name="status_in_progress">In progress</string>
+    <string name="status_finished">Finished</string>
     <string name="node_title_hint">Title</string>
     <string name="action_create">Create</string>
     <string name="action_save">Save</string>
@@ -75,7 +79,44 @@
     <string name="editor_format_list">List</string>
     <string name="editor_format_link">Link</string>
     <string name="editor_format_wikilink">Wiki link</string>
+    <string name="editor_format_term">Term</string>
     <string name="editor_saved">Saved</string>
+    <string name="editor_tags_hint">Tags, comma separated</string>
+    <string name="editor_pick_wikilink">Link to a post</string>
+    <string name="editor_term_title">Add dictionary term</string>
+    <string name="editor_term_hint">Term</string>
+    <string name="editor_term_definition">Definition</string>
+    <string name="editor_term_vi">Vietnamese meaning</string>
+    <string name="editor_term_added">Term will be saved with the post</string>
+
+    <string name="reader_status_title">Learning status</string>
+    <string name="reader_terms">Terms</string>
+    <string name="reader_dictionary">Open dictionary</string>
+    <string name="reader_backlinks">Linked from</string>
+    <string name="reader_related">Related</string>
+    <string name="reader_link_missing">“%1$s” is not in your library yet.</string>
+    <string name="resource_youtube">YouTube</string>
+
+    <string name="search_hint">Search posts, tags, terms…</string>
+    <string name="search_prompt">Type to search your library.</string>
+    <string name="search_empty">No matches.</string>
+    <string name="search_filter_posts">Posts</string>
+    <string name="search_filter_branches">Branches</string>
+    <string name="search_filter_favorites">Favorites</string>
+
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_empty">No starred posts yet. Tap the star on a post to add one.</string>
+
+    <string name="dictionary_title">Dictionary</string>
+    <string name="dictionary_search_hint">Find a term</string>
+    <string name="dictionary_empty">No terms yet. Add one from the editor.</string>
+    <string name="dictionary_scope_all">All</string>
+    <string name="dictionary_scope_global">Global</string>
+    <string name="dictionary_scope_post">Per post</string>
+    <string name="dictionary_open_post">Open post</string>
+
+    <string name="tag_title">Tag</string>
+    <string name="tag_empty">No posts with this tag.</string>
 
     <!-- List states -->
     <string name="state_error">Something went wrong loading this list.</string>
@@ -85,6 +126,8 @@
     <string name="cd_back">Back</string>
     <string name="cd_add">Add item</string>
     <string name="cd_edit">Edit post</string>
+    <string name="cd_favorite">Favorite</string>
+    <string name="cd_youtube">YouTube</string>
     <string name="cd_more">More actions</string>
     <string name="cd_drag">Reorder</string>
     <string name="cd_branch">Branch</string>

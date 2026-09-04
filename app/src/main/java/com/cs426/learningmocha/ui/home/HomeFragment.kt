@@ -30,6 +30,7 @@ class HomeFragment : Fragment() {
 
     private val continueAdapter = ContinueAdapter { openPost(it.id) }
     private val recentsAdapter = RecentPostAdapter { openPost(it.id) }
+    private val favoritesAdapter = RecentPostAdapter { openPost(it.id) }
     private val branchesAdapter = BranchShortcutAdapter { openBranch(it.id) }
 
     override fun onCreateView(
@@ -49,8 +50,13 @@ class HomeFragment : Fragment() {
         b.homeContinueList.adapter = continueAdapter
         b.homeRecentsList.layoutManager = LinearLayoutManager(requireContext())
         b.homeRecentsList.adapter = recentsAdapter
+        b.homeFavoritesList.layoutManager = LinearLayoutManager(requireContext())
+        b.homeFavoritesList.adapter = favoritesAdapter
         b.homeBranchesList.layoutManager = LinearLayoutManager(requireContext())
         b.homeBranchesList.adapter = branchesAdapter
+        b.homeFavoritesHeader.setOnClickListener {
+            findNavController().navigate(R.id.action_global_favorites)
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -72,14 +78,20 @@ class HomeFragment : Fragment() {
                     val showSections = state.listState == ListState.CONTENT
                     b.homeContinueHeader.isVisible = showSections
                     b.homeRecentsHeader.isVisible = showSections
+                    b.homeFavoritesHeader.isVisible = showSections
                     b.homeBranchesHeader.isVisible = showSections
                     continueAdapter.submitList(state.continueReading)
                     recentsAdapter.submitList(state.recents)
+                    favoritesAdapter.submitList(state.favorites)
                     branchesAdapter.submitList(state.branches)
                     b.homeContinueEmpty.isVisible =
                         showSections && state.continueReading.isEmpty()
                     b.homeContinueList.isVisible =
                         showSections && state.continueReading.isNotEmpty()
+                    b.homeFavoritesEmpty.isVisible =
+                        showSections && state.favorites.isEmpty()
+                    b.homeFavoritesList.isVisible =
+                        showSections && state.favorites.isNotEmpty()
                 }
             }
         }

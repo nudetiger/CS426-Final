@@ -5,8 +5,12 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.cs426.learningmocha.LearningMochaApp
+import com.cs426.learningmocha.data.local.entity.DictionaryEntry
+import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
-import com.cs426.learningmocha.data.local.entity.NodeType
+import com.cs426.learningmocha.data.local.entity.ResourceItem
+import com.cs426.learningmocha.data.local.entity.Tag
+import com.cs426.learningmocha.data.repo.PostDetail
 import com.cs426.learningmocha.ui.common.ListState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +22,12 @@ import kotlinx.coroutines.launch
 data class ReaderUiState(
     val listState: ListState = ListState.LOADING,
     val post: Node? = null,
+    val tags: List<Tag> = emptyList(),
+    val backlinks: List<Node> = emptyList(),
+    val related: List<Node> = emptyList(),
+    val resources: List<ResourceItem> = emptyList(),
+    val terms: List<DictionaryEntry> = emptyList(),
+    val titleToId: Map<String, Long> = emptyMap(),
     val errorMessage: String? = null,
 )
 
@@ -29,20 +39,16 @@ class PostReaderViewModel(
     private val app = application as LearningMochaApp
     val postId: Long = savedStateHandle.get<Long>(ARG_POST_ID) ?: 0L
 
-    val uiState: StateFlow<ReaderUiState> = app.postRepository.observePost(postId)
-        .map { node ->
-            when {
-                node == null -> ReaderUiState(
+    val uiState: StateFlow<ReaderUiState> = app.postRepository.observeDetail(postId)
+        .map { detail ->
+            if (detail == null) {
+                ReaderUiState(
                     listState = ListState.ERROR,
                     errorMessage = getApplication<Application>()
                         .getString(com.cs426.learningmocha.R.string.reader_missing),
                 )
-                node.type != NodeType.POST -> ReaderUiState(
-                    listState = ListState.ERROR,
-                    errorMessage = getApplication<Application>()
-                        .getString(com.cs426.learningmocha.R.string.reader_not_a_post),
-                )
-                else -> ReaderUiState(listState = ListState.CONTENT, post = node)
+            } else {
+                detail.toUi()
             }
         }
         .catch { error ->
@@ -57,6 +63,26 @@ class PostReaderViewModel(
     init {
         viewModelScope.launch { app.postRepository.touch(postId) }
     }
+
+    fun toggleFavorite() {
+        val post = uiState.value.post ?: return
+        viewModelScope.launch { app.postRepository.setFavorite(post.id, !post.favorite) }
+    }
+
+    fun setStatus(status: LearningStatus) {
+        viewModelScope.launch { app.postRepository.setStatus(postId, status) }
+    }
+
+    private fun PostDetail.toUi() = ReaderUiState(
+        listState = ListState.CONTENT,
+        post = post,
+        tags = tags,
+        backlinks = backlinks,
+        related = related,
+        resources = resources,
+        terms = terms,
+        titleToId = titleToId,
+    )
 
     companion object {
         const val ARG_POST_ID = "postId"

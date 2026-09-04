@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_s"
+    android:background="@drawable/bg_card"
+    android:foreground="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/touch_target"
+    android:orientation="horizontal"
+    android:padding="@dimen/space_s">
+
+    <ImageView
+        android:layout_width="@dimen/icon_small"
+        android:layout_height="@dimen/icon_small"
+        android:contentDescription="@string/cd_youtube"
+        android:src="@drawable/ic_play"
+        android:tint="@color/mocha_brown" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_s"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/youtube_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/resource_youtube"
+            android:textAppearance="@style/TextAppearance.Mocha.Section"
+            android:textColor="@color/mocha_brown" />
+
+        <TextView
+            android:id="@+id/youtube_url"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+    </LinearLayout>
+</LinearLayout>

@@ -12,15 +12,17 @@ object SeedData {
 
     private val lock = Mutex()
 
-    suspend fun ensureSeeded(dao: NodeDao) {
+    suspend fun ensureSeeded(db: AppDatabase) {
         lock.withLock {
+            val dao = db.nodeDao()
             if (dao.count() == 0) {
-                insertGettingStarted(dao)
+                insertGettingStarted(db, dao)
             }
+            backfill(db, dao)
         }
     }
 
-    private suspend fun insertGettingStarted(dao: NodeDao) {
+    private suspend fun insertGettingStarted(db: AppDatabase, dao: NodeDao) {
         val now = System.currentTimeMillis()
         val branchId = dao.insert(
             Node(
@@ -31,7 +33,7 @@ object SeedData {
                 updatedAt = now,
             ),
         )
-        dao.insert(
+        val welcomeId = dao.insert(
             Node(
                 parentId = branchId,
                 type = NodeType.POST,
@@ -54,7 +56,7 @@ object SeedData {
                 updatedAt = now,
             ),
         )
-        dao.insert(
+        val treeId = dao.insert(
             Node(
                 parentId = folderId,
                 type = NodeType.POST,
@@ -65,7 +67,7 @@ object SeedData {
                 updatedAt = now,
             ),
         )
-        dao.insert(
+        val mdId = dao.insert(
             Node(
                 parentId = folderId,
                 type = NodeType.POST,
@@ -77,6 +79,30 @@ object SeedData {
                 updatedAt = now + 1,
             ),
         )
+        KnowledgeSync.replaceTags(db, welcomeId, listOf("intro", "getting-started"))
+        KnowledgeSync.replaceTags(db, treeId, listOf("intro", "tree"))
+        KnowledgeSync.replaceTags(db, mdId, listOf("markdown", "writing"))
+        KnowledgeSync.addTerm(
+            db,
+            welcomeId,
+            "wiki-link",
+            "A [[Title]] pointer to another post in this library.",
+            "liên kết nội bộ tới bài khác",
+        )
+        KnowledgeSync.addTerm(
+            db,
+            null,
+            "Markdown",
+            "Plain-text format for headings, lists, links, and code.",
+            "định dạng văn bản thuần",
+        )
+    }
+
+    private suspend fun backfill(db: AppDatabase, dao: NodeDao) {
+        if (db.knowledgeDao().linkCount() > 0) return
+        dao.getPosts().forEach { post ->
+            KnowledgeSync.reindex(db, post.id, post.content.orEmpty())
+        }
     }
 
     private val WELCOME_MARKDOWN = """
@@ -94,7 +120,7 @@ object SeedData {
 
         ## What comes next
 
-        Later updates add wiki-links such as [[Branches, folders, and posts]], tags, a dictionary, search, and an AI assistant that can only write after you review the change.
+        Wiki-links such as [[Branches, folders, and posts]] jump to another article. Search looks through titles, tags, and the dictionary. Star a post to keep it on Home.
     """.trimIndent()
 
     private val TREE_MARKDOWN = """
@@ -115,18 +141,21 @@ object SeedData {
         - Drag a row to change its order among siblings
 
         Deleting a branch or folder also deletes everything inside it.
+
+        Related reading: [[Writing in Markdown]].
     """.trimIndent()
 
     private val MARKDOWN_GUIDE = """
         # Writing in Markdown
 
-        Posts are plain Markdown plus an optional wiki-link syntax.
+        Posts are plain Markdown plus wiki-links and YouTube URLs.
 
         ## Common marks
 
         - **Bold** with double asterisks
         - *Italic* with single asterisks
         - `Inline code` with backticks
+        - Wiki-links look like [[Welcome to Learning Mocha]]
 
         ## Lists and headings
 
@@ -140,6 +169,10 @@ object SeedData {
         fun hello() = "Learning Mocha"
         ```
 
-        External links look like [example](https://example.com). Wiki-links look like [[Writing in Markdown]] and become tappable in a later phase.
+        External links look like [example](https://example.com).
+
+        A YouTube URL on its own line becomes a card under the article:
+
+        https://www.youtube.com/watch?v=rfscVS0vtbw
     """.trimIndent()
 }

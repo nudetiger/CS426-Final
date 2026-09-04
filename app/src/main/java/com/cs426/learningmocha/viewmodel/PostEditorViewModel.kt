@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.cs426.learningmocha.LearningMochaApp
+import com.cs426.learningmocha.data.local.entity.DictionaryEntry
+import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.NodeType
 import com.cs426.learningmocha.ui.common.ListState
 import kotlinx.coroutines.channels.Channel
@@ -19,6 +21,8 @@ data class EditorUiState(
     val listState: ListState = ListState.LOADING,
     val title: String = "",
     val content: String = "",
+    val tags: String = "",
+    val status: LearningStatus = LearningStatus.READING,
     val isNew: Boolean = true,
     val errorMessage: String? = null,
 )
@@ -33,6 +37,8 @@ class PostEditorViewModel(
     private val parentId: Long? = savedStateHandle.get<Long>(ARG_PARENT_ID)
         ?.takeUnless { it == ROOT }
 
+    private val pendingTerms = ArrayList<DictionaryEntry>()
+
     private val _uiState = MutableStateFlow(
         EditorUiState(isNew = postId == 0L),
     )
@@ -45,16 +51,29 @@ class PostEditorViewModel(
         viewModelScope.launch { load() }
     }
 
-    fun save(title: String, content: String) {
+    fun addTerm(term: String, definition: String, meaningVi: String) {
+        pendingTerms.add(
+            DictionaryEntry(term = term, definition = definition, meaningVi = meaningVi),
+        )
+    }
+
+    suspend fun postTitles(): List<String> = app.postRepository.postTitles()
+
+    suspend fun titleToId(): Map<String, Long> = app.postRepository.titleToId()
+
+    fun save(title: String, content: String, status: LearningStatus, tags: String) {
         viewModelScope.launch {
+            val names = tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+            val terms = pendingTerms.toList()
             runCatching {
                 if (postId == 0L) {
-                    app.postRepository.createPost(parentId, title, content)
+                    app.postRepository.createPost(parentId, title, content, status, names, terms)
                 } else {
-                    app.postRepository.savePost(postId, title, content)
+                    app.postRepository.savePost(postId, title, content, status, names, terms)
                     postId
                 }
             }.onSuccess { id ->
+                pendingTerms.clear()
                 saved.send(id)
             }.onFailure { error ->
                 _uiState.update {
@@ -84,10 +103,13 @@ class PostEditorViewModel(
             )
             return
         }
+        val tags = app.postRepository.tagsForPost(postId).joinToString(", ") { it.name }
         _uiState.value = EditorUiState(
             listState = ListState.CONTENT,
             title = node.title,
             content = node.content.orEmpty(),
+            tags = tags,
+            status = node.status,
             isNew = false,
         )
     }

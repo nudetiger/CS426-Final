@@ -135,6 +135,36 @@
                     android:paddingEnd="@dimen/space_m" />
 
                 <TextView
+                    android:id="@+id/home_favorites_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="@dimen/space_m"
+                    android:paddingTop="@dimen/space_m"
+                    android:paddingEnd="@dimen/space_m"
+                    android:paddingBottom="@dimen/space_s"
+                    android:text="@string/home_section_favorites"
+                    android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/home_favorites_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:paddingStart="@dimen/space_m"
+                    android:paddingEnd="@dimen/space_m" />
+
+                <TextView
+                    android:id="@+id/home_favorites_empty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="@dimen/space_m"
+                    android:paddingEnd="@dimen/space_m"
+                    android:paddingBottom="@dimen/space_s"
+                    android:text="@string/home_favorites_empty"
+                    android:textAppearance="@style/TextAppearance.Mocha.Caption"
+                    android:visibility="gone" />
+
+                <TextView
                     android:id="@+id/home_branches_header"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

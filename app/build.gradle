@@ -40,6 +40,10 @@ android {
     }
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     // AndroidX core / UI
     implementation 'androidx.appcompat:appcompat:1.7.0'

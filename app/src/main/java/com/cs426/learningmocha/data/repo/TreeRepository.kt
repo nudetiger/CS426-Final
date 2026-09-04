@@ -15,14 +15,14 @@ class TreeRepository(private val db: AppDatabase) {
     private val dao = db.nodeDao()
 
     fun observeChildren(parentId: Long?): Flow<List<Node>> = flow {
-        SeedData.ensureSeeded(dao)
+        SeedData.ensureSeeded(db)
         emitAll(
             if (parentId == null) dao.observeRoots() else dao.observeChildren(parentId),
         )
     }
 
     fun observeRootBranches(): Flow<List<Node>> = flow {
-        SeedData.ensureSeeded(dao)
+        SeedData.ensureSeeded(db)
         emitAll(dao.observeRootBranches())
     }
 

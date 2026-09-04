@@ -17,9 +17,12 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.cs426.learningmocha.R
+import com.cs426.learningmocha.data.local.entity.LearningStatus
+import com.cs426.learningmocha.databinding.DialogDictionaryTermBinding
 import com.cs426.learningmocha.databinding.FragmentPostEditorBinding
 import com.cs426.learningmocha.ui.common.ListState
 import com.cs426.learningmocha.ui.common.ListStateBinder
+import com.cs426.learningmocha.ui.common.WikiMarkdown
 import com.cs426.learningmocha.viewmodel.PostEditorViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -36,6 +39,8 @@ class PostEditorFragment : Fragment() {
     private var hydrated = false
     private var initialTitle = ""
     private var initialContent = ""
+    private var initialTags = ""
+    private var initialStatus = LearningStatus.READING
 
     private val backCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
@@ -67,7 +72,8 @@ class PostEditorFragment : Fragment() {
         b.editorFormatHeading.setOnClickListener { insertLinePrefix("## ") }
         b.editorList.setOnClickListener { insertLinePrefix("- ") }
         b.editorLink.setOnClickListener { wrapSelection("[", "](https://)") }
-        b.editorWikilink.setOnClickListener { wrapSelection("[[", "]]") }
+        b.editorWikilink.setOnClickListener { insertWikiLink() }
+        b.editorTerm.setOnClickListener { addTerm() }
 
         b.editorTabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
@@ -103,8 +109,12 @@ class PostEditorFragment : Fragment() {
                         if (state.listState == ListState.CONTENT && !hydrated) {
                             b.editorTitleInput.setText(state.title)
                             b.editorBody.setText(state.content)
+                            b.editorTagsInput.setText(state.tags)
+                            checkStatus(state.status)
                             initialTitle = state.title
                             initialContent = state.content
+                            initialTags = state.tags
+                            initialStatus = state.status
                             hydrated = true
                         }
                         if (state.errorMessage != null && state.listState == ListState.CONTENT) {
@@ -144,6 +154,8 @@ class PostEditorFragment : Fragment() {
         viewModel.save(
             b.editorTitleInput.text?.toString().orEmpty(),
             b.editorBody.text?.toString().orEmpty(),
+            selectedStatus(),
+            b.editorTagsInput.text?.toString().orEmpty(),
         )
     }
 
@@ -151,7 +163,9 @@ class PostEditorFragment : Fragment() {
         val b = binding ?: return false
         if (!hydrated) return false
         return b.editorTitleInput.text?.toString() != initialTitle ||
-            b.editorBody.text?.toString() != initialContent
+            b.editorBody.text?.toString() != initialContent ||
+            b.editorTagsInput.text?.toString() != initialTags ||
+            selectedStatus() != initialStatus
     }
 
     private fun confirmDiscard() {
@@ -170,9 +184,77 @@ class PostEditorFragment : Fragment() {
         val markdown = b.editorBody.text?.toString().orEmpty()
         if (markdown.isBlank()) {
             b.editorPreview.setText(R.string.editor_preview_empty)
-        } else {
-            markwon?.setMarkdown(b.editorPreview, markdown)
+            return
         }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val rewritten = WikiMarkdown.rewrite(markdown, viewModel.titleToId())
+            markwon?.setMarkdown(b.editorPreview, rewritten)
+        }
+    }
+
+    private fun insertWikiLink() {
+        val edit = binding?.editorBody ?: return
+        if (edit.selectionStart != edit.selectionEnd) {
+            wrapSelection("[[", "]]")
+            return
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            val titles = viewModel.postTitles()
+            if (titles.isEmpty()) {
+                wrapSelection("[[", "]]")
+                return@launch
+            }
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.editor_pick_wikilink)
+                .setItems(titles.toTypedArray()) { _, which ->
+                    val editable = edit.editable ?: return@setItems
+                    val start = edit.selectionStart.coerceAtLeast(0)
+                    val token = "[[${titles[which]}]]"
+                    editable.insert(start, token)
+                    edit.setSelection(start + token.length)
+                }
+                .show()
+        }
+    }
+
+    private fun addTerm() {
+        val fields = DialogDictionaryTermBinding.inflate(layoutInflater)
+        MaterialAlertDialogBuilder(requireContext())
+            .setView(fields.root)
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.action_save) { _, _ ->
+                val term = fields.termInput.text?.toString().orEmpty()
+                if (term.isBlank()) return@setPositiveButton
+                viewModel.addTerm(
+                    term,
+                    fields.termDefinition.text?.toString().orEmpty(),
+                    fields.termVi.text?.toString().orEmpty(),
+                )
+                Snackbar.make(binding?.root ?: return@setPositiveButton, R.string.editor_term_added, Snackbar.LENGTH_SHORT).show()
+            }
+            .show()
+    }
+
+    private fun selectedStatus(): LearningStatus {
+        val b = binding ?: return LearningStatus.READING
+        return when (b.editorStatus.checkedChipId) {
+            R.id.editor_status_none -> LearningStatus.NONE
+            R.id.editor_status_progress -> LearningStatus.IN_PROGRESS
+            R.id.editor_status_finished -> LearningStatus.FINISHED
+            else -> LearningStatus.READING
+        }
+    }
+
+    private fun checkStatus(status: LearningStatus) {
+        val b = binding ?: return
+        b.editorStatus.check(
+            when (status) {
+                LearningStatus.NONE -> R.id.editor_status_none
+                LearningStatus.IN_PROGRESS -> R.id.editor_status_progress
+                LearningStatus.FINISHED -> R.id.editor_status_finished
+                LearningStatus.READING -> R.id.editor_status_reading
+            },
+        )
     }
 
     private fun wrapSelection(prefix: String, suffix: String) {

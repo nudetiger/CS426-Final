@@ -3,6 +3,7 @@ package com.cs426.learningmocha
 import android.app.Application
 import com.cs426.learningmocha.data.local.AppDatabase
 import com.cs426.learningmocha.data.repo.PostRepository
+import com.cs426.learningmocha.data.repo.SearchRepository
 import com.cs426.learningmocha.data.repo.TreeRepository
 
 /**
@@ -17,4 +18,6 @@ class LearningMochaApp : Application() {
     val treeRepository: TreeRepository by lazy { TreeRepository(database) }
 
     val postRepository: PostRepository by lazy { PostRepository(database) }
+
+    val searchRepository: SearchRepository by lazy { SearchRepository(database) }
 }

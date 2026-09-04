@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="@dimen/space_xs"
+    android:layout_marginBottom="@dimen/space_xs"
+    android:background="@drawable/bg_chip"
+    android:paddingStart="@dimen/space_s"
+    android:paddingTop="@dimen/space_xs"
+    android:paddingEnd="@dimen/space_s"
+    android:paddingBottom="@dimen/space_xs"
+    android:textAppearance="@style/TextAppearance.Mocha.Caption"
+    android:textColor="@color/mocha_brown" />

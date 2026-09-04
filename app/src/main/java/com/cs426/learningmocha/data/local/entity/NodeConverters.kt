@@ -14,4 +14,10 @@ class NodeConverters {
 
     @TypeConverter
     fun stringToStatus(value: String): LearningStatus = LearningStatus.valueOf(value)
+
+    @TypeConverter
+    fun resourceTypeToString(value: ResourceType): String = value.name
+
+    @TypeConverter
+    fun stringToResourceType(value: String): ResourceType = ResourceType.valueOf(value)
 }
