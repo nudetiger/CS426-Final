@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Learning Mocha dark palette — same tokens, inverted warmth (mirrors CodeCup night values). -->
+<resources>
+    <color name="mocha_cream">#2A2420</color>
+    <color name="mocha_cream_dark">#1F1B18</color>
+    <color name="mocha_header_bg">#241F1B</color>
+    <color name="mocha_brown">#C9A68A</color>
+    <color name="mocha_brown_deep">#A8856B</color>
+    <color name="mocha_sage">#9DB59D</color>
+    <color name="mocha_taupe">#5A5048</color>
+    <color name="mocha_surface">#332C27</color>
+    <color name="mocha_surface_elevated">#3A332D</color>
+    <color name="mocha_text_primary">#F5EDE4</color>
+    <color name="mocha_text_secondary">#B8A99A</color>
+    <color name="mocha_on_primary">#2A2420</color>
+    <color name="mocha_divider">#453C35</color>
+    <color name="mocha_list_row_odd">#38302A</color>
+    <color name="mocha_error">#D97B6C</color>
+</resources>

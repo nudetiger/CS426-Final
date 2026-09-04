@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Spacing & shape tokens shared by all screens (from CodeCup design language). -->
+<resources>
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_s">8dp</dimen>
+    <dimen name="space_m">16dp</dimen>
+    <dimen name="space_l">24dp</dimen>
+    <dimen name="space_xl">32dp</dimen>
+    <dimen name="card_corner">12dp</dimen>
+    <dimen name="feature_card_corner">16dp</dimen>
+    <!-- Long-form reading: comfortable measure on phones and tablets. -->
+    <dimen name="reader_max_width">560dp</dimen>
+    <dimen name="reader_text">16sp</dimen>
+</resources>

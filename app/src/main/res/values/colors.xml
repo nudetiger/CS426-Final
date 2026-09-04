@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Learning Mocha light palette — adapted from CodeCup (CS426-Midterm) design tokens. -->
+<resources>
+    <color name="mocha_cream">#FFF7F0</color>
+    <color name="mocha_cream_dark">#F3E6DA</color>
+    <color name="mocha_header_bg">#F0E4D8</color>
+    <color name="mocha_brown">#6B4F3A</color>
+    <color name="mocha_brown_deep">#4A3428</color>
+    <color name="mocha_sage">#7A8F7A</color>
+    <color name="mocha_taupe">#C4B5A5</color>
+    <color name="mocha_surface">#FFFBF7</color>
+    <color name="mocha_surface_elevated">#FFFFFF</color>
+    <color name="mocha_text_primary">#2C241C</color>
+    <color name="mocha_text_secondary">#6E6258</color>
+    <color name="mocha_on_primary">#FFFBF7</color>
+    <color name="mocha_divider">#E8DDD3</color>
+    <color name="mocha_list_row_odd">#F3E8DC</color>
+    <color name="mocha_error">#B54A3C</color>
+</resources>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Learning Mocha</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_browse">Browse</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_chat">AI</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Phase 0 placeholders (replaced as phases land, see docs/plan.md) -->
+    <string name="home_subtitle">Knowledge hub — continue reading, recents and favorites land in Phase 1–2.</string>
+    <string name="browse_subtitle">Branch / folder / post tree with drag-to-organize lands in Phase 1.</string>
+    <string name="search_subtitle">Full-text search across titles, content, tags and dictionary lands in Phase 2.</string>
+    <string name="chat_subtitle">AI learning assistant (Answer · Suggest · Modify · Organize) lands in Phase 3.</string>
+    <string name="settings_subtitle">Theme, backend URL and backup / export / import land in Phase 4.</string>
+</resources>

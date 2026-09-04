@@ -1,0 +1,24 @@
+# Android / Gradle
+*.iml
+.gradle/
+build/
+local.properties
+.idea/
+.cxx/
+captures/
+.externalNativeBuild/
+*.apk
+*.aab
+*.keystore
+!debug.keystore
+
+# Backend
+backend/node_modules/
+backend/.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Deliverable packaging (assembled at submission time)
+/dist/

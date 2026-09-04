@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Top-level destinations match bottom_nav_menu ids so NavigationUI wires tabs for free.
+     Stack destinations (reader, editor, review, …) are added here in later phases. -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/homeFragment">
+
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.cs426.learningmocha.ui.home.HomeFragment"
+        android:label="@string/nav_home" />
+    <fragment
+        android:id="@+id/browseFragment"
+        android:name="com.cs426.learningmocha.ui.browse.BrowseFragment"
+        android:label="@string/nav_browse" />
+    <fragment
+        android:id="@+id/searchFragment"
+        android:name="com.cs426.learningmocha.ui.search.SearchFragment"
+        android:label="@string/nav_search" />
+    <fragment
+        android:id="@+id/chatFragment"
+        android:name="com.cs426.learningmocha.ui.chat.ChatFragment"
+        android:label="@string/nav_chat" />
+    <fragment
+        android:id="@+id/settingsFragment"
+        android:name="com.cs426.learningmocha.ui.settings.SettingsFragment"
+        android:label="@string/nav_settings" />
+</navigation>

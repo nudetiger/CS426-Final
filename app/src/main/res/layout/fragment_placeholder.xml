@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shared Phase-0 placeholder: each tab sets its own title/subtitle.
+     Replaced by real screens as phases land (docs/plan.md). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="@dimen/space_l">
+
+    <TextView
+        android:id="@+id/placeholder_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.Mocha.Title"
+        android:textSize="24sp" />
+
+    <TextView
+        android:id="@+id/placeholder_subtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:gravity="center"
+        android:maxWidth="@dimen/reader_max_width"
+        android:textAppearance="@style/TextAppearance.Mocha.Caption"
+        android:textSize="14sp" />
+</LinearLayout>

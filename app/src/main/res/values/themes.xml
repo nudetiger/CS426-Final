@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base theme: calm coffee-shop chrome, Comfortaa everywhere. -->
+    <style name="Theme.LearningMocha" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/mocha_brown</item>
+        <item name="colorPrimaryVariant">@color/mocha_brown_deep</item>
+        <item name="colorOnPrimary">@color/mocha_on_primary</item>
+        <item name="colorSecondary">@color/mocha_sage</item>
+        <item name="colorOnSecondary">@color/mocha_on_primary</item>
+        <item name="colorError">@color/mocha_error</item>
+        <item name="android:colorBackground">@color/mocha_cream</item>
+        <item name="colorSurface">@color/mocha_surface</item>
+        <item name="android:fontFamily">@font/comfortaa</item>
+        <item name="fontFamily">@font/comfortaa</item>
+        <item name="android:statusBarColor">@color/mocha_header_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">@color/mocha_header_bg</item>
+    </style>
+
+    <style name="TextAppearance.Mocha.Title" parent="TextAppearance.MaterialComponents.Headline6">
+        <item name="android:textColor">@color/mocha_text_primary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.Mocha.Body" parent="TextAppearance.MaterialComponents.Body1">
+        <item name="android:textColor">@color/mocha_text_primary</item>
+        <item name="android:lineSpacingMultiplier">1.5</item>
+    </style>
+
+    <style name="TextAppearance.Mocha.Caption" parent="TextAppearance.MaterialComponents.Caption">
+        <item name="android:textColor">@color/mocha_text_secondary</item>
+    </style>
+
+    <style name="Widget.Mocha.BottomNav" parent="Widget.MaterialComponents.BottomNavigationView.Colored">
+        <item name="backgroundTint">@color/mocha_header_bg</item>
+    </style>
+</resources>
