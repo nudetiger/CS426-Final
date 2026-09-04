@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive-icon foreground layer: the mocha cup from @drawable/ic_launcher, minus the cream
+     circle that the background layer now provides.
+     The paths keep their original 48-unit coordinates; the group scales them about the art's
+     centre (24.5, 23) and re-centres that on the 108-unit canvas. At 1.55x the art's bounding
+     circle is r=32.4 around (54, 54), i.e. just inside the 66dp safe zone, so no launcher mask
+     shape can clip the saucer corners.
+     Colours are literal for the same reason as the background layer. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="24.5"
+        android:pivotY="23"
+        android:scaleX="1.55"
+        android:scaleY="1.55"
+        android:translateX="29.5"
+        android:translateY="31">
+        <path
+            android:fillColor="#6B4F3A"
+            android:pathData="M12,18h20v6c0,4.4 -3.6,8 -8,8h-4c-4.4,0 -8,-3.6 -8,-8v-6z" />
+        <path
+            android:fillColor="#6B4F3A"
+            android:pathData="M32,19h3c2.2,0 4,1.8 4,4s-1.8,4 -4,4h-3v-2.5h3c0.83,0 1.5,-0.67 1.5,-1.5s-0.67,-1.5 -1.5,-1.5h-3V19z" />
+        <path
+            android:fillColor="#4A3428"
+            android:pathData="M10,34h24v2.5c0,0.83 -0.67,1.5 -1.5,1.5h-21c-0.83,0 -1.5,-0.67 -1.5,-1.5V34z" />
+        <path
+            android:fillColor="#C4B5A5"
+            android:pathData="M19,8c-1,1.5 -1,3 0,4.5s1,3 0,4.5h2c-1,-1.5 -1,-3 0,-4.5s1,-3 0,-4.5h-2z" />
+        <path
+            android:fillColor="#C4B5A5"
+            android:pathData="M25,8c-1,1.5 -1,3 0,4.5s1,3 0,4.5h2c-1,-1.5 -1,-3 0,-4.5s1,-3 0,-4.5h-2z" />
+    </group>
+</vector>

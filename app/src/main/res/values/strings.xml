@@ -9,9 +9,6 @@
     <string name="nav_chat">AI</string>
     <string name="nav_settings">Settings</string>
 
-    <!-- Phase 3–4 placeholders -->
-    <string name="search_subtitle">Full-text search across titles, content, tags and dictionary.</string>
-    <string name="chat_subtitle">AI learning assistant (Answer · Suggest · Modify · Organize) lands in Phase 3.</string>
     <string name="chat_tagline">Answer · Suggest · Modify · Organize</string>
     <string name="chat_empty">No conversations yet. Tap + to ask Mocha.</string>
     <string name="chat_conversation_empty">Ask anything about your library, or switch to Modify to generate posts.</string>
@@ -33,10 +30,8 @@
     <string name="review_title">Review changes</string>
     <string name="review_apply">Apply selected</string>
     <string name="review_discard">Discard all</string>
-    <string name="review_expand">Preview</string>
     <string name="review_empty">No actions in this proposal.</string>
     <string name="review_undone">Undone</string>
-    <string name="settings_subtitle">Theme, backend URL and backup / export / import.</string>
 
     <!-- Settings -->
     <string name="settings_appearance">Appearance</string>
@@ -84,7 +79,6 @@
     <string name="home_greeting_morning">Good morning</string>
     <string name="home_greeting_afternoon">Good afternoon</string>
     <string name="home_greeting_evening">Good evening</string>
-    <string name="home_library_count">%d posts in your library</string>
     <string name="home_section_continue">Continue reading</string>
     <string name="home_section_recents">Recent posts</string>
     <string name="home_section_branches">Branches</string>
@@ -159,7 +153,6 @@
     <string name="reader_backlinks">Linked from</string>
     <string name="reader_related">Related</string>
     <string name="reader_link_missing">“%1$s” is not in your library yet.</string>
-    <string name="resource_youtube">YouTube</string>
 
     <string name="search_hint">Search posts, tags, terms…</string>
     <string name="search_prompt">Type to search your library.</string>
@@ -191,10 +184,12 @@
     <string name="cd_add">Add item</string>
     <string name="cd_edit">Edit post</string>
     <string name="cd_favorite">Favorite</string>
-    <string name="cd_youtube">YouTube</string>
     <string name="cd_more">More actions</string>
     <string name="cd_drag">Reorder</string>
     <string name="cd_branch">Branch</string>
     <string name="cd_folder">Folder</string>
     <string name="cd_post">Post</string>
+    <!-- Navigation labels for the graph and tag browser destinations. -->
+    <string name="graph_title">Knowledge graph</string>
+    <string name="tags_title">Tags</string>
 </resources>

@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.cs426.learningmocha.data.local.entity.DictionaryEntry
 import com.cs426.learningmocha.data.local.entity.Link
 import com.cs426.learningmocha.data.local.entity.Node
@@ -115,6 +116,23 @@ interface KnowledgeDao {
     @Insert
     suspend fun insertEntry(entry: DictionaryEntry): Long
 
+    @Update
+    suspend fun updateEntry(entry: DictionaryEntry)
+
+    @Query("DELETE FROM dictionary WHERE id = :id")
+    suspend fun deleteEntry(id: Long)
+
+    /** One term per scope: `postId = null` is the global glossary, otherwise the post's own. */
+    @Query(
+        """
+        SELECT * FROM dictionary
+        WHERE term = :term COLLATE NOCASE
+          AND ((:postId IS NULL AND postId IS NULL) OR postId = :postId)
+        LIMIT 1
+        """,
+    )
+    suspend fun findEntry(postId: Long?, term: String): DictionaryEntry?
+
     @Query("SELECT COUNT(*) FROM dictionary")
     suspend fun dictionaryCount(): Int
 
@@ -142,11 +160,22 @@ interface KnowledgeDao {
     @Insert
     suspend fun insertResource(item: ResourceItem): Long
 
-    @Query("DELETE FROM resources WHERE postId = :postId")
-    suspend fun deleteResources(postId: Long)
+    @Query("DELETE FROM resources WHERE id = :id")
+    suspend fun deleteResource(id: Long)
 
-    @Query("SELECT * FROM resources WHERE postId = :postId")
+    @Query("SELECT * FROM resources WHERE postId = :postId ORDER BY id")
     suspend fun resourcesForPost(postId: Long): List<ResourceItem>
+
+    /** Search hit source: `resources.postId` is NOT NULL, so every row has an owning post. */
+    @Query(
+        """
+        SELECT * FROM resources
+        WHERE title LIKE :like OR url LIKE :like
+        ORDER BY title COLLATE NOCASE
+        LIMIT 20
+        """,
+    )
+    suspend fun searchResources(like: String): List<ResourceItem>
 
     @Query(
         """

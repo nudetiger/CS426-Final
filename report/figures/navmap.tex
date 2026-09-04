@@ -1,0 +1,55 @@
+% Navigation map: one activity, five tabs, nine pushed destinations.
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize,
+  tab/.style={draw=mochaBrown, fill=mochaCreamDark, rounded corners=2pt, align=center,
+              minimum height=7mm, text width=1.85cm, inner sep=2pt},
+  scr/.style={draw=mochaBrown!70, fill=mochaCream, rounded corners=2pt, align=center,
+              minimum height=7mm, text width=2.15cm, inner sep=2pt},
+  edge/.style={-{Stealth[length=1.6mm]}, draw=mochaBrown!70},
+]
+
+\node[font=\scriptsize\bfseries\color{mochaDeep}] at (-0.2,1.35) {Bottom navigation};
+\node[tab] (home)     at (0.6,0.6) {Home};
+\node[tab] (browse)   at (2.8,0.6) {Browse};
+\node[tab] (search)   at (5.0,0.6) {Search};
+\node[tab] (ai)       at (7.2,0.6) {AI};
+\node[tab] (settings) at (9.4,0.6) {Settings};
+
+\node[scr] (reader)  at (0.7,-1.4) {Post reader};
+\node[scr] (graph)   at (3.2,-1.4) {Knowledge graph};
+\node[scr] (favs)    at (5.7,-1.4) {Favourites};
+\node[scr] (dict)    at (8.2,-1.4) {Dictionary};
+
+\node[scr] (editor)  at (0.7,-3.0) {Post editor};
+\node[scr] (tags)    at (3.2,-3.0) {Tags};
+\node[scr] (tagdet)  at (5.7,-3.0) {Tag detail};
+\node[scr] (chat)    at (8.2,-3.0) {Conversation};
+
+\node[scr] (review)  at (5.7,-4.4) {Review changes};
+\node[scr, draw=mochaSage] (player) at (0.7,-4.4) {YouTube sheet};
+
+\draw[edge] (home) -- (reader);
+\draw[edge] (home) -- (graph);
+\draw[edge] (home) -- (favs);
+\draw[edge] (home) -- (dict);
+\draw[edge] (home) -- (tags);
+\draw[edge] (browse) -- (reader);
+\draw[edge] (search) -- (reader);
+\draw[edge] (search) -- (tagdet);
+\draw[edge] (ai) -- (chat);
+\draw[edge] (chat) -- (review);
+\draw[edge] (reader) -- (editor);
+\draw[edge] (reader) -- (player);
+\draw[edge] (reader) to[out=20, in=200] (graph);
+\draw[edge] (tags) -- (tagdet);
+\draw[edge] (tagdet) to[out=100, in=280] (reader.south east);
+\end{tikzpicture}
+\caption{Navigation graph. One \code{MainActivity} hosts five bottom-navigation tabs; nine further
+destinations sit on the back stack (the tab bar hides itself for them), and the YouTube player is a bottom
+sheet rather than a destination so playback stops with the sheet. The reader, editor, favourites,
+dictionary, tags, tag detail, graph, conversation and review destinations are all declared as global
+actions, so any screen can open them without a dedicated edge in the graph.}
+\label{fig:navmap}
+\end{figure}

@@ -2,6 +2,7 @@ package com.cs426.learningmocha.data.repo
 
 import androidx.room.withTransaction
 import com.cs426.learningmocha.data.local.AppDatabase
+import com.cs426.learningmocha.data.local.InlineResources
 import com.cs426.learningmocha.data.local.KnowledgeSync
 import com.cs426.learningmocha.data.local.SeedData
 import com.cs426.learningmocha.data.local.entity.DictionaryEntry
@@ -51,9 +52,9 @@ class PostRepository(private val db: AppDatabase) {
                 tags = knowledge.tagsForPost(id),
                 backlinks = knowledge.backlinks(id),
                 related = related(id),
-                resources = knowledge.resourcesForPost(id),
+                resources = InlineResources.merge(id, content, knowledge.resourcesForPost(id)),
                 terms = terms,
-                titleToId = dao.getPosts().associate { it.title.lowercase() to it.id },
+                titleToId = dao.postTitleIds().associate { it.title.lowercase() to it.id },
             )
         }
     }
@@ -90,7 +91,7 @@ class PostRepository(private val db: AppDatabase) {
 
     suspend fun getTag(id: Long): Tag? = knowledge.getTag(id)
 
-    suspend fun postTitles(): List<String> = dao.getPosts().map { it.title }
+    suspend fun postTitles(): List<String> = dao.postTitleIds().map { it.title }
 
     suspend fun tagsForPost(id: Long): List<Tag> = knowledge.tagsForPost(id)
 
@@ -107,6 +108,10 @@ class PostRepository(private val db: AppDatabase) {
         val max = if (parentId == null) dao.maxOrderRoot() else dao.maxOrder(parentId)
         val now = System.currentTimeMillis()
         return db.withTransaction {
+            requireTitleFree(trimmed, null)
+            require(parentId == null || dao.getById(parentId)?.type != NodeType.POST) {
+                "Posts cannot contain other items"
+            }
             val id = dao.insert(
                 Node(
                     parentId = parentId,
@@ -140,6 +145,10 @@ class PostRepository(private val db: AppDatabase) {
         require(trimmed.isNotEmpty()) { "Title is required" }
         db.withTransaction {
             val node = dao.getById(id) ?: return@withTransaction
+            if (trimmed != node.title) {
+                requireTitleFree(trimmed, id)
+                KnowledgeSync.retitle(db, node, trimmed)
+            }
             dao.update(
                 node.copy(
                     title = trimmed,
@@ -166,26 +175,45 @@ class PostRepository(private val db: AppDatabase) {
         dao.update(node.copy(status = status, updatedAt = System.currentTimeMillis()))
     }
 
-    suspend fun addTerm(postId: Long?, term: String, definition: String, meaningVi: String) {
-        KnowledgeSync.addTerm(db, postId, term, definition, meaningVi)
+    /** Upsert: the same term in the same scope is edited, never duplicated. @return its row id */
+    suspend fun addTerm(
+        postId: Long?,
+        term: String,
+        definition: String,
+        meaningVi: String,
+    ): Long = KnowledgeSync.addTerm(db, postId, term, definition, meaningVi)
+
+    suspend fun updateTerm(entry: DictionaryEntry) {
+        require(entry.term.isNotBlank()) { "Term is required" }
+        knowledge.updateEntry(entry.copy(term = entry.term.trim()))
     }
+
+    suspend fun removeTerm(id: Long) {
+        knowledge.deleteEntry(id)
+    }
+
+    suspend fun getTerm(postId: Long?, term: String): DictionaryEntry? =
+        knowledge.findEntry(postId, term.trim())
 
     suspend fun findPostByTitle(title: String): Node? = dao.findPostByTitle(title)
 
+    /** Complements the Backlinks section rather than repeating it, so both are worth reading. */
     suspend fun related(postId: Long, limit: Int = 5): List<Node> {
         val scores = HashMap<Long, Int>()
+        val backlinkIds = knowledge.backlinks(postId).map { it.id }.toSet()
+        fun score(id: Long, points: Int) {
+            if (id == postId || id in backlinkIds) return
+            scores[id] = (scores[id] ?: 0) + points
+        }
         for (tag in knowledge.tagsForPost(postId)) {
             for (node in knowledge.postsWithTag(tag.id)) {
-                if (node.id != postId) {
-                    scores[node.id] = (scores[node.id] ?: 0) + 2
-                }
+                score(node.id, 2)
             }
         }
         for (target in knowledge.outgoingTargets(postId)) {
+            score(target.id, 2)
             for (node in knowledge.backlinks(target.id)) {
-                if (node.id != postId) {
-                    scores[node.id] = (scores[node.id] ?: 0) + 1
-                }
+                score(node.id, 1)
             }
         }
         return scores.entries
@@ -242,19 +270,58 @@ class PostRepository(private val db: AppDatabase) {
         KnowledgeSync.reindex(db, fromId, next)
     }
 
-    suspend fun addResource(postId: Long, type: ResourceType, title: String, url: String) {
-        knowledge.insertResource(
-            ResourceItem(
-                postId = postId,
-                type = type,
-                title = title.ifBlank { type.name },
-                url = url,
-            ),
-        )
+    /** @return the row id, so an AI-added reference can be undone */
+    suspend fun addResource(
+        postId: Long,
+        type: ResourceType,
+        title: String,
+        url: String,
+    ): Long = knowledge.insertResource(
+        ResourceItem(
+            postId = postId,
+            type = type,
+            title = title.ifBlank { type.name },
+            url = url,
+        ),
+    )
+
+    /** Only stored rows can be removed here; an inline YouTube card goes away with its markdown. */
+    suspend fun removeResource(id: Long) {
+        if (id == 0L) return
+        knowledge.deleteResource(id)
     }
 
     suspend fun titleToId(): Map<String, Long> =
-        dao.getPosts().associate { it.title.lowercase() to it.id }
+        dao.postTitleIds().associate { it.title.lowercase() to it.id }
+
+    /**
+     * Rename that keeps inbound `[[wiki-links]]` alive: every linking post's markdown is
+     * rewritten in the same transaction. [TreeRepository.rename] applies the same rewrite, so a
+     * rename from Browse and one from the editor behave identically.
+     */
+    suspend fun renamePost(id: Long, newTitle: String) {
+        val trimmed = newTitle.trim()
+        require(trimmed.isNotEmpty()) { "Title is required" }
+        db.withTransaction {
+            val node = dao.getById(id) ?: return@withTransaction
+            require(node.type == NodeType.POST) { "Only a post can be renamed here" }
+            if (trimmed == node.title) return@withTransaction
+            requireTitleFree(trimmed, id)
+            KnowledgeSync.retitle(db, node, trimmed)
+        }
+    }
+
+    /**
+     * Titles address posts everywhere — wiki-links, AI actions, `findPostByTitle` — so two posts
+     * sharing one title makes every lookup pick an arbitrary winner. Only checked when the title
+     * changes, so a library that already holds duplicates (an old merge import) stays editable.
+     */
+    private suspend fun requireTitleFree(title: String, selfId: Long?) {
+        val existing = dao.findPostByTitle(title)
+        require(existing == null || existing.id == selfId) {
+            "A post called \"$title\" already exists"
+        }
+    }
 
     suspend fun touch(id: Long) {
         val node = dao.getById(id) ?: return

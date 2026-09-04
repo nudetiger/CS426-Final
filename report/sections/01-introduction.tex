@@ -1,0 +1,69 @@
+\section{The project}
+\label{sec:intro}
+
+\subsection{The problem}
+
+People who learn technical subjects on their own accumulate notes faster than they accumulate
+understanding. The notes end up scattered across a chat with themselves, a folder of screenshots, twelve
+open browser tabs and three note-taking apps, and the connective tissue --- \emph{this depends on that},
+\emph{I already know this part}, \emph{that term means something specific here} --- lives only in memory
+and decays. Six months later the notes are still there and the thread through them is gone.
+
+Two things are missing from the usual note app. The first is \textbf{structure that survives}: a way to
+say that \emph{Raft} belongs under \emph{Consensus} under \emph{Distributed Systems}, that it relates to
+\emph{Leader Election}, and that it is currently half-read rather than finished. The second is
+\textbf{help with the part that is actually hard}: not writing the notes down, but working out what to
+learn next, in what order, given what is already understood.
+
+\subsection{Learning Mocha}
+
+Learning Mocha is a native Android app that treats a person's own learning as a small private
+encyclopaedia they own outright:
+
+\begin{itemize}
+  \item a \textbf{personal Wikipedia} --- Markdown articles organised into branches, folders and
+        subfolders, cross-linked with \code{[[wiki-links]]} that resolve to real posts and produce
+        backlinks automatically;
+  \item a \textbf{learning tracker} --- per-post status, favourites, tags, external references and
+        YouTube resources that play without leaving the article, and a glossary that defines a term in
+        English and Vietnamese without interrupting the reading;
+  \item a \textbf{knowledge graph} --- the same library seen as nodes and edges, so gaps and clusters are
+        visible at a glance rather than inferred from a file tree;
+  \item an \textbf{AI learning assistant} --- a chat that can read the library through explicit,
+        read-only queries and \emph{propose} concrete changes: generate an article, build a learning path
+        as a tree of posts, link things together, reorganise a branch. Every proposal is reviewed
+        item by item before anything is written.
+\end{itemize}
+
+\subsection{The two commitments that shaped the design}
+
+Almost every interesting decision in this project follows from two commitments made before any code was
+written.
+
+\begin{mochabox}[title={1. Local-first, not offline-tolerant}]
+The knowledge base lives in a Room database on the device and nowhere else. There is no account, no sync,
+no cloud copy, and Android's own Auto Backup is switched off so the operating system does not quietly
+upload the database either. Consequently every feature except the assistant works with the network
+switched off --- not degraded, but identical --- and the app cannot lose someone's library because a
+server went away. The cost is real and accepted: no multi-device access, and backup is the user's
+responsibility, which is why export/import is a first-class screen with a weekly reminder.
+\end{mochabox}
+
+\begin{mochabox}[title={2. The AI never writes to the database}]
+A language model that can call \code{DELETE} is a data-loss feature. Instead the model has no database
+access at all: it can ask for information through seven read-only queries, and it can \emph{propose}
+changes only as a batch of structured JSON actions. The device parses that batch, validates it against
+live data, shows it on a review screen where each action can be inspected and deselected, and then
+applies the approved subset in a single Room transaction. Destructive actions arrive unchecked and need an
+explicit confirmation. This is what makes an assistant with write ambitions safe enough to actually use.
+\end{mochabox}
+
+\subsection{Why this is not a template project}
+
+The parts that took the most thought are the parts that do not exist in a tutorial: a single
+self-referencing table that makes branches, folders and posts share one set of tree operations; a
+content-backed FTS4 index kept in step by Room's own triggers; wiki-link resolution that survives
+renaming a post; a model-independent action protocol with on-device validation and single-level undo; a
+two-round context mechanism that lets the model query the library without ever being sent it; and a
+force-directed graph renderer written against \code{Canvas} with the layout maths in framework-free Java
+so it can be unit-tested. \S\ref{sec:self} is honest about what is and is not finished.

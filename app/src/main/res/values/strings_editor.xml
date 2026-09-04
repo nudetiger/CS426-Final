@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the post editor (references, term dialog) and the Dictionary CRUD screen. -->
+<resources>
+
+    <!-- Post editor: references & resources -->
+    <string name="editor_resources_header">References</string>
+    <string name="editor_resources_add">Add</string>
+    <string name="editor_resources_empty">No references yet. Attach an article, a book or a video.</string>
+    <string name="editor_resource_dialog_title">Attach a reference</string>
+    <string name="editor_resource_kind">Kind</string>
+    <string name="editor_resource_name_hint">Title (optional)</string>
+    <string name="editor_resource_url_hint">Link</string>
+    <string name="editor_resource_url_required">A link is required.</string>
+    <string name="editor_resource_added">Saved with the post</string>
+    <string name="editor_resource_removed">Reference removed</string>
+    <string name="editor_term_required">Type the term first.</string>
+    <string name="editor_no_link_targets">No other posts to link to yet.</string>
+    <string name="resource_kind_youtube">YouTube</string>
+    <string name="resource_kind_article">Article</string>
+    <string name="resource_kind_book">Book</string>
+    <string name="resource_kind_other">Other</string>
+    <string name="cd_resource_remove">Remove this reference</string>
+    <string name="cd_resource">%1$s: %2$s</string>
+
+    <!-- Dictionary screen -->
+    <string name="dict_add_title">Add a term</string>
+    <string name="dict_edit_title">Edit term</string>
+    <string name="dict_scope_global">Global term</string>
+    <string name="dict_scope_post">From “%1$s”</string>
+    <string name="dict_scope_post_unknown">Attached to a post</string>
+    <string name="dict_empty">No terms yet. Tap + to add one.</string>
+    <string name="dict_empty_filtered">No terms match this filter.</string>
+    <string name="dict_deleted">Deleted “%1$s”</string>
+    <string name="dict_undo">Undo</string>
+    <string name="dict_saved">Term saved</string>
+    <string name="dict_term_required">Type the term first.</string>
+    <string name="cd_dict_add">Add a term</string>
+    <string name="cd_dict_row_menu">Term actions</string>
+</resources>

@@ -1,0 +1,56 @@
+% System architecture: the device is the source of truth; the gateway only holds the key.
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  layer/.style={draw=mochaBrown, fill=mochaCream, rounded corners=3pt, align=center,
+                minimum height=8mm, inner xsep=6pt, text width=#1},
+  chip/.style={draw=mochaBrown!60, fill=mochaCreamDark, rounded corners=2pt, align=center,
+               font=\scriptsize, minimum height=7mm, inner xsep=4pt},
+  group/.style={draw=mochaBrown!35, dashed, rounded corners=4pt, inner sep=7pt},
+  flow/.style={-{Stealth[length=2.2mm]}, draw=mochaDeep, thick},
+  thin flow/.style={-{Stealth[length=1.8mm]}, draw=mochaBrown!70},
+  node distance=5mm and 6mm,
+]
+
+% ---- device ----
+\node[layer=3.0cm] (ui) {UI\\\scriptsize Fragments + XML Views};
+\node[layer=3.0cm, below=of ui] (vm) {ViewModel\\\scriptsize StateFlow, ListState};
+\node[layer=3.0cm, below=of vm] (repo) {Repositories\\\scriptsize Tree, Post, Search, Graph, Backup};
+\node[layer=3.0cm, below=of repo] (room) {Room / SQLite\\\scriptsize 9 entities + FTS4};
+
+\node[layer=3.4cm, right=14mm of vm, anchor=west] (engine)
+     {AI Action Engine\\\scriptsize parse $\rightarrow$ validate $\rightarrow$ review $\rightarrow$ one transaction};
+\node[layer=3.4cm, below=of engine, anchor=north west] (tools)
+     {Context Tools\\\scriptsize 7 read-only queries};
+\node[layer=3.4cm, above=of engine, anchor=south west] (chat)
+     {Chat Repository\\\scriptsize sessions, SSE stream, rounds};
+
+\node[group, fit=(ui) (room) (chat) (tools), label={[font=\scriptsize\bfseries\color{mochaDeep}]above:%
+  Android device --- source of truth, fully usable offline}] (device) {};
+
+% ---- server side ----
+\node[layer=3.4cm, right=17mm of chat.east, anchor=west] (gw)
+     {Express gateway\\\scriptsize holds the API key, no database};
+\node[layer=3.4cm, below=14mm of gw] (llm) {DeepSeek API\\\scriptsize chat completions};
+
+\draw[flow] (ui) -- (vm);
+\draw[flow] (vm) -- (repo);
+\draw[flow] (repo) -- (room);
+\draw[thin flow] (vm.east) -- (engine.west);
+\draw[thin flow] (chat.south) -- (engine.north);
+\draw[thin flow] (engine.south) -- (tools.north);
+\draw[thin flow] (tools.west) to[out=180, in=-20] (repo.east);
+\draw[flow] (engine.south west) to[out=250, in=25]
+      node[chip, pos=0.75, right=3pt] {approved batch} (room.east);
+\draw[flow] (chat.east) -- node[chip, pos=0.5, above=1pt] {HTTPS} (gw.west);
+\draw[flow] (gw) -- (llm);
+
+\node[chip, below=3mm of room.south, anchor=north, text width=6.4cm]
+     {Never leaves the device: posts, links, tags, dictionary, resources, settings, chat history};
+\end{tikzpicture}
+\caption{Overall architecture. Knowledge lives only in Room on the device; the backend is a
+stateless key-holding proxy, and every AI-originated write passes through validation and an
+explicit user review before a single Room transaction applies it.}
+\label{fig:architecture}
+\end{figure}

@@ -1,0 +1,110 @@
+\section{Technologies used}
+\label{sec:tech}
+
+\subsection{The stack, and why each piece is there}
+
+\begin{longtable}{L{4.3cm} L{1.8cm} X}
+\toprule
+\textbf{Technology} & \textbf{Version} & \textbf{Why this one} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Technology} & \textbf{Version} & \textbf{Why this one} \\
+\midrule
+\endhead
+Kotlin & 1.9.24 &
+Primary language: coroutines and \code{Flow} give the whole app one asynchronous idiom, and Room's
+suspend/Flow DAOs mean no database call ever needs a manual thread hop. \\
+\addlinespace
+Java & 17 target &
+Used deliberately for framework-free logic in \code{util/}: parsers, the force-directed layout, the
+streaming envelope reader, backup writer/reader and the diff. Pure Java classes with no Android imports
+are the parts worth unit-testing on the JVM, so the language boundary and the test boundary coincide. \\
+\addlinespace
+Android SDK (XML Views) & min 24,\newline target 35 &
+Views rather than Compose: the design reference is a Views project, minSdk 24 keeps the reach wide, and
+the two custom-drawing requirements (the graph canvas, the reading column) are more direct against
+\code{View} and \code{Canvas}. \\
+\addlinespace
+AGP / Gradle & 8.7.3 / 8.9 &
+Current stable pair for compileSdk 35; the wrapper is committed so the build needs no global Gradle. \\
+\addlinespace
+Room & 2.6.1 &
+Local source of truth. Chosen over raw SQLite or files for four properties this project depends on:
+compile-time-checked queries, real transactions, observable \code{Flow} queries, and testable migrations.
+FTS4 comes from Room's \code{@Fts4} annotation --- version 2.6 has no FTS5 annotation, which is why the
+index is FTS4. \\
+\addlinespace
+KSP & 1.9.24-1.0.20 &
+Room's annotation processor, roughly twice as fast as kapt on this project. \\
+\addlinespace
+Navigation Component & 2.8.3 &
+One activity, five bottom-navigation tabs and nine pushed destinations with typed arguments and a real
+back stack, all declared in \code{nav\_graph.xml}. Global actions keep cross-screen navigation from
+turning into a web of per-screen actions. \\
+\addlinespace
+Lifecycle / ViewModel & 2.8.7 &
+\code{ViewModel} + \code{StateFlow} + \code{repeatOnLifecycle} is the app's entire state-management
+story; every screen exposes one immutable UI-state data class. \\
+\addlinespace
+Material Components & 1.12.0 &
+Chips, bottom sheets, dialogs and the bottom navigation bar, all restyled onto the mocha palette rather
+than used with default Material colours. \\
+\addlinespace
+Markwon & 4.6.2 (core, linkify) &
+Renders Markdown into a \code{TextView} entirely offline. Its pluggable link resolver is what makes
+\code{[[wiki-links]]} clickable: they are rewritten to an internal \code{mocha://post/<id>} scheme before
+rendering and intercepted on tap. Only the artefacts actually used are pulled in. \\
+\addlinespace
+Retrofit + OkHttp + Gson & 2.11.0 / 4.12.0 / 2.11.0 &
+Retrofit for the two request/response endpoints, raw OkHttp for the Server-Sent-Events stream (Retrofit
+has no streaming idiom worth the ceremony here), Gson for the action envelope. All three are used only
+for the gateway --- there is no other network traffic in the app. \\
+\addlinespace
+kotlinx-coroutines & 1.9.0 &
+\code{Dispatchers.IO} for database and network work, \code{Dispatchers.Default} for graph layout, and
+structured cancellation so leaving a screen cancels an in-flight AI stream. \\
+\addlinespace
+Node.js + Express & 24 / 4 &
+The gateway. Roughly 230 lines, no database, no state: it holds the API key, builds the system prompt for
+the requested mode, normalises upstream errors, and relays the token stream. \\
+\addlinespace
+DeepSeek API & \code{deepseek-chat} &
+The language model, reached only through the gateway. The app never talks to it directly and never holds
+a key. The action protocol is plain JSON documented in the prompt, so swapping providers means changing
+one URL. \\
+\addlinespace
+JUnit 4 + Room testing & 4.13.2 / 2.6.1 &
+JVM unit tests for pure logic, plus \code{MigrationTestHelper} for real schema migrations with real rows. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Deliberate non-dependencies}
+
+What was left out matters as much as what went in, because every dependency is a thing that can break the
+build a day before a deadline:
+
+\begin{itemize}
+  \item \textbf{No dependency-injection framework.} Hilt or Koin would earn their keep in a larger team
+        project; here the object graph is nine lazily-created singletons on the \code{Application}, which
+        is smaller and needs no annotation processor.
+  \item \textbf{No graph library.} The knowledge graph is a \code{View} plus about 150 lines of
+        Fruchterman--Reingold in Java. A charting or graph SDK would have added megabytes and a WebView
+        for less control.
+  \item \textbf{No YouTube player SDK.} Playback uses the standard IFrame embed in a locked-down
+        \code{WebView} against \code{youtube-nocookie.com}, with the URL allow-list enforced in the
+        \code{WebViewClient}.
+  \item \textbf{No image loading, no analytics, no crash reporting, no ads.} Nothing in the app needs to
+        phone home, and adding an SDK that could would contradict the privacy promise made on the
+        settings screen.
+  \item \textbf{No Compose.} Mixing Compose into a Views codebase mid-project buys nothing the deadline
+        can spend.
+\end{itemize}
+
+\subsection{Development tooling}
+
+The repository carries an \code{AGENTS.md} that states the architecture rules a contributor (human or
+AI coding assistant) must follow: the layer boundaries, the Kotlin/Java split, the design-token rule, the
+phase order, and the invariant that the AI subsystem may never reach a DAO. \code{docs/plan.md} is the
+long-form design document, updated at the end of every phase with notes for the next one. Those files are
+development tooling, not part of the shipped application.

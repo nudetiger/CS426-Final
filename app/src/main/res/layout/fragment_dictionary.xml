@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mocha_cream">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/mocha_header_bg"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/header_min_height"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/space_xs"
+            android:paddingEnd="@dimen/space_s">
+
+            <ImageButton
+                android:id="@+id/dictionary_back"
+                android:layout_width="@dimen/touch_target"
+                android:layout_height="@dimen/touch_target"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_back"
+                android:src="@drawable/ic_back" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@string/dictionary_title"
+                android:textAppearance="@style/TextAppearance.Mocha.Title"
+                android:textColor="@color/mocha_brown" />
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/dictionary_search"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/content_gutter"
+            android:layout_marginTop="@dimen/space_m"
+            android:layout_marginEnd="@dimen/content_gutter"
+            android:layout_marginBottom="@dimen/space_s"
+            android:background="@drawable/bg_card"
+            android:hint="@string/dictionary_search_hint"
+            android:imeOptions="actionSearch"
+            android:importantForAutofill="no"
+            android:inputType="text"
+            android:maxLines="1"
+            android:minHeight="@dimen/touch_target"
+            android:padding="@dimen/space_s"
+            android:textAppearance="@style/TextAppearance.Mocha.Body"
+            android:textColorHint="@color/mocha_text_secondary" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/content_gutter"
+            android:paddingEnd="@dimen/content_gutter"
+            android:paddingBottom="@dimen/space_s"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/dictionary_chips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:selectionRequired="true"
+                app:singleLine="true"
+                app:singleSelection="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/dictionary_chip_all"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:checked="true"
+                    android:text="@string/dictionary_scope_all" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/dictionary_chip_global"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="@string/dictionary_scope_global" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/dictionary_chip_post"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="@string/dictionary_scope_post" />
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/dictionary_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="@dimen/content_gutter"
+                android:paddingEnd="@dimen/content_gutter"
+                android:paddingBottom="@dimen/fab_list_inset" />
+
+            <include
+                android:id="@+id/list_state"
+                layout="@layout/view_list_state" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/dictionary_fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/space_m"
+        android:contentDescription="@string/cd_dict_add"
+        app:backgroundTint="@color/mocha_brown"
+        app:srcCompat="@drawable/ic_add"
+        app:tint="@color/mocha_on_primary" />
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

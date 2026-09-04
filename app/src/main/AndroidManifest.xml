@@ -1,23 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Only used to reach the Learning Mocha backend gateway (DeepSeek proxy).
-         Every other feature works fully offline. -->
+    <!-- The only network permission the app needs: reaching the Learning Mocha backend gateway
+         (DeepSeek proxy). Every other feature works fully offline, and offline handling is done
+         by pinging the gateway rather than by reading connectivity state. -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Phase 4: local reminder notification for backup. -->
+    <!-- Local reminder notification for backup; requested at runtime on API 33+. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".LearningMochaApp"
-        android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.LearningMocha"
-        android:usesCleartextTraffic="true">
-        <!-- usesCleartextTraffic: local dev gateway runs on plain HTTP (10.0.2.2 / LAN).
-             All real API traffic is proxied by the backend over HTTPS. -->
+        android:theme="@style/Theme.LearningMocha">
+        <!-- allowBackup is off on purpose: Android Auto Backup would copy the Room database,
+             chat history included, to the user's cloud account, and the app promises that
+             nothing leaves the device (settings_privacy_body). Settings -> Export library is
+             the supported backup path, and it deliberately omits chat. -->
 
         <activity
             android:name=".MainActivity"

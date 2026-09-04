@@ -1,0 +1,91 @@
+\section{Setup and installation}
+\label{sec:setup}
+
+There are two ways to run Learning Mocha: install the shipped APK, which needs nothing but an Android
+device, or build from source. The AI assistant additionally needs the small gateway process, and the app
+is designed so that everything else keeps working when that process is absent.
+
+\subsection{Installing the shipped APK}
+
+\begin{enumerate}
+  \item Copy \code{apk/app-release.apk} from the submission archive to an Android device or emulator
+        running \textbf{Android 7.0 (API 24)} or newer.
+  \item Install it: \code{adb install -r app-release.apk}, or open the file on the device and allow
+        installation from unknown sources.
+  \item Launch \emph{Learning Mocha}. On first start the app seeds a small ``Getting Started'' branch so
+        no screen is empty, and no account, permission grant or network connection is required.
+\end{enumerate}
+
+The APK is signed with a self-generated release key. The keystore and its passwords are deliberately not
+part of the archive, so the build is reproducible without them --- a source build without
+\code{keystore.properties} simply produces an unsigned release APK instead of failing.
+
+\subsection{Building the Android app from source}
+
+\begin{description}[leftmargin=2.2em, style=nextline, font=\normalfont\bfseries]
+  \item[Prerequisites] JDK 17 (the JetBrains Runtime bundled with Android Studio is fine), the Android
+    SDK with platform 35 and build-tools 34 or newer. No other tooling is needed --- the Gradle wrapper
+    downloads Gradle 8.9 itself.
+  \item[SDK location] Create \code{local.properties} in the repository root with
+    \code{sdk.dir=<path to your Android SDK>}. Android Studio writes this file automatically the first
+    time the project is opened.
+  \item[JDK selection] Gradle 8.9 cannot run on JDK 23 or newer. If your default \code{java} is newer,
+    either point \code{JAVA\_HOME} at a JDK 17 for the session or add
+    \code{org.gradle.java.home=<path to a JDK 17>} to your own \code{\textasciitilde/.gradle/gradle.properties}.
+    A machine-specific path is deliberately kept out of the committed \code{gradle.properties} so the
+    project configures on any machine.
+\end{description}
+
+\begin{lstlisting}[language=bash, caption={Building and testing from the repository root (PowerShell).}]
+.\gradlew.bat assembleDebug              # debug APK -> app\build\outputs\apk\debug\
+.\gradlew.bat installDebug               # install on a connected device or emulator
+.\gradlew.bat test                       # JVM unit tests
+.\gradlew.bat connectedDebugAndroidTest  # instrumented Room migration tests (needs a device)
+.\gradlew.bat assembleRelease            # release APK -> app\build\outputs\apk\release\
+\end{lstlisting}
+
+\subsection{Running the AI gateway}
+
+The gateway is a single Node process whose only job is to hold the DeepSeek API key and shape requests.
+It requires Node 18 or newer (developed on Node 24).
+
+\begin{lstlisting}[language=bash, caption={Starting the gateway.}]
+cd backend
+npm install
+copy .env.example .env      # then set DEEPSEEK_API_KEY=<your key>
+npm run dev                 # listens on http://localhost:8787
+\end{lstlisting}
+
+\code{.env} carries three settings: \code{DEEPSEEK\_API\_KEY} (required), \code{MODEL} (default
+\code{deepseek-chat}) and \code{PORT} (default \code{8787}). The file is git-ignored and never packaged,
+so the key exists in exactly one place and never inside the APK.
+
+Pointing the app at the gateway:
+
+\begin{itemize}
+  \item \textbf{Emulator} --- the default address \code{http://10.0.2.2:8787/} already resolves to the
+        host machine's \code{localhost}, so nothing needs configuring.
+  \item \textbf{Physical device} --- open \textbf{Settings $\rightarrow$ AI gateway} in the app and enter
+        \code{http://<your computer's LAN IP>:8787/}, then use \textbf{Test connection}. The device and
+        the computer must be on the same network.
+\end{itemize}
+
+The app polls \code{GET /v1/health} before every request. When the gateway is unreachable the AI screens
+show a calm banner (``AI unavailable --- your library still works'') with a retry button, and every other
+feature behaves exactly as it does online. Health also reports whether the gateway supports streaming, so
+an older gateway degrades to the non-streaming endpoint rather than failing.
+
+\subsection{Rebuilding this report}
+
+\begin{lstlisting}[language=bash, caption={The report is plain \LaTeX{} with no external image dependencies.}]
+cd report
+pdflatex -interaction=nonstopmode report.tex   # run twice so the table of contents settles
+\end{lstlisting}
+
+\subsection{Assembling the submission archive}
+
+\code{tools/package-submission.ps1} builds the graded archive from a clean working tree. It stages
+\code{README.md}, the full source (with \code{.git} history and without build output), the release APK,
+this PDF and the demo-video link into \code{dist/24125006\_24125009.zip}. The script deliberately fails
+rather than continuing if a secret --- \code{backend/.env}, the keystore, \code{keystore.properties} or
+anything that matches a DeepSeek key pattern --- would end up inside the archive.

@@ -34,6 +34,14 @@
             android:textColor="@color/mocha_brown" />
 
         <ImageButton
+            android:id="@+id/reader_graph"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/reader_show_graph"
+            android:src="@drawable/ic_branch" />
+
+        <ImageButton
             android:id="@+id/reader_favorite"
             android:layout_width="@dimen/touch_target"
             android:layout_height="@dimen/touch_target"
@@ -60,122 +68,143 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:padding="@dimen/space_m">
+            android:paddingStart="@dimen/content_gutter"
+            android:paddingTop="@dimen/space_m"
+            android:paddingEnd="@dimen/content_gutter"
+            android:paddingBottom="@dimen/space_m">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center_horizontal"
                 android:orientation="vertical">
 
-                <LinearLayout
+                <TextView
+                    android:id="@+id/reader_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_chip"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/touch_target"
+                    android:paddingStart="@dimen/space_s"
+                    android:paddingTop="@dimen/space_xs"
+                    android:paddingEnd="@dimen/space_s"
+                    android:paddingBottom="@dimen/space_xs"
+                    android:textAppearance="@style/TextAppearance.Mocha.Caption"
+                    android:textColor="@color/mocha_brown" />
+
+                <TextView
+                    android:id="@+id/reader_path"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:ellipsize="start"
+                    android:maxLines="1"
+                    android:textAppearance="@style/TextAppearance.Mocha.Caption"
+                    android:visibility="gone" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/reader_tags"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
+
+                <TextView
+                    android:id="@+id/reader_terms_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
+                    android:text="@string/reader_terms"
+                    android:textAppearance="@style/TextAppearance.Mocha.Section"
+                    android:visibility="gone" />
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/reader_terms"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal" />
+                </HorizontalScrollView>
+
+                <TextView
+                    android:id="@+id/reader_dictionary_all"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:minHeight="@dimen/touch_target"
+                    android:text="@string/reader_dictionary"
+                    android:textAppearance="@style/TextAppearance.Mocha.Caption"
+                    android:textColor="@color/mocha_brown" />
+
+                <TextView
+                    android:id="@+id/reader_body"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
                     android:maxWidth="@dimen/reader_max_width"
-                    android:orientation="vertical">
+                    android:textAppearance="@style/TextAppearance.Mocha.Body"
+                    android:textIsSelectable="true" />
 
-                    <TextView
-                        android:id="@+id/reader_status"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_chip"
-                        android:paddingStart="@dimen/space_s"
-                        android:paddingTop="@dimen/space_xs"
-                        android:paddingEnd="@dimen/space_s"
-                        android:paddingBottom="@dimen/space_xs"
-                        android:textAppearance="@style/TextAppearance.Mocha.Caption"
-                        android:textColor="@color/mocha_brown" />
+                <TextView
+                    android:id="@+id/reader_resources_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_l"
+                    android:layout_marginBottom="@dimen/space_s"
+                    android:text="@string/reader_references"
+                    android:textAppearance="@style/TextAppearance.Mocha.Section"
+                    android:visibility="gone" />
 
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_s"
-                        android:scrollbars="none">
+                <LinearLayout
+                    android:id="@+id/reader_resources"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
 
-                        <LinearLayout
-                            android:id="@+id/reader_tags"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal" />
-                    </HorizontalScrollView>
+                <TextView
+                    android:id="@+id/reader_backlinks_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
+                    android:layout_marginBottom="@dimen/space_s"
+                    android:text="@string/reader_backlinks"
+                    android:textAppearance="@style/TextAppearance.Mocha.Section"
+                    android:visibility="gone" />
 
-                    <LinearLayout
-                        android:id="@+id/reader_resources"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_s"
-                        android:orientation="vertical" />
+                <LinearLayout
+                    android:id="@+id/reader_backlinks"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
 
-                    <TextView
-                        android:id="@+id/reader_body"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_m"
-                        android:textAppearance="@style/TextAppearance.Mocha.Body"
-                        android:textIsSelectable="true" />
+                <TextView
+                    android:id="@+id/reader_related_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
+                    android:layout_marginBottom="@dimen/space_s"
+                    android:text="@string/reader_related"
+                    android:textAppearance="@style/TextAppearance.Mocha.Section"
+                    android:visibility="gone" />
 
-                    <TextView
-                        android:id="@+id/reader_terms_header"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_l"
-                        android:text="@string/reader_terms"
-                        android:textAppearance="@style/TextAppearance.Mocha.Section"
-                        android:visibility="gone" />
-
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_s"
-                        android:scrollbars="none">
-
-                        <LinearLayout
-                            android:id="@+id/reader_terms"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal" />
-                    </HorizontalScrollView>
-
-                    <TextView
-                        android:id="@+id/reader_dictionary_all"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:paddingTop="@dimen/space_s"
-                        android:paddingBottom="@dimen/space_s"
-                        android:text="@string/reader_dictionary"
-                        android:textAppearance="@style/TextAppearance.Mocha.Caption"
-                        android:textColor="@color/mocha_brown" />
-
-                    <TextView
-                        android:id="@+id/reader_backlinks_header"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_m"
-                        android:text="@string/reader_backlinks"
-                        android:textAppearance="@style/TextAppearance.Mocha.Section"
-                        android:visibility="gone" />
-
-                    <LinearLayout
-                        android:id="@+id/reader_backlinks"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical" />
-
-                    <TextView
-                        android:id="@+id/reader_related_header"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_m"
-                        android:text="@string/reader_related"
-                        android:textAppearance="@style/TextAppearance.Mocha.Section"
-                        android:visibility="gone" />
-
-                    <LinearLayout
-                        android:id="@+id/reader_related"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical" />
-                </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/reader_related"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 

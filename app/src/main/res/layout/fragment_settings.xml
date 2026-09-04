@@ -12,8 +12,8 @@
         android:gravity="center_vertical"
         android:minHeight="@dimen/header_min_height"
         android:orientation="horizontal"
-        android:paddingStart="@dimen/space_m"
-        android:paddingEnd="@dimen/space_m">
+        android:paddingStart="@dimen/content_gutter"
+        android:paddingEnd="@dimen/content_gutter">
 
         <TextView
             android:layout_width="wrap_content"

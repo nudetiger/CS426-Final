@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the post reader: references section, breadcrumbs and the YouTube player sheet. -->
+<resources>
+    <string name="reader_references">References &amp; resources</string>
+    <string name="reader_show_graph">Show in graph</string>
+    <string name="reader_open_failed">No app on this device can open that link.</string>
+    <!-- Breadcrumb separator; kept as a resource so the glyph is defined in one place. -->
+    <string name="reader_path_separator" translatable="false">" › "</string>
+
+    <string name="resource_type_youtube">YouTube</string>
+    <string name="resource_type_article">Article</string>
+    <string name="resource_type_book">Book</string>
+    <string name="resource_type_other">Link</string>
+
+    <string name="youtube_sheet_title">Video</string>
+    <string name="youtube_sheet_open">Open in YouTube</string>
+    <string name="youtube_sheet_unavailable">Video unavailable offline. Open it in YouTube to try again.</string>
+
+    <string name="reader_cd_resource">Resource</string>
+    <string name="reader_cd_favorite_add">Add to favorites</string>
+    <string name="reader_cd_favorite_remove">Remove from favorites</string>
+    <string name="reader_cd_status">Learning status: %1$s. Tap to change.</string>
+</resources>

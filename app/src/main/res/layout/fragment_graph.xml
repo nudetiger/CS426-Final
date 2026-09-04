@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mocha_cream"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/mocha_header_bg"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/header_min_height"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/space_xs"
+            android:paddingEnd="@dimen/space_s">
+
+            <ImageButton
+                android:id="@+id/graph_back"
+                android:layout_width="@dimen/touch_target"
+                android:layout_height="@dimen/touch_target"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_back"
+                android:src="@drawable/ic_back" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="@string/graph_title"
+                android:textAppearance="@style/TextAppearance.Mocha.Title"
+                android:textColor="@color/mocha_brown" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/graph_caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/content_gutter"
+            android:paddingEnd="@dimen/content_gutter"
+            android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/content_gutter"
+            android:paddingTop="@dimen/space_xs"
+            android:paddingEnd="@dimen/content_gutter"
+            android:paddingBottom="@dimen/space_s"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/graph_mode_group"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:chipSpacingHorizontal="@dimen/space_xs"
+                    app:selectionRequired="true"
+                    app:singleLine="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/graph_chip_links"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:checked="true"
+                        android:text="@string/graph_mode_links" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/graph_chip_tags"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/graph_mode_tags" />
+                </com.google.android.material.chip.ChipGroup>
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/graph_chip_all"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_s"
+                    android:checkable="false"
+                    android:text="@string/graph_scope_all"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <com.cs426.learningmocha.ui.graph.GraphView
+            android:id="@+id/graph_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@string/cd_graph_canvas" />
+
+        <LinearLayout
+            android:id="@+id/graph_selection"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:layout_margin="@dimen/space_m"
+            android:background="@drawable/bg_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="@dimen/space_s"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/graph_selected_title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+                <TextView
+                    android:id="@+id/graph_selected_caption"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/graph_open"
+                style="@style/Widget.Mocha.ToolbarButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/graph_open_post" />
+        </LinearLayout>
+
+        <include
+            android:id="@+id/list_state"
+            layout="@layout/view_list_state" />
+    </FrameLayout>
+</LinearLayout>

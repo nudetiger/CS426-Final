@@ -1,0 +1,87 @@
+% Room schema: one self-referencing nodes table plus satellite tables.
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize,
+  x=1cm, y=1cm,
+  tbl/.style={draw=mochaBrown, fill=mochaCream, rounded corners=2pt, align=left,
+              inner sep=4pt, text width=#1, anchor=center},
+  rel/.style={draw=mochaBrown!75, -{Stealth[length=1.8mm]}},
+  fts/.style={draw=mochaSage, fill=mochaCreamDark, rounded corners=2pt, align=left,
+              inner sep=4pt, text width=#1, anchor=center},
+]
+
+\node[fts=3.6cm] (fts) at (0,3.1) {%
+  \thdr{posts\_fts}\\[1pt]
+  FTS4(title, content)\\
+  content=\code{nodes} (Room triggers)};
+
+\node[tbl=4.4cm] (nodes) at (0,0.6) {%
+  \thdr{nodes}\\[1pt]
+  \underline{id}\ \ parentId $\rightarrow$ nodes\\
+  type: BRANCH \textbar{} FOLDER \textbar{} POST\\
+  title\ \ content (markdown)\\
+  status\ \ favorite\ \ orderIndex\\
+  createdAt\ \ updatedAt};
+
+\node[tbl=3.1cm] (links) at (-4.9,1.4) {%
+  \thdr{links}\\[1pt]
+  \underline{id}\ \ anchorText\\
+  fromPostId $\rightarrow$ nodes\\
+  toPostId $\rightarrow$ nodes};
+
+\node[tbl=3.1cm] (dict) at (-4.9,-1.5) {%
+  \thdr{dictionary}\\[1pt]
+  \underline{id}\ \ postId? $\rightarrow$ nodes\\
+  term\ \ definition\\
+  meaningVi\\
+  \itshape postId NULL = global};
+
+\node[tbl=3.1cm] (tags) at (5.0,2.2) {%
+  \thdr{tags}\\[1pt]
+  \underline{id}\ \ name (unique)};
+
+\node[tbl=3.1cm] (posttags) at (5.0,0.9) {%
+  \thdr{post\_tags}\\[1pt]
+  \underline{postId} $\rightarrow$ nodes\\
+  \underline{tagId} $\rightarrow$ tags};
+
+\node[tbl=3.1cm] (res) at (5.0,-1.5) {%
+  \thdr{resources}\\[1pt]
+  \underline{id}\ \ postId $\rightarrow$ nodes\\
+  type: YOUTUBE \textbar{} ARTICLE\\
+  \phantom{type: }\textbar{} BOOK \textbar{} OTHER\\
+  title\ \ url};
+
+\node[tbl=3.3cm] (sessions) at (-4.9,-4.3) {%
+  \thdr{chat\_sessions}\\[1pt]
+  \underline{id}\ \ title\ \ createdAt};
+
+\node[tbl=4.4cm] (messages) at (0.4,-4.4) {%
+  \thdr{chat\_messages}\\[1pt]
+  \underline{id}\ \ sessionId $\rightarrow$ chat\_sessions\\
+  role\ \ text\ \ status\\
+  actionsJson (a pending batch)};
+
+\node[align=left, text width=3.4cm, anchor=center, font=\scriptsize\itshape\color{mochaMuted}]
+      at (5.2,-4.4) {The only tables deliberately excluded from export.};
+
+\draw[rel] (links.east)    -- ([yshift=6mm]nodes.west);
+\draw[rel] (dict.east)     -- ([yshift=-6mm]nodes.west);
+\draw[rel] (posttags.west) -- ([yshift=3mm]nodes.east);
+\draw[rel] (posttags.north) -- (tags.south);
+\draw[rel] (res.west)      -- ([yshift=-9mm]nodes.east);
+\draw[rel] (sessions.east) -- (messages.west);
+\draw[draw=mochaSage, dashed, -{Stealth[length=1.8mm]}] (nodes.north) -- (fts.south);
+\end{tikzpicture}
+
+\smallskip
+{\footnotesize Every arrow is a real \code{ON DELETE CASCADE} foreign key, so deleting a branch removes
+its subtree, links, tags, glossary entries and resources in one statement. Backlinks are a reverse query
+on \code{links}, never a stored second copy, and \code{posts\_fts} is content-backed so Room's generated
+triggers keep the index in step with \code{nodes} automatically.\par}
+
+\caption{The Room schema (database version 3). Branches, folders and posts share one self-referencing
+\code{nodes} table, which makes every tree operation identical regardless of node type.}
+\label{fig:datamodel}
+\end{figure}

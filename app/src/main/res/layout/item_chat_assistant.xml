@@ -22,6 +22,26 @@
         android:textColor="@color/mocha_text_primary" />
 
     <TextView
+        android:id="@+id/bubble_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_s"
+        android:layout_marginTop="@dimen/space_xs"
+        android:textAppearance="@style/TextAppearance.Mocha.Caption"
+        android:textColor="@color/mocha_text_secondary"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/bubble_context"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_s"
+        android:layout_marginTop="@dimen/space_xs"
+        android:textAppearance="@style/TextAppearance.Mocha.Caption"
+        android:textColor="@color/mocha_text_secondary"
+        android:visibility="gone" />
+
+    <TextView
         android:id="@+id/bubble_action"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -15,9 +15,17 @@ import com.cs426.learningmocha.net.ApiError
 import com.cs426.learningmocha.net.ChatMessageDto
 import com.cs426.learningmocha.net.ChatRequest
 import com.cs426.learningmocha.net.ChatResponse
+import com.cs426.learningmocha.net.HealthResponse
 import com.cs426.learningmocha.net.MochaApi
+import com.cs426.learningmocha.net.SseChatClient
+import com.cs426.learningmocha.net.StreamFrame
+import com.cs426.learningmocha.util.StreamingAnswerExtractor
 import com.google.gson.Gson
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 sealed class SendResult {
     data object Answered : SendResult()
@@ -25,9 +33,25 @@ sealed class SendResult {
     data class Failed(val message: String, val retryable: Boolean) : SendResult()
 }
 
+/**
+ * The reply currently arriving over SSE. Transient by design: it is never written
+ * to `chat_messages`, so a stream that is cancelled or dies mid-flight leaves no
+ * half-finished row behind.
+ *
+ * [working] means there is no user-visible prose yet — the envelope is still
+ * opening, or it turned out to be an action batch / context request, which the
+ * user never sees as raw JSON.
+ */
+data class StreamingBubble(
+    val sessionId: Long,
+    val text: String,
+    val working: Boolean,
+)
+
 class ChatRepository(
     private val db: AppDatabase,
     private val api: MochaApi,
+    private val sse: SseChatClient,
     search: SearchRepository,
     posts: PostRepository,
     val executor: ActionExecutor,
@@ -35,6 +59,18 @@ class ChatRepository(
     private val chat = db.chatDao()
     private val tools = ContextTools(db, search, posts)
     private val gson = Gson()
+
+    private val _streaming = MutableStateFlow<StreamingBubble?>(null)
+    val streaming: StateFlow<StreamingBubble?> = _streaming.asStateFlow()
+
+    private val _sharedContext = MutableStateFlow<Map<Long, Int>>(emptyMap())
+
+    /**
+     * How many notes the assistant read before answering, per message id (plan §22).
+     * Kept in memory rather than in Room: persisting it would mean a schema
+     * migration, and chat history is deliberately never exported anyway.
+     */
+    val sharedContext: StateFlow<Map<Long, Int>> = _sharedContext.asStateFlow()
 
     @Volatile
     var lastUndo: UndoSnapshot? = null
@@ -52,11 +88,13 @@ class ChatRepository(
 
     suspend fun deleteSession(id: Long) = chat.deleteSession(id)
 
-    suspend fun ping(): Boolean = try {
-        api.health().ok
+    suspend fun health(): HealthResponse? = try {
+        api.health()
     } catch (_: Exception) {
-        false
+        null
     }
+
+    suspend fun ping(): Boolean = health()?.ok == true
 
     suspend fun send(sessionId: Long, mode: String, userText: String): SendResult {
         val trimmed = userText.trim()
@@ -97,7 +135,8 @@ class ChatRepository(
     }
 
     private suspend fun complete(sessionId: Long, mode: String): SendResult {
-        if (!ping()) {
+        val health = health()
+        if (health == null || !health.ok) {
             return persistError(sessionId, "AI unavailable — your library still works", true)
         }
         SeedData.ensureSeeded(db)
@@ -110,19 +149,44 @@ class ChatRepository(
         val kbIndex = KbIndex.build(db.nodeDao().getAll())
         val roundMessages = history.toMutableList()
         var toolResults: String? = null
+        var sharedNotes = 0
         return try {
             repeat(4) { round ->
-                val reply = postChat(mode, roundMessages, kbIndex, toolResults)
+                val reply = roundReply(
+                    sessionId = sessionId,
+                    mode = mode,
+                    messages = roundMessages,
+                    kbIndex = kbIndex,
+                    toolResults = toolResults,
+                    streaming = health.streaming,
+                )
                 val envelope = ActionParser.parseOrAnswer(reply)
                 when (envelope.type) {
                     "context_request" -> {
                         if (round >= 3) {
                             return persistError(sessionId, "Could not gather enough context", true)
                         }
-                        toolResults = tools.run(envelope.queries.orEmpty())
+                        val queries = envelope.queries.orEmpty()
+                        toolResults = tools.run(queries)
+                        sharedNotes += minOf(queries.size, CONTEXT_QUERY_CAP)
                         roundMessages.add(ChatMessageDto(ChatMessage.ROLE_ASSISTANT, reply))
                     }
                     "actions" -> {
+                        // Answer mode is read-only by contract, so a batch proposed there
+                        // is reported as prose instead of a row waiting to be applied.
+                        if (mode == MODE_ANSWER) {
+                            val id = chat.insertMessage(
+                                ChatMessage(
+                                    sessionId = sessionId,
+                                    role = ChatMessage.ROLE_ASSISTANT,
+                                    text = (envelope.summary ?: "I have some changes in mind") +
+                                        "\n\nSwitch to Suggest or Modify to review them.",
+                                    status = ChatMessage.STATUS_OK,
+                                ),
+                            )
+                            recordShared(id, sharedNotes)
+                            return SendResult.Answered
+                        }
                         val id = chat.insertMessage(
                             ChatMessage(
                                 sessionId = sessionId,
@@ -132,27 +196,115 @@ class ChatRepository(
                                 status = ChatMessage.STATUS_PENDING,
                             ),
                         )
+                        recordShared(id, sharedNotes)
                         return SendResult.NeedsReview(id)
                     }
                     else -> {
-                        chat.insertMessage(
+                        // Two ways a reply can carry nothing worth showing: an envelope of an
+                        // unknown type (whose raw JSON must never reach a bubble), and a
+                        // degenerate answer whose text is blank — DeepSeek occasionally emits a
+                        // long run of spaces instead of prose. Both become a retryable error
+                        // rather than an empty bubble the user cannot act on.
+                        val prose = envelope.text ?: reply
+                        if (prose.isBlank()) {
+                            return persistError(
+                                sessionId,
+                                "The assistant replied with nothing usable — try again",
+                                true,
+                            )
+                        }
+                        val id = chat.insertMessage(
                             ChatMessage(
                                 sessionId = sessionId,
                                 role = ChatMessage.ROLE_ASSISTANT,
-                                text = envelope.text ?: reply,
+                                text = prose,
                                 status = ChatMessage.STATUS_OK,
                             ),
                         )
+                        recordShared(id, sharedNotes)
                         return SendResult.Answered
                     }
                 }
             }
             persistError(sessionId, "Could not gather enough context", true)
+        } catch (cancelled: CancellationException) {
+            // The user left the screen or sent again: drop the stream silently.
+            throw cancelled
         } catch (error: ApiError) {
             persistError(sessionId, error.message ?: "Request failed", error.retryable)
         } catch (error: Exception) {
             persistError(sessionId, error.message ?: "Request failed", true)
+        } finally {
+            clearStreaming(sessionId)
         }
+    }
+
+    /**
+     * One request/reply round. Streaming is preferred when the gateway advertises
+     * it, but a stream that dies before the first token falls back to the buffered
+     * route once — after tokens have landed a silent retry would duplicate a
+     * half-rendered bubble, so the failure is surfaced instead.
+     */
+    private suspend fun roundReply(
+        sessionId: Long,
+        mode: String,
+        messages: List<ChatMessageDto>,
+        kbIndex: String,
+        toolResults: String?,
+        streaming: Boolean,
+    ): String {
+        if (!streaming) return postChat(mode, messages, kbIndex, toolResults)
+        val buffer = StringBuilder()
+        return try {
+            streamChat(sessionId, buffer, ChatRequest(mode, messages, kbIndex, toolResults))
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            if (buffer.isNotEmpty()) throw error
+            postChat(mode, messages, kbIndex, toolResults)
+        }
+    }
+
+    private suspend fun streamChat(
+        sessionId: Long,
+        buffer: StringBuilder,
+        request: ChatRequest,
+    ): String {
+        publishStreaming(sessionId, "")
+        var fullReply: String? = null
+        sse.stream(request).collect { frame ->
+            when (frame) {
+                is StreamFrame.Delta -> {
+                    buffer.append(frame.text)
+                    publishStreaming(sessionId, buffer.toString())
+                }
+                is StreamFrame.Done -> fullReply = frame.reply
+                is StreamFrame.Failure -> throw ApiError(frame.message, frame.retryable)
+            }
+        }
+        // No `done` frame means the connection dropped mid-generation.
+        return fullReply ?: throw ApiError("The reply stopped early — try again", true)
+    }
+
+    /**
+     * Publishes the growing reply. The envelope is still JSON on the wire, so the
+     * visible prose is decoded out of the partial `text` field rather than shown raw.
+     */
+    private fun publishStreaming(sessionId: Long, buffer: String) {
+        val kind = StreamingAnswerExtractor.kind(buffer)
+        val prose = kind == StreamingAnswerExtractor.KIND_ANSWER ||
+            kind == StreamingAnswerExtractor.KIND_PROSE
+        val text = StreamingAnswerExtractor.partialAnswerText(buffer)
+        _streaming.value = StreamingBubble(sessionId, text, !prose || text.isBlank())
+    }
+
+    private fun clearStreaming(sessionId: Long) {
+        if (_streaming.value?.sessionId == sessionId) _streaming.value = null
+    }
+
+    private fun recordShared(messageId: Long, notes: Int) {
+        if (notes <= 0) return
+        _sharedContext.value = _sharedContext.value + (messageId to notes)
     }
 
     private suspend fun persistError(sessionId: Long, text: String, retryable: Boolean): SendResult {
@@ -195,7 +347,17 @@ class ChatRepository(
         }
         throw ApiError(
             parsed?.error ?: "HTTP ${response.code()}",
-            parsed?.retryable == true || response.code() >= 500 || response.code() == 429,
+            // The gateway already normalized retryability; only guess when the
+            // body is not its JSON (a proxy's HTML error page, say).
+            parsed?.retryable ?: (response.code() >= 500 || response.code() == 429),
         )
+    }
+
+    private companion object {
+        /** Mirrors the cap in [ContextTools.run], so the shared-notes count matches reality. */
+        const val CONTEXT_QUERY_CAP = 8
+
+        /** The one mode that may not propose changes (see `backend/prompts.js`). */
+        const val MODE_ANSWER = "answer"
     }
 }

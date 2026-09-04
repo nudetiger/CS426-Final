@@ -7,18 +7,48 @@ import com.cs426.learningmocha.data.local.entity.NodeType
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-/** First-launch sample tree so Browse / Home / Reader are never empty. */
+/**
+ * First-launch sample tree so Browse / Home / Reader are never empty.
+ *
+ * Seeding is tied to the creation of the database file, not to the library being empty: the seed
+ * text invites the reader to delete it, and re-growing it behind the user's back would be a bug.
+ * [markFreshDatabase] is called from Room's `onCreate` callback (see [AppDatabase.build]) during
+ * the very first query, which is the `count()` below.
+ */
 object SeedData {
 
     private val lock = Mutex()
 
+    @Volatile
+    private var freshDatabase = false
+
+    @Volatile
+    private var seedChecked = false
+
+    @Volatile
+    private var backfilled = false
+
+    /** Room's one-shot database-created callback. */
+    fun markFreshDatabase() {
+        freshDatabase = true
+    }
+
     suspend fun ensureSeeded(db: AppDatabase) {
+        if (seedChecked && backfilled) return
         lock.withLock {
             val dao = db.nodeDao()
-            if (dao.count() == 0) {
-                insertGettingStarted(db, dao)
+            if (!seedChecked) {
+                // count() opens the database, so it must run before freshDatabase is read.
+                val empty = dao.count() == 0
+                seedChecked = true
+                if (empty && freshDatabase) {
+                    insertGettingStarted(db, dao)
+                }
             }
-            backfill(db, dao)
+            if (!backfilled) {
+                backfilled = true
+                backfill(db, dao)
+            }
         }
     }
 
@@ -98,6 +128,7 @@ object SeedData {
         )
     }
 
+    /** One-shot repair for libraries written before `links` existed (schema v1). */
     private suspend fun backfill(db: AppDatabase, dao: NodeDao) {
         if (db.knowledgeDao().linkCount() > 0) return
         dao.getPosts().forEach { post ->
@@ -120,7 +151,7 @@ object SeedData {
 
         ## What comes next
 
-        Wiki-links such as [[Branches, folders, and posts]] jump to another article. Search looks through titles, tags, and the dictionary. Star a post to keep it on Home.
+        Wiki-links such as [[Branches, folders, and posts]] jump to another article. Search looks through titles, article text, tags, references, and the dictionary. Star a post to keep it on Home.
     """.trimIndent()
 
     private val TREE_MARKDOWN = """

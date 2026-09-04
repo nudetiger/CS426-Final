@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filter-chip fill: the warm cream pair from the palette instead of Material's grey, so the
+     Material chips in Search / Editor / Dictionary match the hand-rolled @drawable/bg_chip
+     pills used for reader tags and breadcrumbs. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/mocha_cream_dark" android:state_checked="true" />
+    <item android:color="@color/mocha_surface" />
+</selector>

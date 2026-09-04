@@ -18,7 +18,9 @@ data class ChatResponse(
     val retryable: Boolean? = null,
 )
 
+/** [streaming] defaults to false so an older gateway degrades to `POST /v1/chat`. */
 data class HealthResponse(
     val ok: Boolean = false,
     val model: String? = null,
+    val streaming: Boolean = false,
 )

@@ -1,6 +1,7 @@
 package com.cs426.learningmocha.data.repo
 
 import com.cs426.learningmocha.data.local.AppDatabase
+import com.cs426.learningmocha.data.local.KnowledgeSync
 import com.cs426.learningmocha.data.local.SeedData
 import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeType
@@ -48,6 +49,7 @@ class TreeRepository(private val db: AppDatabase) {
     suspend fun create(parentId: Long?, type: NodeType, title: String): Long {
         val trimmed = title.trim()
         require(trimmed.isNotEmpty()) { "Title is required" }
+        requireContainer(parentId)
         val order = nextOrder(parentId)
         val now = System.currentTimeMillis()
         return dao.insert(
@@ -62,15 +64,31 @@ class TreeRepository(private val db: AppDatabase) {
         )
     }
 
+    /**
+     * Renaming a post also rewrites the `[[wiki-links]]` that point at it, and refuses a title
+     * another post already uses — titles are how links and AI actions address posts.
+     */
     suspend fun rename(id: Long, title: String) {
         val trimmed = title.trim()
         require(trimmed.isNotEmpty()) { "Title is required" }
-        val node = dao.getById(id) ?: return
-        dao.update(node.copy(title = trimmed, updatedAt = System.currentTimeMillis()))
+        db.withTransaction {
+            val node = dao.getById(id) ?: return@withTransaction
+            if (node.type == NodeType.POST) {
+                if (trimmed == node.title) return@withTransaction
+                val clash = dao.findPostByTitle(trimmed)
+                require(clash == null || clash.id == id) {
+                    "A post called \"$trimmed\" already exists"
+                }
+                KnowledgeSync.retitle(db, node, trimmed)
+                return@withTransaction
+            }
+            dao.update(node.copy(title = trimmed, updatedAt = System.currentTimeMillis()))
+        }
     }
 
     suspend fun move(id: Long, newParentId: Long?) {
         val node = dao.getById(id) ?: return
+        requireContainer(newParentId)
         val parentById = HashMap<Long, Long>()
         dao.getAll().forEach { item ->
             item.parentId?.let { parent -> parentById[item.id] = parent }
@@ -112,6 +130,14 @@ class TreeRepository(private val db: AppDatabase) {
         }
         return all.filter { it.type != NodeType.POST }
             .filter { !TreeRules.wouldCreateCycle(movingId, it.id, parentById) }
+    }
+
+    /** Only branches and folders hold children — a child of a post is invisible in Browse. */
+    internal suspend fun requireContainer(parentId: Long?) {
+        if (parentId == null) return
+        require(dao.getById(parentId)?.type != NodeType.POST) {
+            "Posts cannot contain other items"
+        }
     }
 
     private suspend fun nextOrder(parentId: Long?): Int {

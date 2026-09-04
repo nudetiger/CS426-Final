@@ -35,7 +35,11 @@
             app:argType="long" />
         <action
             android:id="@+id/action_reader_to_editor"
-            app:destination="@id/postEditorFragment" />
+            app:destination="@id/postEditorFragment"
+            app:enterAnim="@anim/nav_enter"
+            app:exitAnim="@anim/nav_exit"
+            app:popEnterAnim="@anim/nav_pop_enter"
+            app:popExitAnim="@anim/nav_pop_exit" />
     </fragment>
 
     <fragment
@@ -69,6 +73,23 @@
             app:argType="long" />
     </fragment>
 
+    <!-- Knowledge graph: whole library, or the neighbourhood of one post when
+         focusPostId is set (0 = whole library). -->
+    <fragment
+        android:id="@+id/graphFragment"
+        android:name="com.cs426.learningmocha.ui.graph.GraphFragment"
+        android:label="@string/graph_title">
+        <argument
+            android:name="focusPostId"
+            android:defaultValue="0L"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/tagsFragment"
+        android:name="com.cs426.learningmocha.ui.search.TagsFragment"
+        android:label="@string/tags_title" />
+
     <fragment
         android:id="@+id/chatConversationFragment"
         android:name="com.cs426.learningmocha.ui.chat.ChatConversationFragment"
@@ -86,25 +107,68 @@
             app:argType="long" />
     </fragment>
 
+    <!-- Every destination change shares one 180 ms fade-and-drift set (res/anim/nav_*). -->
     <action
         android:id="@+id/action_global_open_post"
-        app:destination="@id/postReaderFragment" />
+        app:destination="@id/postReaderFragment"
+        app:enterAnim="@anim/nav_enter"
+        app:exitAnim="@anim/nav_exit"
+        app:popEnterAnim="@anim/nav_pop_enter"
+        app:popExitAnim="@anim/nav_pop_exit" />
     <action
         android:id="@+id/action_global_edit_post"
-        app:destination="@id/postEditorFragment" />
+        app:destination="@id/postEditorFragment"
+        app:enterAnim="@anim/nav_enter"
+        app:exitAnim="@anim/nav_exit"
+        app:popEnterAnim="@anim/nav_pop_enter"
+        app:popExitAnim="@anim/nav_pop_exit" />
     <action
         android:id="@+id/action_global_favorites"
-        app:destination="@id/favoritesFragment" />
+        app:destination="@id/favoritesFragment"
+        app:enterAnim="@anim/nav_enter"
+        app:exitAnim="@anim/nav_exit"
+        app:popEnterAnim="@anim/nav_pop_enter"
+        app:popExitAnim="@anim/nav_pop_exit" />
     <action
         android:id="@+id/action_global_dictionary"
-        app:destination="@id/dictionaryFragment" />
+        app:destination="@id/dictionaryFragment"
+        app:enterAnim="@anim/nav_enter"
+        app:exitAnim="@anim/nav_exit"
+        app:popEnterAnim="@anim/nav_pop_enter"
+        app:popExitAnim="@anim/nav_pop_exit" />
     <action
         android:id="@+id/action_global_tag"
-        app:destination="@id/tagDetailFragment" />
+        app:destination="@id/tagDetailFragment"
+        app:enterAnim="@anim/nav_enter"
+        app:exitAnim="@anim/nav_exit"
+        app:popEnterAnim="@anim/nav_pop_enter"
+        app:popExitAnim="@anim/nav_pop_exit" />
+    <action
+        android:id="@+id/action_global_graph"
+        app:destination="@id/graphFragment"
+        app:enterAnim="@anim/nav_enter"
+        app:exitAnim="@anim/nav_exit"
+        app:popEnterAnim="@anim/nav_pop_enter"
+        app:popExitAnim="@anim/nav_pop_exit" />
+    <action
+        android:id="@+id/action_global_tags"
+        app:destination="@id/tagsFragment"
+        app:enterAnim="@anim/nav_enter"
+        app:exitAnim="@anim/nav_exit"
+        app:popEnterAnim="@anim/nav_pop_enter"
+        app:popExitAnim="@anim/nav_pop_exit" />
     <action
         android:id="@+id/action_global_chat_conversation"
-        app:destination="@id/chatConversationFragment" />
+        app:destination="@id/chatConversationFragment"
+        app:enterAnim="@anim/nav_enter"
+        app:exitAnim="@anim/nav_exit"
+        app:popEnterAnim="@anim/nav_pop_enter"
+        app:popExitAnim="@anim/nav_pop_exit" />
     <action
         android:id="@+id/action_global_review_changes"
-        app:destination="@id/reviewChangesFragment" />
+        app:destination="@id/reviewChangesFragment"
+        app:enterAnim="@anim/nav_enter"
+        app:exitAnim="@anim/nav_exit"
+        app:popEnterAnim="@anim/nav_pop_enter"
+        app:popExitAnim="@anim/nav_pop_exit" />
 </navigation>

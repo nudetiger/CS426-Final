@@ -1,0 +1,14 @@
+TODO before submitting: paste the link to the 5-10 minute demo video here
+(Google Drive or unlisted YouTube, shared so that anyone with the link can view).
+
+Suggested running order for the recording, matching report/report.pdf §3:
+  1. Home hub -> Browse tree: create a branch, a folder and a post, drag to reorder.
+  2. Editor: markdown + [[wiki-link]] + tags + status + a dictionary term; Preview tab.
+  3. Reader: rendered article, tap a wiki-link, backlinks, related, dictionary popup,
+     an embedded YouTube resource playing in-app.
+  4. Knowledge graph: whole library, then "show in graph" from one post.
+  5. Search: FTS across content, tags, dictionary and resources; filters.
+  6. AI assistant: Answer (streamed) -> Modify ("I want to learn Distributed Systems")
+     -> review screen -> change the location -> Apply -> Undo.
+  7. Offline: stop the backend, show the calm banner and that the library still works.
+  8. Settings: theme switch, export -> import round trip, backup reminder.

@@ -1,0 +1,78 @@
+% Learning Mocha — CS426 final report: shared preamble.
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper,margin=2.4cm,headheight=14pt]{geometry}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[breakable,skins]{tcolorbox}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,shapes.geometric,fit,calc,backgrounds}
+\usepackage[hidelinks]{hyperref}
+
+% --- Mocha palette (mirrors app/src/main/res/values/colors.xml) ---
+\definecolor{mochaBrown}{HTML}{6B4F3A}
+\definecolor{mochaDeep}{HTML}{4A3428}
+\definecolor{mochaCream}{HTML}{FFF7F0}
+\definecolor{mochaCreamDark}{HTML}{F3E6DA}
+\definecolor{mochaSage}{HTML}{7A8F7A}
+\definecolor{mochaText}{HTML}{2C241C}
+\definecolor{mochaMuted}{HTML}{6E6258}
+\definecolor{mochaError}{HTML}{B54A3C}
+
+\hypersetup{colorlinks=false, pdftitle={Learning Mocha — CS426 Final Report}}
+
+\titleformat{\section}{\Large\bfseries\color{mochaDeep}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{mochaBrown}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{mochaBrown}}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6ex plus .4ex}{1.0ex}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{mochaMuted}Learning Mocha}
+\fancyhead[R]{\small\color{mochaMuted}CS426 Final Project}
+\fancyfoot[C]{\small\color{mochaMuted}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\setlist[itemize]{leftmargin=1.3em,itemsep=1pt,topsep=2pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=1pt,topsep=2pt}
+
+\lstdefinestyle{mocha}{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{mochaBrown}\bfseries,
+  stringstyle=\color{mochaSage},
+  commentstyle=\color{mochaMuted}\itshape,
+  numberstyle=\tiny\color{mochaMuted},
+  backgroundcolor=\color{mochaCreamDark!45},
+  frame=single, rulecolor=\color{mochaCreamDark},
+  breaklines=true, breakatwhitespace=false,
+  showstringspaces=false, tabsize=2,
+  columns=fullflexible, keepspaces=true,
+  xleftmargin=0.6em, xrightmargin=0.2em,
+  aboveskip=0.8em, belowskip=0.8em,
+}
+\lstset{style=mocha}
+
+\newtcolorbox{mochabox}[1][]{
+  breakable, enhanced, colback=mochaCream, colframe=mochaBrown,
+  boxrule=0.5pt, arc=2pt, left=6pt, right=6pt, top=5pt, bottom=5pt,
+  fonttitle=\bfseries, #1
+}
+
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% Table-header label used inside TikZ schema nodes.
+\newcommand{\thdr}[1]{{\bfseries\color{mochaDeep}#1}}

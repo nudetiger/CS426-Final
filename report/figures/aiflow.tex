@@ -1,0 +1,63 @@
+% The AI write path: nothing reaches Room until the user approves it.
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  font=\scriptsize,
+  x=1cm, y=1cm,
+  step/.style={draw=mochaBrown, fill=mochaCream, rounded corners=2pt, align=center,
+               minimum height=9mm, text width=#1, inner sep=3pt, anchor=center},
+  gate/.style={draw=mochaError, line width=0.7pt, fill=mochaCreamDark, rounded corners=2pt,
+               align=center, minimum height=9mm, text width=#1, inner sep=3pt, anchor=center},
+  ext/.style={draw=mochaSage, fill=mochaCreamDark, rounded corners=2pt, align=center,
+              minimum height=9mm, text width=#1, inner sep=3pt, anchor=center},
+  tag/.style={font=\scriptsize\itshape\color{mochaDeep}, align=center, anchor=center},
+  go/.style={-{Stealth[length=1.9mm]}, draw=mochaDeep},
+  loop/.style={-{Stealth[length=1.9mm]}, draw=mochaSage, dashed},
+]
+
+% --- request row -----------------------------------------------------------
+\node[step=2.1cm] (msg)  at (-6.4, 0)    {user message\\+ mode};
+\node[step=2.4cm] (idx)  at (-3.3, 0)    {build kbIndex\\\itshape titles only, $\le$4\,KB};
+\node[ext=2.1cm]  (gw)   at (-0.2, 0)    {gateway\\$\rightarrow$ DeepSeek};
+\node[step=2.5cm] (env)  at ( 3.1, 0)    {parse one JSON\\envelope};
+
+% --- the three outcomes ----------------------------------------------------
+\node[step=2.3cm] (answer) at (-6.4,-2.6) {answer bubble\\\itshape streamed live};
+\node[ext=2.5cm]  (tools)  at (-2.6,-2.6) {ContextTools\\\itshape 7 read-only queries};
+\node[step=2.8cm] (val)    at ( 3.1,-2.6) {ActionValidator\\\itshape schema, refs, parents,\\\itshape cycles, caps};
+
+\node[gate=3.0cm] (review) at ( 3.1,-5.0) {\bfseries Review screen\\\itshape per-action checkbox,\\\itshape preview, location};
+\node[step=3.0cm] (tx)     at ( 3.1,-7.1) {ActionExecutor\\\itshape one Room transaction};
+\node[step=2.3cm] (undo)   at (-0.9,-7.1) {Undo snapshot};
+
+% --- arrow labels, placed explicitly so nothing collides -------------------
+\node[tag] at (4.35,-1.25) {type=actions};
+\node[tag] at (4.05,-3.75) {valid};
+\node[tag] at (1.85,-6.05) {approved\\subset};
+\node[tag] at (-5.35,-0.85) {type=answer};
+\node[tag] at (0.55,-1.85) {type=\\context\_request};
+\node[tag] at (-3.40,-1.55) {results,\\$\le$4 rounds};
+
+\draw[go] (msg) -- (idx);
+\draw[go] (idx) -- (gw);
+\draw[go] (gw)  -- (env);
+\draw[go] (env.south) -- (val.north);
+\draw[go] (val.south) -- (review.north);
+\draw[go] (review.south) -- (tx.north);
+\draw[go] (tx.west) -- (undo.east);
+\draw[go] (env.south west) to[out=215, in=25] (answer.north east);
+\draw[loop] (env.south west) to[out=250, in=15] (tools.east);
+\draw[loop] (tools.north) to[out=100, in=250] (idx.south);
+
+\node[align=left, text width=3.5cm, anchor=west, font=\scriptsize\color{mochaMuted}]
+      at (5.0,-2.6) {Any invalid action rejects the \emph{whole} batch with a readable error list --- a
+      half-applied proposal would be worse than none.};
+\node[align=left, text width=3.5cm, anchor=west, font=\scriptsize\color{mochaError}]
+      at (5.0,-5.0) {The only path from the model to the database. Destructive actions arrive unchecked
+      and need a confirmation.};
+\end{tikzpicture}
+\caption{The AI write path. The model never sees the database and never writes to it: it emits a JSON
+envelope, the device validates it against live data, the user approves individual actions, and one Room
+transaction applies them all-or-nothing.}
+\label{fig:aiflow}
+\end{figure}

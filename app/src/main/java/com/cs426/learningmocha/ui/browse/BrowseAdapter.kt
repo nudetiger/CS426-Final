@@ -3,7 +3,6 @@ package com.cs426.learningmocha.ui.browse
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.cs426.learningmocha.R
@@ -23,7 +22,7 @@ class BrowseAdapter(
     }
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
-        holder.bind(getItem(position), position, onClick, onMenu)
+        holder.bind(getItem(position), onClick, onMenu)
     }
 
     fun currentIds(): List<Long> = currentList.map { it.id }
@@ -39,7 +38,6 @@ class BrowseAdapter(
     class Holder(private val binding: ItemTreeNodeBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(
             node: Node,
-            position: Int,
             onClick: (Node) -> Unit,
             onMenu: (Node, View) -> Unit,
         ) {
@@ -64,12 +62,6 @@ class BrowseAdapter(
             binding.nodeIcon.setImageResource(icon)
             binding.nodeIcon.contentDescription = binding.root.context.getString(description)
             binding.nodeCaption.setText(caption)
-            binding.root.setBackgroundColor(
-                ContextCompat.getColor(
-                    binding.root.context,
-                    if (position % 2 == 1) R.color.mocha_list_row_odd else R.color.mocha_cream,
-                ),
-            )
             binding.root.setOnClickListener { onClick(node) }
             binding.nodeMenu.setOnClickListener { onMenu(node, it) }
         }

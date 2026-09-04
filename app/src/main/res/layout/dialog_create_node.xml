@@ -25,12 +25,14 @@
             android:id="@+id/create_type_branch"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_target"
             android:text="@string/browse_type_branch" />
 
         <RadioButton
             android:id="@+id/create_type_folder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_target"
             android:text="@string/browse_type_folder" />
 
         <RadioButton
@@ -38,6 +40,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:checked="true"
+            android:minHeight="@dimen/touch_target"
             android:text="@string/browse_type_post" />
     </RadioGroup>
 

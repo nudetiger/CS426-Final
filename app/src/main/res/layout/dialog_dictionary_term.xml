@@ -7,11 +7,20 @@
     android:padding="@dimen/space_l">
 
     <TextView
+        android:id="@+id/term_heading"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/editor_term_title"
         android:textAppearance="@style/TextAppearance.Mocha.Title"
         android:textColor="@color/mocha_brown" />
+
+    <TextView
+        android:id="@+id/term_scope"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:textAppearance="@style/TextAppearance.Mocha.Caption"
+        android:visibility="gone" />
 
     <com.google.android.material.textfield.TextInputLayout
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"

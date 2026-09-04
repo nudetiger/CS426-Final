@@ -12,9 +12,12 @@ import com.cs426.learningmocha.data.local.entity.ResourceItem
 import com.cs426.learningmocha.data.local.entity.Tag
 import com.cs426.learningmocha.data.repo.PostDetail
 import com.cs426.learningmocha.ui.common.ListState
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -22,6 +25,7 @@ import kotlinx.coroutines.launch
 data class ReaderUiState(
     val listState: ListState = ListState.LOADING,
     val post: Node? = null,
+    val breadcrumbs: List<Node> = emptyList(),
     val tags: List<Tag> = emptyList(),
     val backlinks: List<Node> = emptyList(),
     val related: List<Node> = emptyList(),
@@ -31,6 +35,7 @@ data class ReaderUiState(
     val errorMessage: String? = null,
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class PostReaderViewModel(
     application: Application,
     savedStateHandle: SavedStateHandle,
@@ -39,7 +44,11 @@ class PostReaderViewModel(
     private val app = application as LearningMochaApp
     val postId: Long = savedStateHandle.get<Long>(ARG_POST_ID) ?: 0L
 
-    val uiState: StateFlow<ReaderUiState> = app.postRepository.observeDetail(postId)
+    /** Bumped by [retry] so the error state's Retry button re-subscribes to the post. */
+    private val attempts = MutableStateFlow(0)
+
+    val uiState: StateFlow<ReaderUiState> = attempts
+        .flatMapLatest { app.postRepository.observeDetail(postId) }
         .map { detail ->
             if (detail == null) {
                 ReaderUiState(
@@ -73,9 +82,14 @@ class PostReaderViewModel(
         viewModelScope.launch { app.postRepository.setStatus(postId, status) }
     }
 
-    private fun PostDetail.toUi() = ReaderUiState(
+    fun retry() {
+        attempts.value += 1
+    }
+
+    private suspend fun PostDetail.toUi() = ReaderUiState(
         listState = ListState.CONTENT,
         post = post,
+        breadcrumbs = app.treeRepository.breadcrumbs(post.parentId),
         tags = tags,
         backlinks = backlinks,
         related = related,

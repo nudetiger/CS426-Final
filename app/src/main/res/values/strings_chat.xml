@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the streaming chat bubble and its privacy caption (plan §22). -->
+<resources>
+    <string name="chat_stream_typing">Mocha is typing…</string>
+    <string name="chat_stream_working">Mocha is working…</string>
+
+    <plurals name="chat_shared_with_ai">
+        <item quantity="one">Shared with AI: %1$d note</item>
+        <item quantity="other">Shared with AI: %1$d notes</item>
+    </plurals>
+</resources>

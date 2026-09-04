@@ -52,81 +52,138 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/editor_title_layout"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            <!-- Metadata scrolls in its own pane so the writing area never collapses when
+                 the keyboard is up; the format toolbar and tabs stay pinned to the body. -->
+            <androidx.core.widget.NestedScrollView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/space_m"
-                android:layout_marginTop="@dimen/space_s"
-                android:layout_marginEnd="@dimen/space_m"
-                android:hint="@string/editor_title_hint">
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:fillViewport="true"
+                android:scrollbars="none">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editor_title_input"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textCapSentences"
-                    android:maxLines="1" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:orientation="vertical"
+                    android:paddingBottom="@dimen/space_s">
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/editor_status"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/space_m"
-                android:layout_marginTop="@dimen/space_s"
-                android:layout_marginEnd="@dimen/space_m"
-                android:paddingBottom="@dimen/space_xs"
-                app:selectionRequired="true"
-                app:singleSelection="true">
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/editor_title_layout"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/content_gutter"
+                        android:layout_marginTop="@dimen/space_s"
+                        android:layout_marginEnd="@dimen/content_gutter"
+                        android:hint="@string/editor_title_hint">
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/editor_status_none"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checkable="true"
-                    android:text="@string/status_none" />
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editor_title_input"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textCapSentences"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/editor_status_reading"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checkable="true"
-                    android:text="@string/status_reading" />
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/editor_status"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/content_gutter"
+                        android:layout_marginTop="@dimen/space_s"
+                        android:layout_marginEnd="@dimen/content_gutter"
+                        android:paddingBottom="@dimen/space_xs"
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/editor_status_progress"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checkable="true"
-                    android:text="@string/status_in_progress" />
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/editor_status_none"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checkable="true"
+                            android:text="@string/status_none" />
 
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/editor_status_finished"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checkable="true"
-                    android:text="@string/status_finished" />
-            </com.google.android.material.chip.ChipGroup>
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/editor_status_reading"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checkable="true"
+                            android:text="@string/status_reading" />
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/editor_tags_layout"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/space_m"
-                android:layout_marginTop="@dimen/space_s"
-                android:layout_marginEnd="@dimen/space_m"
-                android:hint="@string/editor_tags_hint">
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/editor_status_progress"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checkable="true"
+                            android:text="@string/status_in_progress" />
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editor_tags_input"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:maxLines="1" />
-            </com.google.android.material.textfield.TextInputLayout>
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/editor_status_finished"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checkable="true"
+                            android:text="@string/status_finished" />
+                    </com.google.android.material.chip.ChipGroup>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/editor_tags_layout"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/content_gutter"
+                        android:layout_marginEnd="@dimen/content_gutter"
+                        android:hint="@string/editor_tags_hint">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/editor_tags_input"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:imeOptions="actionDone"
+                            android:inputType="text"
+                            android:maxLines="1" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/content_gutter"
+                        android:layout_marginEnd="@dimen/space_s"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/editor_resources_header"
+                            android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/editor_add_resource"
+                            style="@style/Widget.Mocha.ToolbarButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/editor_resources_add" />
+                    </LinearLayout>
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/editor_resources"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/content_gutter"
+                        android:layout_marginEnd="@dimen/content_gutter"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/editor_resources_empty"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/content_gutter"
+                        android:layout_marginEnd="@dimen/content_gutter"
+                        android:text="@string/editor_resources_empty"
+                        android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+                </LinearLayout>
+            </androidx.core.widget.NestedScrollView>
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
@@ -215,7 +272,7 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1">
+                android:layout_weight="2">
 
                 <EditText
                     android:id="@+id/editor_body"
@@ -228,6 +285,7 @@
                     android:importantForAutofill="no"
                     android:inputType="textMultiLine|textCapSentences"
                     android:padding="@dimen/space_m"
+                    android:scrollbars="vertical"
                     android:textColor="@color/mocha_text_primary"
                     android:textColorHint="@color/mocha_text_secondary"
                     android:textSize="@dimen/text_body" />
@@ -237,13 +295,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:background="@color/mocha_surface"
-                    android:padding="@dimen/space_m"
+                    android:paddingStart="@dimen/content_gutter"
+                    android:paddingTop="@dimen/space_m"
+                    android:paddingEnd="@dimen/content_gutter"
+                    android:paddingBottom="@dimen/space_m"
                     android:visibility="gone">
 
+                    <!-- wrap_content, not match_parent: a TextView only applies maxWidth
+                         when it is measured AT_MOST, which is what keeps the preview column
+                         readable on a tablet. -->
                     <TextView
                         android:id="@+id/editor_preview"
-                        android:layout_width="match_parent"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:maxWidth="@dimen/reader_max_width"
                         android:textAppearance="@style/TextAppearance.Mocha.Body" />
                 </androidx.core.widget.NestedScrollView>
             </FrameLayout>

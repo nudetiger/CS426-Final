@@ -14,6 +14,5 @@
     <color name="mocha_text_secondary">#B8A99A</color>
     <color name="mocha_on_primary">#2A2420</color>
     <color name="mocha_divider">#453C35</color>
-    <color name="mocha_list_row_odd">#38302A</color>
     <color name="mocha_error">#D97B6C</color>
 </resources>

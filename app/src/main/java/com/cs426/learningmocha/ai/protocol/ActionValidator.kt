@@ -5,6 +5,13 @@ import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeType
 import com.cs426.learningmocha.util.TreeRules
 
+/**
+ * Gate between the model's JSON and Room: every batch is checked here before the review screen
+ * shows it, so a malformed or destructive plan never reaches [com.cs426.learningmocha.ai.engine.ActionExecutor].
+ *
+ * The op set and the caps below are documented to the model in `backend/prompts.js`
+ * (ACTION_PROTOCOL) — change one side and the other has to follow.
+ */
 object ActionValidator {
     const val MAX_ACTIONS = 40
     const val MAX_TITLE = 200
@@ -19,7 +26,15 @@ object ActionValidator {
         "add_resource", "add_dictionary_entry",
     )
 
-    fun validate(actions: List<KbAction>, nodes: List<Node>): List<String> {
+    /**
+     * @param enabled when given, only the checked actions are validated — the "Action N" numbers
+     *   then still match the rows on screen, because indices come from the full list either way
+     */
+    fun validate(
+        actions: List<KbAction>,
+        nodes: List<Node>,
+        enabled: BooleanArray? = null,
+    ): List<String> {
         val errors = ArrayList<String>()
         if (actions.isEmpty()) {
             errors.add("No actions to apply")
@@ -37,6 +52,7 @@ object ActionValidator {
         val scope = Scope(byTitle)
 
         for ((index, action) in actions.withIndex()) {
+            if (enabled != null && !enabled.getOrElse(index) { false }) continue
             val n = index + 1
             val op = action.op.orEmpty()
             if (op !in knownOps) {
@@ -66,14 +82,34 @@ object ActionValidator {
                     }
                 }
                 "update_post" -> {
-                    resolvePost(action, n, scope, errors)
+                    val post = resolvePost(action, n, scope, errors)
                     checkContent(action.content, n, errors, required = false)
                     checkTags(action.tags, n, errors)
-                    if (action.title != null) checkTitle(action.title, n, errors)
+                    if (action.title != null) {
+                        checkTitle(action.title, n, errors)
+                        // Titles address posts, so a retitle onto a taken one has to fail here
+                        // rather than throw halfway through the executor's transaction.
+                        val key = action.title.trim().lowercase()
+                        val existing = scope.byTitle[key]
+                        val taken = key.isNotEmpty() &&
+                            (
+                                key in scope.newPosts ||
+                                    key in scope.newContainers ||
+                                    (existing != null && existing.id != post?.id)
+                                )
+                        if (taken) {
+                            errors.add("Action $n: title \"${action.title}\" already exists")
+                        }
+                    }
                 }
                 "move_post" -> {
                     val post = resolvePost(action, n, scope, errors)
                     val parent = resolveExistingTitle(action.newParentTitle, n, "newParentTitle", scope, errors)
+                    val parentKey = action.newParentTitle?.trim()?.lowercase().orEmpty()
+                    // Only containers hold children; a post nested under a post vanishes from Browse.
+                    if (parent?.type == NodeType.POST || (parent == null && parentKey in scope.newPosts)) {
+                        errors.add("Action $n: parent cannot be a post")
+                    }
                     if (post != null && parent != null) {
                         if (TreeRules.wouldCreateCycle(post.id, parent.id, parentById)) {
                             errors.add("Action $n: move would create a cycle")
@@ -281,15 +317,34 @@ object ActionLabels {
         }
     }
 
+    /**
+     * Depth of an action inside its own batch, for the tree preview on the review screen.
+     * The model wires parents with `parentRef` or `parentTitle`, so both are followed; a parent
+     * that is not part of the batch is an existing node, which anchors the walk at depth 0.
+     */
     fun indent(action: KbAction, all: List<KbAction>): Int {
+        val byRef = all.filter { !it.ref.isNullOrBlank() }.associateBy { it.ref!!.trim() }
+        val byTitle = all
+            .filter { it.op?.startsWith("create_") == true && !it.title.isNullOrBlank() }
+            .associateBy { it.title!!.trim().lowercase() }
         var depth = 0
-        var ref = action.parentRef
-        val byRef = all.filter { !it.ref.isNullOrBlank() }.associateBy { it.ref }
+        var cursor = action
         val seen = HashSet<String>()
-        while (!ref.isNullOrBlank() && seen.add(ref)) {
+        while (true) {
+            val ref = cursor.parentRef?.trim()
+            val title = cursor.parentTitle?.trim()?.lowercase()
+            val token = when {
+                !ref.isNullOrEmpty() -> "ref:$ref"
+                !title.isNullOrEmpty() -> "title:$title"
+                else -> return depth
+            }
+            if (!seen.add(token)) return depth
+            val parent = when {
+                !ref.isNullOrEmpty() -> byRef[ref]
+                else -> byTitle[title.orEmpty()]
+            } ?: return depth
             depth++
-            ref = byRef[ref]?.parentRef
+            cursor = parent
         }
-        return depth
     }
 }

@@ -12,11 +12,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.cs426.learningmocha.R
 import com.cs426.learningmocha.data.local.entity.ChatMessage
 import com.cs426.learningmocha.databinding.FragmentChatConversationBinding
 import com.cs426.learningmocha.ui.common.ListStateBinder
+import com.cs426.learningmocha.viewmodel.ChatConversationUiState
 import com.cs426.learningmocha.viewmodel.ChatConversationViewModel
 import io.noties.markwon.Markwon
 import io.noties.markwon.linkify.LinkifyPlugin
@@ -49,6 +51,10 @@ class ChatConversationFragment : Fragment() {
             stackFromEnd = true
         }
         b.conversationList.adapter = messages
+        // The streaming bubble is re-bound every few milliseconds as tokens arrive. The default
+        // change animation cross-fades the old and new view, so those repaints stack up and the
+        // growing text visibly draws over itself. Insert/remove animations stay on.
+        (b.conversationList.itemAnimator as? DefaultItemAnimator)?.supportsChangeAnimations = false
         b.conversationBack.setOnClickListener { findNavController().popBackStack() }
         b.conversationSend.setOnClickListener { send() }
         b.conversationBannerRetry.setOnClickListener { viewModel.ping() }
@@ -97,9 +103,13 @@ class ChatConversationFragment : Fragment() {
                         offlineText = getString(R.string.chat_offline),
                         onRetry = { viewModel.ping() },
                     )
-                    messages.submitList(state.messages) {
-                        if (state.messages.isNotEmpty()) {
-                            b.conversationList.scrollToPosition(state.messages.lastIndex)
+                    val rows = buildRows(state)
+                    // Only follow the tail when the user is already there, so reading
+                    // back through the conversation is not yanked forward by new tokens.
+                    val atBottom = !b.conversationList.canScrollVertically(1)
+                    messages.submitList(rows) {
+                        if (atBottom && rows.isNotEmpty()) {
+                            b.conversationList.scrollToPosition(rows.lastIndex)
                         }
                     }
                 }
@@ -122,6 +132,14 @@ class ChatConversationFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             b.conversationTitle.text = viewModel.sessionTitle()
         }
+    }
+
+    private fun buildRows(state: ChatConversationUiState): List<ChatRow> {
+        val rows = state.messages.map { message ->
+            ChatRow.Message(message, state.sharedContext[message.id] ?: 0)
+        }
+        val bubble = state.streaming ?: return rows
+        return rows + ChatRow.Streaming(bubble.text, bubble.working)
     }
 
     private fun openReview(message: ChatMessage) {

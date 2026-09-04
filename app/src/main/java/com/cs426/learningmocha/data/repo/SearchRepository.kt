@@ -14,7 +14,7 @@ data class SearchHit(
     val kind: Kind,
     val postId: Long?,
 ) {
-    enum class Kind { POST, BRANCH, DICTIONARY }
+    enum class Kind { POST, BRANCH, DICTIONARY, RESOURCE }
 }
 
 data class SearchFilter(
@@ -44,15 +44,15 @@ class SearchRepository(private val db: AppDatabase) {
         val match = FtsQueryBuilder.toMatchQuery(q)
         if (match != null) {
             knowledge.fts(match).forEach { node ->
-                if (passes(node, filter)) put(node.toHit())
+                if (passes(node, filter)) put(node.toHit(q))
             }
             val like = likePattern(q)
             dao.titlesLike(like).forEach { node ->
-                if (passes(node, filter)) put(node.toHit())
+                if (passes(node, filter)) put(node.toHit(q))
             }
             knowledge.tagsNamedLike(like).forEach { tag ->
                 knowledge.postsWithTag(tag.id).forEach { node ->
-                    if (passes(node, filter)) put(node.toHit())
+                    if (passes(node, filter)) put(node.toHit(q))
                 }
             }
             if (filter.type == null && !filter.favoritesOnly && filter.status == null) {
@@ -67,12 +67,21 @@ class SearchRepository(private val db: AppDatabase) {
                         ),
                     )
                 }
+                knowledge.searchResources(like).forEach { item ->
+                    put(
+                        SearchHit(
+                            id = item.id,
+                            title = item.title.ifBlank { item.url },
+                            caption = item.url,
+                            kind = SearchHit.Kind.RESOURCE,
+                            postId = item.postId,
+                        ),
+                    )
+                }
             }
         } else if (hasFilter) {
             dao.getAll().forEach { node ->
-                if ((node.type == NodeType.POST || node.type == NodeType.BRANCH) && passes(node, filter)) {
-                    put(node.toHit())
-                }
+                if (passes(node, filter)) put(node.toHit(q))
             }
         }
 
@@ -84,28 +93,55 @@ class SearchRepository(private val db: AppDatabase) {
     }
 
     private fun passes(node: Node, filter: SearchFilter): Boolean {
-        if (filter.type != null && node.type != filter.type) return false
+        // The type chip reads "Branches & folders", so a folder passes the container filter.
+        val typeOk = filter.type == null ||
+            node.type == filter.type ||
+            (filter.type == NodeType.BRANCH && node.type == NodeType.FOLDER)
+        if (!typeOk) return false
         if (filter.status != null && (node.type != NodeType.POST || node.status != filter.status)) {
             return false
         }
         if (filter.favoritesOnly && (node.type != NodeType.POST || !node.favorite)) return false
-        if (filter.type == null && node.type != NodeType.POST && node.type != NodeType.BRANCH) {
-            return false
-        }
         return true
     }
 
-    private fun Node.toHit(): SearchHit {
-        val kind = if (type == NodeType.BRANCH) SearchHit.Kind.BRANCH else SearchHit.Kind.POST
+    /** Containers keep `postId = null`: opening one belongs in Browse, not the reader. */
+    private fun Node.toHit(query: String): SearchHit {
+        val container = type != NodeType.POST
         return SearchHit(
             id = id,
             title = title,
-            caption = if (type == NodeType.BRANCH) "Branch" else "Post",
-            kind = kind,
-            postId = if (type == NodeType.POST) id else null,
+            caption = when {
+                container -> if (type == NodeType.BRANCH) "Branch" else "Folder"
+                title.contains(query.trim(), ignoreCase = true) -> "Post"
+                else -> snippet(content.orEmpty(), query) ?: "Post"
+            },
+            kind = if (container) SearchHit.Kind.BRANCH else SearchHit.Kind.POST,
+            postId = if (container) null else id,
         )
+    }
+
+    /** Body excerpt around the first match, so a hit that matched only the article says why. */
+    private fun snippet(content: String, query: String): String? {
+        val token = query.trim().substringBefore(' ')
+        if (token.isEmpty()) return null
+        val at = content.indexOf(token, ignoreCase = true)
+        if (at < 0) return null
+        var start = (at - 30).coerceAtLeast(0)
+        var end = (at + token.length + 60).coerceAtMost(content.length)
+        while (start > 0 && !content[start - 1].isWhitespace()) start--
+        while (end < content.length && !content[end].isWhitespace()) end++
+        val text = content.substring(start, end).replace(WHITESPACE, " ").trim()
+        if (text.isEmpty()) return null
+        val head = if (start > 0) "…" else ""
+        val tail = if (end < content.length) "…" else ""
+        return head + text + tail
     }
 
     private fun likePattern(raw: String): String =
         "%" + raw.replace("%", "").replace("_", "") + "%"
+
+    private companion object {
+        val WHITESPACE = Regex("""\s+""")
+    }
 }

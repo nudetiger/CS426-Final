@@ -7,6 +7,12 @@ import androidx.room.Update
 import com.cs426.learningmocha.data.local.entity.Node
 import kotlinx.coroutines.flow.Flow
 
+/** Title lookup without the bodies: resolving `[[wiki-links]]` needs ids and titles only. */
+data class TitleId(
+    val id: Long,
+    val title: String,
+)
+
 @Dao
 interface NodeDao {
 
@@ -68,7 +74,17 @@ interface NodeDao {
     @Query("SELECT * FROM nodes WHERE type = 'POST' ORDER BY title COLLATE NOCASE")
     suspend fun getPosts(): List<Node>
 
-    @Query("SELECT * FROM nodes WHERE type IN ('POST', 'BRANCH') AND title LIKE :like ORDER BY title COLLATE NOCASE LIMIT 30")
+    @Query("SELECT id, title FROM nodes WHERE type = 'POST' ORDER BY title COLLATE NOCASE")
+    suspend fun postTitleIds(): List<TitleId>
+
+    @Query(
+        """
+        SELECT * FROM nodes
+        WHERE type IN ('POST', 'BRANCH', 'FOLDER') AND title LIKE :like
+        ORDER BY title COLLATE NOCASE
+        LIMIT 30
+        """,
+    )
     suspend fun titlesLike(like: String): List<Node>
 
     @Query("SELECT COALESCE(MAX(orderIndex), -1) FROM nodes WHERE parentId IS NULL")

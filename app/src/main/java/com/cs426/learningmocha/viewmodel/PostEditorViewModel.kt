@@ -7,15 +7,33 @@ import androidx.lifecycle.viewModelScope
 import com.cs426.learningmocha.LearningMochaApp
 import com.cs426.learningmocha.data.local.entity.DictionaryEntry
 import com.cs426.learningmocha.data.local.entity.LearningStatus
-import com.cs426.learningmocha.data.local.entity.NodeType
+import com.cs426.learningmocha.data.local.entity.ResourceItem
+import com.cs426.learningmocha.data.local.entity.ResourceType
 import com.cs426.learningmocha.ui.common.ListState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+/**
+ * One reference attached to the post being edited. [storedId] is 0 until the row exists in Room;
+ * [pending] marks the ones this draft still has to insert on save. A row with neither
+ * (a YouTube link derived from the markdown) is shown but cannot be detached here.
+ */
+data class EditorResource(
+    val key: Long,
+    val storedId: Long,
+    val type: ResourceType,
+    val title: String,
+    val url: String,
+    val pending: Boolean,
+) {
+    val removable: Boolean get() = pending || storedId != 0L
+}
 
 data class EditorUiState(
     val listState: ListState = ListState.LOADING,
@@ -24,12 +42,21 @@ data class EditorUiState(
     val tags: String = "",
     val status: LearningStatus = LearningStatus.READING,
     val isNew: Boolean = true,
+    val resources: List<EditorResource> = emptyList(),
+    val pendingTerms: List<DictionaryEntry> = emptyList(),
     val errorMessage: String? = null,
 )
 
+/**
+ * Owns the in-progress draft. The fragment never keeps editor state of its own: it pushes every
+ * keystroke in here and renders back from [uiState], so a configuration change cannot lose text
+ * (the ViewModel outlives the fragment) and the stored copy loaded from Room never overwrites a
+ * draft that is already in memory. Title/content/tags/status also go through [SavedStateHandle],
+ * which carries them across process death.
+ */
 class PostEditorViewModel(
     application: Application,
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
 ) : AndroidViewModel(application) {
 
     private val app = application as LearningMochaApp
@@ -37,11 +64,15 @@ class PostEditorViewModel(
     private val parentId: Long? = savedStateHandle.get<Long>(ARG_PARENT_ID)
         ?.takeUnless { it == ROOT }
 
-    private val pendingTerms = ArrayList<DictionaryEntry>()
+    private var initialTitle = ""
+    private var initialContent = ""
+    private var initialTags = ""
+    private var initialStatus = LearningStatus.READING
+    private var draftTouched = false
+    private var nextPendingKey = -1L
+    private val removedResourceIds = LinkedHashSet<Long>()
 
-    private val _uiState = MutableStateFlow(
-        EditorUiState(isNew = postId == 0L),
-    )
+    private val _uiState = MutableStateFlow(EditorUiState(isNew = postId == 0L))
     val uiState: StateFlow<EditorUiState> = _uiState.asStateFlow()
 
     private val saved = Channel<Long>(Channel.BUFFERED)
@@ -51,36 +82,130 @@ class PostEditorViewModel(
         viewModelScope.launch { load() }
     }
 
+    fun onTitleChanged(value: String) {
+        if (_uiState.value.title == value) return
+        draftTouched = true
+        savedStateHandle[KEY_DRAFT_TITLE] = value
+        _uiState.update { it.copy(title = value) }
+    }
+
+    fun onContentChanged(value: String) {
+        if (_uiState.value.content == value) return
+        draftTouched = true
+        savedStateHandle[KEY_DRAFT_CONTENT] = value
+        _uiState.update { it.copy(content = value) }
+    }
+
+    fun onTagsChanged(value: String) {
+        if (_uiState.value.tags == value) return
+        draftTouched = true
+        savedStateHandle[KEY_DRAFT_TAGS] = value
+        _uiState.update { it.copy(tags = value) }
+    }
+
+    fun onStatusChanged(status: LearningStatus) {
+        if (_uiState.value.status == status) return
+        draftTouched = true
+        savedStateHandle[KEY_DRAFT_STATUS] = status.name
+        _uiState.update { it.copy(status = status) }
+    }
+
     fun addTerm(term: String, definition: String, meaningVi: String) {
-        pendingTerms.add(
-            DictionaryEntry(term = term, definition = definition, meaningVi = meaningVi),
+        val entry = DictionaryEntry(term = term, definition = definition, meaningVi = meaningVi)
+        _uiState.update { it.copy(pendingTerms = it.pendingTerms + entry) }
+    }
+
+    fun addResource(type: ResourceType, title: String, url: String) {
+        val draft = EditorResource(
+            key = nextPendingKey--,
+            storedId = 0L,
+            type = type,
+            title = title.trim(),
+            url = url.trim(),
+            pending = true,
         )
+        _uiState.update { it.copy(resources = it.resources + draft) }
+    }
+
+    fun removeResource(key: Long) {
+        val current = _uiState.value.resources
+        val target = current.firstOrNull { it.key == key } ?: return
+        if (!target.removable) return
+        if (target.storedId != 0L) removedResourceIds.add(target.storedId)
+        _uiState.update { it.copy(resources = current.filterNot { item -> item.key == key }) }
+    }
+
+    fun consumeError() {
+        if (_uiState.value.errorMessage == null) return
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    fun isDirty(): Boolean {
+        val state = _uiState.value
+        if (state.listState != ListState.CONTENT) return false
+        return state.title != initialTitle ||
+            state.content != initialContent ||
+            state.tags != initialTags ||
+            state.status != initialStatus ||
+            state.pendingTerms.isNotEmpty() ||
+            removedResourceIds.isNotEmpty() ||
+            state.resources.any { it.pending }
     }
 
     suspend fun postTitles(): List<String> = app.postRepository.postTitles()
 
     suspend fun titleToId(): Map<String, Long> = app.postRepository.titleToId()
 
-    fun save(title: String, content: String, status: LearningStatus, tags: String) {
+    fun save() {
+        val state = _uiState.value
+        // The Save button lives in the header, outside the list-state overlay, so it is
+        // reachable before the stored copy has loaded — writing then would save a blank draft.
+        if (state.listState != ListState.CONTENT) return
         viewModelScope.launch {
-            val names = tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }
-            val terms = pendingTerms.toList()
+            val names = state.tags.split(',').map { it.trim() }.filter { it.isNotEmpty() }
             runCatching {
-                if (postId == 0L) {
-                    app.postRepository.createPost(parentId, title, content, status, names, terms)
+                val id = if (postId == 0L) {
+                    app.postRepository.createPost(
+                        parentId,
+                        state.title,
+                        state.content,
+                        state.status,
+                        names,
+                        state.pendingTerms,
+                    )
                 } else {
-                    app.postRepository.savePost(postId, title, content, status, names, terms)
+                    app.postRepository.savePost(
+                        postId,
+                        state.title,
+                        state.content,
+                        state.status,
+                        names,
+                        state.pendingTerms,
+                    )
                     postId
                 }
+                // After the post write, so a reindex can never drop a reference added here.
+                removedResourceIds.forEach { app.postRepository.removeResource(it) }
+                state.resources.filter { it.pending }.forEach { item ->
+                    app.postRepository.addResource(id, item.type, item.title, item.url)
+                }
+                id
             }.onSuccess { id ->
-                pendingTerms.clear()
+                removedResourceIds.clear()
+                initialTitle = state.title
+                initialContent = state.content
+                initialTags = state.tags
+                initialStatus = state.status
+                _uiState.update {
+                    it.copy(
+                        pendingTerms = emptyList(),
+                        resources = it.resources.map { item -> item.copy(pending = false) },
+                    )
+                }
                 saved.send(id)
             }.onFailure { error ->
                 _uiState.update {
-                    it.copy(
-                        listState = ListState.CONTENT,
-                        errorMessage = error.message,
-                    )
+                    it.copy(listState = ListState.CONTENT, errorMessage = error.message)
                 }
             }
         }
@@ -88,14 +213,11 @@ class PostEditorViewModel(
 
     private suspend fun load() {
         if (postId == 0L) {
-            _uiState.value = EditorUiState(
-                listState = ListState.CONTENT,
-                isNew = true,
-            )
+            publish("", "", "", LearningStatus.READING, emptyList(), isNew = true)
             return
         }
-        val node = app.treeRepository.getNode(postId)
-        if (node == null || node.type != NodeType.POST) {
+        val detail = app.postRepository.observeDetail(postId).first()
+        if (detail == null) {
             _uiState.value = EditorUiState(
                 listState = ListState.ERROR,
                 errorMessage = getApplication<Application>()
@@ -103,20 +225,76 @@ class PostEditorViewModel(
             )
             return
         }
-        val tags = app.postRepository.tagsForPost(postId).joinToString(", ") { it.name }
-        _uiState.value = EditorUiState(
-            listState = ListState.CONTENT,
-            title = node.title,
-            content = node.content.orEmpty(),
-            tags = tags,
-            status = node.status,
+        publish(
+            title = detail.post.title,
+            content = detail.post.content.orEmpty(),
+            tags = detail.tags.joinToString(", ") { it.name },
+            status = detail.post.status,
+            resources = detail.resources.map { it.toDraft() },
             isNew = false,
         )
     }
+
+    /**
+     * Seeds the dirty baseline from storage and shows it — but only where the draft is still
+     * untouched, so a restored view or a saved-state draft always wins over the stored copy.
+     */
+    private fun publish(
+        title: String,
+        content: String,
+        tags: String,
+        status: LearningStatus,
+        resources: List<EditorResource>,
+        isNew: Boolean,
+    ) {
+        initialTitle = title
+        initialContent = content
+        initialTags = tags
+        initialStatus = status
+        val current = _uiState.value
+        val stored = resources.filterNot { it.storedId in removedResourceIds }
+        val savedStatus = savedStateHandle.get<String>(KEY_DRAFT_STATUS)
+            ?.let { name -> LearningStatus.entries.firstOrNull { it.name == name } }
+        _uiState.value = current.copy(
+            listState = ListState.CONTENT,
+            isNew = isNew,
+            title = if (draftTouched) {
+                current.title
+            } else {
+                savedStateHandle.get<String>(KEY_DRAFT_TITLE) ?: title
+            },
+            content = if (draftTouched) {
+                current.content
+            } else {
+                savedStateHandle.get<String>(KEY_DRAFT_CONTENT) ?: content
+            },
+            tags = if (draftTouched) {
+                current.tags
+            } else {
+                savedStateHandle.get<String>(KEY_DRAFT_TAGS) ?: tags
+            },
+            status = if (draftTouched) current.status else savedStatus ?: status,
+            resources = stored + current.resources.filter { it.pending },
+            errorMessage = null,
+        )
+    }
+
+    private fun ResourceItem.toDraft() = EditorResource(
+        key = id,
+        storedId = id,
+        type = type,
+        title = title,
+        url = url,
+        pending = false,
+    )
 
     companion object {
         const val ARG_POST_ID = "postId"
         const val ARG_PARENT_ID = "parentId"
         const val ROOT = -1L
+        private const val KEY_DRAFT_TITLE = "draftTitle"
+        private const val KEY_DRAFT_CONTENT = "draftContent"
+        private const val KEY_DRAFT_TAGS = "draftTags"
+        private const val KEY_DRAFT_STATUS = "draftStatus"
     }
 }

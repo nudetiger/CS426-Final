@@ -10,9 +10,9 @@
         android:layout_height="wrap_content"
         android:background="@color/mocha_header_bg"
         android:orientation="vertical"
-        android:paddingStart="@dimen/space_m"
+        android:paddingStart="@dimen/content_gutter"
         android:paddingTop="@dimen/space_m"
-        android:paddingEnd="@dimen/space_m"
+        android:paddingEnd="@dimen/content_gutter"
         android:paddingBottom="@dimen/space_s">
 
         <TextView
@@ -95,8 +95,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:paddingStart="@dimen/space_s"
-            android:paddingEnd="@dimen/space_s" />
+            android:paddingStart="@dimen/content_gutter"
+            android:paddingEnd="@dimen/content_gutter" />
 
         <include
             android:id="@+id/list_state"

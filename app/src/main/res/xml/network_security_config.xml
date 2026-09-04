@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The only host this app ever contacts is the Learning Mocha gateway (backend/server.js): a
+     developer-run Node process on localhost, on 10.0.2.2 from the emulator, or on a LAN address
+     typed into Settings -> AI gateway. It has no TLS certificate, so that hop must be cleartext;
+     the DeepSeek call it proxies is HTTPS on the server side, and no user content is stored
+     there. Declaring it here instead of android:usesCleartextTraffic="true" keeps the
+     justification with the policy and leaves system trust anchors (i.e. no user-installed CAs)
+     in force. The base config has to stay permissive because Network Security Config cannot
+     express "any private IP range", and a grader on a physical device supplies their own. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

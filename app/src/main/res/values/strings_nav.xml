@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the Home quick-actions row and the Tags index. -->
+<resources>
+    <string name="tags_empty">No tags yet. Add tags to a post while editing it.</string>
+    <string name="tags_search_hint">Find a tag</string>
+
+    <plurals name="tags_post_count">
+        <item quantity="one">%d post</item>
+        <item quantity="other">%d posts</item>
+    </plurals>
+
+    <plurals name="home_library_posts">
+        <item quantity="one">%d post in your library</item>
+        <item quantity="other">%d posts in your library</item>
+    </plurals>
+</resources>

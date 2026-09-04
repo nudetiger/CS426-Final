@@ -1,5 +1,6 @@
 package com.cs426.learningmocha.ui.reader
 
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -9,6 +10,8 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.StringRes
+import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -21,15 +24,17 @@ import com.cs426.learningmocha.R
 import com.cs426.learningmocha.data.local.entity.DictionaryEntry
 import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
+import com.cs426.learningmocha.data.local.entity.ResourceItem
 import com.cs426.learningmocha.data.local.entity.ResourceType
 import com.cs426.learningmocha.databinding.FragmentPostReaderBinding
-import com.cs426.learningmocha.databinding.ItemYoutubeBinding
+import com.cs426.learningmocha.databinding.ItemResourceBinding
 import com.cs426.learningmocha.ui.common.ChipBar
 import com.cs426.learningmocha.ui.common.ListState
 import com.cs426.learningmocha.ui.common.ListStateBinder
 import com.cs426.learningmocha.ui.common.WikiMarkdown
 import com.cs426.learningmocha.ui.common.labelRes
 import com.cs426.learningmocha.viewmodel.PostReaderViewModel
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.noties.markwon.AbstractMarkwonPlugin
 import io.noties.markwon.LinkResolverDef
@@ -60,6 +65,12 @@ class PostReaderFragment : Fragment() {
 
         b.readerBack.setOnClickListener { findNavController().popBackStack() }
         b.readerFavorite.setOnClickListener { viewModel.toggleFavorite() }
+        b.readerGraph.setOnClickListener {
+            findNavController().navigate(
+                R.id.action_global_graph,
+                bundleOf("focusPostId" to viewModel.postId),
+            )
+        }
         b.readerEdit.setOnClickListener {
             findNavController().navigate(
                 R.id.action_reader_to_editor,
@@ -87,7 +98,7 @@ class PostReaderFragment : Fragment() {
                         emptyText = getString(R.string.reader_missing),
                         errorText = state.errorMessage,
                         offlineText = getString(R.string.state_offline),
-                        onRetry = { },
+                        onRetry = viewModel::retry,
                     )
                     val post = state.post
                     if (state.listState == ListState.CONTENT && post != null) {
@@ -95,7 +106,19 @@ class PostReaderFragment : Fragment() {
                         b.readerFavorite.setImageResource(
                             if (post.favorite) R.drawable.ic_star else R.drawable.ic_star_border,
                         )
+                        b.readerFavorite.contentDescription = getString(
+                            if (post.favorite) {
+                                R.string.reader_cd_favorite_remove
+                            } else {
+                                R.string.reader_cd_favorite_add
+                            },
+                        )
                         b.readerStatus.setText(post.status.labelRes())
+                        b.readerStatus.contentDescription = getString(
+                            R.string.reader_cd_status,
+                            getString(post.status.labelRes()),
+                        )
+                        bindBreadcrumbs(b.readerPath, state.breadcrumbs)
                         ChipBar.bind(b.readerTags, state.tags.map { tag ->
                             tag.name to {
                                 findNavController().navigate(
@@ -104,13 +127,17 @@ class PostReaderFragment : Fragment() {
                                 )
                             }
                         })
-                        bindResources(b.readerResources, state.resources.map { it.url to it.type })
                         val markdown = WikiMarkdown.rewrite(post.content.orEmpty(), state.titleToId)
                         markwon?.setMarkdown(b.readerBody, markdown)
                         b.readerTermsHeader.isVisible = state.terms.isNotEmpty()
                         ChipBar.bind(b.readerTerms, state.terms.map { term ->
                             term.term to { showTerm(term) }
                         })
+                        bindResources(
+                            b.readerResourcesHeader,
+                            b.readerResources,
+                            state.resources,
+                        )
                         bindNodeRows(b.readerBacklinksHeader, b.readerBacklinks, state.backlinks)
                         bindNodeRows(b.readerRelatedHeader, b.readerRelated, state.related)
                     }
@@ -167,37 +194,110 @@ class PostReaderFragment : Fragment() {
             .show()
     }
 
+    /**
+     * A bottom sheet instead of a dialog: the definition appears without covering the paragraph
+     * the term was read in, so looking a word up does not interrupt reading.
+     */
     private fun showTerm(entry: DictionaryEntry) {
-        val body = buildString {
-            append(entry.definition)
+        val context = requireContext()
+        val gutter = resources.getDimensionPixelSize(R.dimen.space_l)
+        val gap = resources.getDimensionPixelSize(R.dimen.space_s)
+        val content = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundResource(R.color.mocha_cream)
+            setPadding(gutter, gutter, gutter, gutter)
+            addView(
+                TextView(context).apply {
+                    setTextAppearance(R.style.TextAppearance_Mocha_Title)
+                    setTextColor(ContextCompat.getColor(context, R.color.mocha_brown))
+                    text = entry.term
+                },
+            )
+            addView(
+                TextView(context).apply {
+                    setTextAppearance(R.style.TextAppearance_Mocha_Body)
+                    text = entry.definition
+                },
+                LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = gap },
+            )
             if (entry.meaningVi.isNotBlank()) {
-                append("\n\n")
-                append(entry.meaningVi)
+                addView(
+                    TextView(context).apply {
+                        setTextAppearance(R.style.TextAppearance_Mocha_Caption)
+                        text = entry.meaningVi
+                    },
+                    LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { topMargin = gap },
+                )
             }
         }
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(entry.term)
-            .setMessage(body)
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
+        BottomSheetDialog(context).apply {
+            setContentView(content)
+            show()
+        }
+    }
+
+    private fun bindBreadcrumbs(path: TextView, crumbs: List<Node>) {
+        path.isVisible = crumbs.isNotEmpty()
+        if (crumbs.isEmpty()) return
+        path.text = crumbs.joinToString(getString(R.string.reader_path_separator)) { it.title }
     }
 
     private fun bindResources(
+        header: TextView,
         container: LinearLayout,
-        items: List<Pair<String, ResourceType>>,
+        items: List<ResourceItem>,
     ) {
-        container.removeAllViews()
+        header.isVisible = items.isNotEmpty()
         container.isVisible = items.isNotEmpty()
-        val inflater = layoutInflater
-        for ((url, type) in items) {
-            if (type != ResourceType.YOUTUBE) continue
-            val card = ItemYoutubeBinding.inflate(inflater, container, false)
-            card.youtubeUrl.text = url
-            card.root.setOnClickListener {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-            }
+        container.removeAllViews()
+        for (item in items) {
+            val card = ItemResourceBinding.inflate(layoutInflater, container, false)
+            val typeLabel = getString(resourceLabel(item.type))
+            val title = item.title.ifBlank { typeLabel }
+            card.resourceTitle.text = title
+            card.resourceType.text = typeLabel
+            // An inline YouTube URL has no stored title, so its card would say "YouTube" twice.
+            card.resourceType.isVisible = !title.equals(typeLabel, ignoreCase = true)
+            card.resourceUrl.text = hostOf(item.url)
+            card.resourceIcon.setImageResource(
+                if (item.type == ResourceType.YOUTUBE) R.drawable.ic_play else R.drawable.ic_post,
+            )
+            card.resourceIcon.contentDescription = typeLabel
+            card.root.setOnClickListener { openResource(item, title) }
             container.addView(card.root)
         }
+    }
+
+    /** YouTube plays inline; anything else — and any link with no video id — leaves the app. */
+    private fun openResource(item: ResourceItem, title: String) {
+        if (item.type == ResourceType.YOUTUBE) {
+            val videoId = YouTubePlayerSheet.videoId(item.url)
+            if (videoId != null) {
+                YouTubePlayerSheet.show(parentFragmentManager, videoId, item.url, title)
+                return
+            }
+        }
+        openExternally(item.url)
+    }
+
+    private fun openExternally(url: String) {
+        if (url.isBlank()) return
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (error: ActivityNotFoundException) {
+            Toast.makeText(requireContext(), R.string.reader_open_failed, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun hostOf(url: String): String {
+        val host = Uri.parse(url).host?.removePrefix("www.")
+        return if (host.isNullOrBlank()) url else host
     }
 
     private fun bindNodeRows(header: TextView, container: LinearLayout, nodes: List<Node>) {
@@ -216,4 +316,12 @@ class PostReaderFragment : Fragment() {
             container.addView(row)
         }
     }
+}
+
+@StringRes
+private fun resourceLabel(type: ResourceType): Int = when (type) {
+    ResourceType.YOUTUBE -> R.string.resource_type_youtube
+    ResourceType.ARTICLE -> R.string.resource_type_article
+    ResourceType.BOOK -> R.string.resource_type_book
+    ResourceType.OTHER -> R.string.resource_type_other
 }

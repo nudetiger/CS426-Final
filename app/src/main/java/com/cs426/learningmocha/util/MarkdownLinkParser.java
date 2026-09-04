@@ -58,6 +58,29 @@ public final class MarkdownLinkParser {
         return out;
     }
 
+    /**
+     * Rewrites every {@code [[oldTitle]]} to {@code [[newTitle]]}, ignoring case and padding
+     * inside the brackets, so renaming a post does not orphan the links pointing at it.
+     *
+     * @return the markdown unchanged when there is nothing to rewrite
+     */
+    public static String renameWikiLinks(String markdown, String oldTitle, String newTitle) {
+        if (markdown == null || markdown.isEmpty() || oldTitle == null || newTitle == null) {
+            return markdown;
+        }
+        String from = oldTitle.trim();
+        String to = newTitle.trim();
+        if (from.isEmpty() || to.isEmpty() || from.equals(to)) {
+            return markdown;
+        }
+        Pattern pattern = Pattern.compile(
+                "\\[\\[\\s*" + Pattern.quote(from) + "\\s*]]",
+                Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
+        );
+        return pattern.matcher(markdown)
+                .replaceAll(Matcher.quoteReplacement("[[" + to + "]]"));
+    }
+
     /** First occurrence of each video id, in document order. */
     public static List<YoutubeUrl> youtubeUrls(String markdown) {
         List<YoutubeUrl> out = new ArrayList<>();

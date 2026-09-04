@@ -1,0 +1,66 @@
+\section{Work division}
+\label{sec:work}
+
+The project was built by two people. The split follows the natural seam in the architecture: one side owns
+the local knowledge base --- storage, the tree, reading and writing posts, search, the graph, backup and
+the release build --- and the other owns everything the assistant touches, from the gateway and the action
+protocol to the review screen that gates every AI write.
+
+\begin{longtable}{L{2.1cm} L{4.6cm} X}
+\toprule
+\textbf{Student ID} & \textbf{Name and role} & \textbf{Delivered} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Student ID} & \textbf{Name and role} & \textbf{Delivered} \\
+\midrule
+\endhead
+24125006 &
+Nguyen Anh Dung\newline\emph{Android app core} &
+Project scaffold, Gradle/AGP setup and the mocha design system (tokens, DayNight themes, typography).
+Room schema and all three migrations, the single-table node model, DAOs and repositories.
+Tree operations: create, rename, move with cycle checking, drag-to-reorder, cascade delete.
+Browse, Home hub, post reader and Markdown editor with live preview. Wiki-link parsing, backlinks,
+related posts and rename propagation. FTS4 search with filters, tags, favourites, status, dictionary
+storage. Knowledge-graph screen and the force-directed layout. Backup export/import, settings, theme,
+backup reminder. Release signing, R8 rules, adaptive launcher icon, packaging script. \\
+\addlinespace
+24125009 &
+Le Huu Hoa\newline\emph{AI subsystem and quality} &
+The Node/Express DeepSeek gateway: endpoint contracts, prompt construction, the four chat modes, error
+normalisation and Server-Sent-Events streaming. The model-independent action protocol (14 operations),
+its parser and the on-device validator. The seven read-only context tools and the multi-round context
+loop. The transactional action executor and undo snapshots. Chat UI with streamed replies and the
+privacy disclosure. The review-changes screen: per-action selection, tree preview, rendered previews and
+diffs, destination picker, edit-before-save, destructive-action confirmation. Embedded YouTube playback,
+dictionary CRUD screen, unit and instrumented tests, this report and the demo video. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Shared work}
+
+Some things were done together rather than divided, because splitting them would have cost more than it
+saved:
+
+\begin{itemize}
+  \item \textbf{Design decisions} recorded in \code{docs/plan.md} --- the storage model, the AI action
+        protocol, and the list of features explicitly \emph{not} built for version~1.
+  \item \textbf{Code review.} Every phase ended with a review pass against the rules in
+        \code{AGENTS.md} (layer boundaries, the Kotlin/Java split, design tokens, and the invariant that
+        the AI never writes to the database directly).
+  \item \textbf{The audit that shaped the final phase.} Before the last round of work, the whole codebase
+        was audited against \code{docs/idea.md} and the grading rubric across eight dimensions
+        (knowledge-base features, AI features, search and navigation, UI/UX, defects, release readiness,
+        the gateway, tests and packaging). Each finding was then re-checked adversarially before anyone
+        wrote code, which is how the two most serious problems --- the tool-role request rejection and the
+        resource-wiping save --- were found and fixed rather than shipped. \S\ref{sec:self} lists what came
+        out of it.
+  \item \textbf{Manual testing} on the emulator: the feature matrix in \S\ref{sec:testing} was walked by
+        both members, including the offline transition and the export/import round trip.
+\end{itemize}
+
+\subsection{Commit history}
+
+The repository history is included in the archive (\code{src/.git}), with one commit per development
+phase and the phase notes for the next phase written into \code{docs/plan.md} at the end of each one, so
+the reasoning behind each step is visible in the diff rather than only in the final state.

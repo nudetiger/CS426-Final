@@ -22,3 +22,6 @@ Thumbs.db
 
 # Deliverable packaging (assembled at submission time)
 /dist/
+*.jks
+keystore/
+keystore.properties

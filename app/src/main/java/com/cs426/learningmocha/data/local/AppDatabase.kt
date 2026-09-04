@@ -166,7 +166,17 @@ abstract class AppDatabase : RoomDatabase() {
                 context.applicationContext,
                 AppDatabase::class.java,
                 "learning_mocha.db",
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addCallback(
+                    object : RoomDatabase.Callback() {
+                        // Fires once, when the file is created — so SeedData can tell a first
+                        // launch from a library the user has deliberately emptied.
+                        override fun onCreate(db: SupportSQLiteDatabase) {
+                            SeedData.markFreshDatabase()
+                        }
+                    },
+                )
+                .build()
         }
     }
 }

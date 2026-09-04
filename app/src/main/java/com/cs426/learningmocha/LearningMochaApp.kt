@@ -11,6 +11,7 @@ import com.cs426.learningmocha.data.repo.PostRepository
 import com.cs426.learningmocha.data.repo.SearchRepository
 import com.cs426.learningmocha.data.repo.TreeRepository
 import com.cs426.learningmocha.net.ApiClient
+import com.cs426.learningmocha.net.SseChatClient
 
 /**
  * Learning Mocha — local-first personal learning / knowledge management app.
@@ -39,6 +40,7 @@ class LearningMochaApp : Application() {
         ChatRepository(
             db = database,
             api = ApiClient.create { settings.backendUrl },
+            sse = SseChatClient { settings.backendUrl },
             search = searchRepository,
             posts = postRepository,
             executor = actionExecutor,

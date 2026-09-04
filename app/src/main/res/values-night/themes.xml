@@ -1,18 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.LearningMocha" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/mocha_brown</item>
-        <item name="colorPrimaryVariant">@color/mocha_brown_deep</item>
-        <item name="colorOnPrimary">@color/mocha_on_primary</item>
-        <item name="colorSecondary">@color/mocha_sage</item>
-        <item name="colorOnSecondary">@color/mocha_on_primary</item>
-        <item name="colorError">@color/mocha_error</item>
-        <item name="android:colorBackground">@color/mocha_cream</item>
-        <item name="colorSurface">@color/mocha_surface</item>
-        <item name="android:fontFamily">@font/comfortaa</item>
-        <item name="fontFamily">@font/comfortaa</item>
-        <item name="android:statusBarColor">@color/mocha_header_bg</item>
+    <!-- Dark mode inherits the whole base theme; the palette already flips through
+         values-night/colors.xml, so only the status-bar icon polarity differs. -->
+    <style name="Theme.LearningMocha" parent="Theme.Mocha.Base">
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:navigationBarColor">@color/mocha_header_bg</item>
     </style>
 </resources>

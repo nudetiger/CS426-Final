@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Legacy launcher icon for API 24-25, which has no AdaptiveIconDrawable. Aliases the original
+     full-bleed vector (cream circle + cup) instead of duplicating its paths. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_launcher" />

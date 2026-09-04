@@ -25,6 +25,40 @@ public class MarkdownLinkParserTest {
         assertTrue(MarkdownLinkParser.wikiLinks("[[  ]] and []").isEmpty());
     }
 
+    // Renaming a post rewrites the links pointing at it, or every inbound link dies.
+    @Test
+    public void renamesWikiLinksIgnoringCaseAndPadding() {
+        String md = "See [[ spring boot ]] and [[Spring Boot]] and [[Spring Boots]].";
+        String out = MarkdownLinkParser.renameWikiLinks(md, "Spring Boot", "Spring Framework");
+        assertEquals(
+                "See [[Spring Framework]] and [[Spring Framework]] and [[Spring Boots]].",
+                out);
+    }
+
+    @Test
+    public void renameTreatsTitlesAsLiteralsNotPatterns() {
+        String md = "Read [[C++ (basics)]] first.";
+        assertEquals(
+                "Read [[C# notes]] first.",
+                MarkdownLinkParser.renameWikiLinks(md, "C++ (basics)", "C# notes"));
+    }
+
+    // A '$' in the new title is a group reference to Matcher.replaceAll if it is not quoted.
+    @Test
+    public void renameKeepsDollarsAndBackslashesInTheNewTitle() {
+        assertEquals(
+                "[[Cost $5 \\ net]]",
+                MarkdownLinkParser.renameWikiLinks("[[Cost]]", "Cost", "Cost $5 \\ net"));
+    }
+
+    @Test
+    public void renameLeavesUnrelatedMarkdownAlone() {
+        String md = "No links here, and [[Other]] stays.";
+        assertEquals(md, MarkdownLinkParser.renameWikiLinks(md, "Raft", "Paxos"));
+        assertEquals(md, MarkdownLinkParser.renameWikiLinks(md, "Other", "Other"));
+        assertEquals(md, MarkdownLinkParser.renameWikiLinks(md, "Other", "  "));
+    }
+
     @Test
     public void extractsUniqueYoutubeIds() {
         String md = ""

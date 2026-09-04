@@ -1,5 +1,7 @@
 package com.cs426.learningmocha.net
 
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -45,6 +47,27 @@ object ApiClient {
             .build()
             .create(MochaApi::class.java)
     }
+
+    /**
+     * Absolute URL of [path] on the configured gateway. Only scheme/host/port are
+     * taken from [baseUrl], which is exactly what the Retrofit interceptor above
+     * does, so both transports hit the same endpoints for a given setting.
+     */
+    fun endpoint(baseUrl: String, path: String): HttpUrl {
+        val configured = baseUrl.toHttpUrlOrNull() ?: DEFAULT_BASE_URL.toHttpUrl()
+        return configured.newBuilder().encodedPath("/$path").build()
+    }
+
+    /**
+     * Client for Server-Sent Events. The read timeout is an inter-chunk gap and
+     * must outlast the gateway's own 120 s generation budget, otherwise a slow
+     * first token would cancel a stream the backend is still happily filling.
+     */
+    fun streamingClient(): OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(130, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .build()
 }
 
 class ApiError(message: String, val retryable: Boolean) : Exception(message)

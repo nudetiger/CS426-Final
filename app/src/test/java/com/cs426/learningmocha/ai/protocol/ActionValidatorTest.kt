@@ -204,6 +204,79 @@ class ActionValidatorTest {
         assertTrue(ActionValidator.validate(actions, nodes).any { it.contains("cycle") })
     }
 
+    // A post nested under a post is unreachable in Browse, so the batch must be rejected first.
+    @Test
+    fun rejectsMoveUnderAPost() {
+        val nodes = listOf(branch(1, "Root"), post(3, "Raft"), post(4, "Paxos"))
+        val actions = listOf(
+            KbAction(op = "move_post", postTitle = "Raft", newParentTitle = "Paxos"),
+        )
+        assertTrue(
+            ActionValidator.validate(actions, nodes).any { it.contains("parent cannot be a post") },
+        )
+    }
+
+    @Test
+    fun rejectsMoveUnderAPostCreatedEarlierInBatch() {
+        val nodes = listOf(branch(1, "Root"), post(3, "Raft"))
+        val actions = listOf(
+            KbAction(op = "create_post", title = "Paxos", content = "# Paxos"),
+            KbAction(op = "move_post", postTitle = "Raft", newParentTitle = "Paxos"),
+        )
+        assertTrue(
+            ActionValidator.validate(actions, nodes).any { it.contains("parent cannot be a post") },
+        )
+    }
+
+    @Test
+    fun acceptsMoveUnderAFolder() {
+        val nodes = listOf(
+            branch(1, "Root"),
+            Node(id = 2, parentId = 1, type = NodeType.FOLDER, title = "Consensus"),
+            post(3, "Raft"),
+        )
+        val actions = listOf(
+            KbAction(op = "move_post", postTitle = "Raft", newParentTitle = "Consensus"),
+        )
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, nodes))
+    }
+
+    // Titles address posts everywhere, so a retitle onto a taken one must fail at review time
+    // instead of throwing halfway through the executor's transaction.
+    @Test
+    fun rejectsRetitleOntoAnExistingPost() {
+        val nodes = listOf(branch(1, "Root"), post(3, "Raft"), post(4, "Paxos"))
+        val actions = listOf(
+            KbAction(op = "update_post", postTitle = "Raft", title = "Paxos"),
+        )
+        assertTrue(
+            ActionValidator.validate(actions, nodes).any { it.contains("already exists") },
+        )
+    }
+
+    @Test
+    fun acceptsRetitleToAFreeTitle() {
+        val nodes = listOf(branch(1, "Root"), post(3, "Raft"))
+        val actions = listOf(
+            KbAction(op = "update_post", postTitle = "Raft", title = "Raft consensus"),
+        )
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, nodes))
+    }
+
+    // The review screen validates only the checked rows, but the numbers must still match them.
+    @Test
+    fun skipsDeselectedActionsWithoutRenumbering() {
+        val actions = listOf(
+            KbAction(op = "create_post", parentTitle = "No Such Branch", title = "Raft"),
+            KbAction(op = "create_post", title = "Paxos", content = "# Paxos"),
+        )
+        val enabled = booleanArrayOf(false, true)
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, emptyList(), enabled))
+
+        val both = ActionValidator.validate(actions, emptyList(), booleanArrayOf(true, true))
+        assertTrue(both.any { it.startsWith("Action 1:") })
+    }
+
     @Test
     fun allowsLinkToPostThatDoesNotExistYet() {
         val nodes = listOf(branch(1, "A"), post(3, "Raft"))

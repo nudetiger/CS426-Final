@@ -48,6 +48,30 @@ class ActionLabelsTest {
         assertEquals(2, ActionLabels.indent(post, all))
     }
 
+    // The prompt also allows addressing a parent by title, which the review preview must nest.
+    @Test
+    fun indentFollowsTheTitleChain() {
+        val branch = KbAction(op = "create_branch", title = "Distributed Systems")
+        val folder = KbAction(
+            op = "create_folder",
+            title = "Consensus",
+            parentTitle = "distributed systems",
+        )
+        val post = KbAction(op = "create_post", title = "Raft", parentTitle = "Consensus")
+        val all = listOf(branch, folder, post)
+
+        assertEquals(0, ActionLabels.indent(branch, all))
+        assertEquals(1, ActionLabels.indent(folder, all))
+        assertEquals(2, ActionLabels.indent(post, all))
+    }
+
+    // A parent that is not part of the batch already exists in the tree: it anchors at depth 0.
+    @Test
+    fun indentIgnoresParentsOutsideTheBatch() {
+        val post = KbAction(op = "create_post", title = "Raft", parentTitle = "Backend")
+        assertEquals(0, ActionLabels.indent(post, listOf(post)))
+    }
+
     @Test
     fun indentTerminatesOnACyclicRefChain() {
         val a = KbAction(op = "create_folder", title = "A", ref = "a", parentRef = "b")

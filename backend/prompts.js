@@ -90,9 +90,35 @@ export function buildMessages({ mode, kbIndex, messages, toolResults }) {
       : "The user's knowledge base is currently empty.",
   ].join("\n\n");
 
-  const out = [{ role: "system", content: system }, ...messages];
+  const out = [
+    { role: "system", content: system },
+    ...messages.map(normalizeRole),
+  ];
   if (toolResults) {
-    out.push({ role: "tool", content: String(toolResults) });
+    // Deliberately a `user` turn, not `role: "tool"`. The OpenAI-compatible
+    // tool role requires a matching tool_call_id from a real tool_calls
+    // response; DeepSeek rejects the request with HTTP 400 without it. Our
+    // protocol asks for context through a plain JSON envelope instead, so the
+    // results come back as an ordinary labelled turn. This also keeps the
+    // gateway model-independent (see docs/plan.md §11).
+    out.push({
+      role: "user",
+      content:
+        "CONTEXT TOOL RESULTS from the user's local knowledge base " +
+        "(read-only, produced on-device):\n" +
+        String(toolResults) +
+        "\n\nNow answer the user's last request. Reply with exactly one JSON object.",
+    });
   }
   return out;
+}
+
+/**
+ * Anything the app forwards that is not a plain user/assistant turn is folded
+ * into a user turn, so a stale `tool` role in an old chat history can never
+ * break a live request.
+ */
+function normalizeRole(message) {
+  const role = message?.role === "assistant" ? "assistant" : "user";
+  return { role, content: String(message?.content ?? "") };
 }

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AI change-review screen: the gate every AI-originated write passes through. -->
+<resources>
+    <string name="review_selected_count">%1$d of %2$d changes selected</string>
+    <string name="review_none_selected">Nothing selected — tick the changes you want to keep.</string>
+    <string name="review_delete_warning">Deletions in this selection are permanent.</string>
+    <string name="review_load_failed">This proposal could not be opened.</string>
+    <string name="review_apply_failed">Could not apply these changes. Nothing was written.</string>
+    <string name="review_error_row">%1$s — %2$s</string>
+
+    <string name="review_row_under">under %1$s</string>
+    <string name="review_row_root">at the top level</string>
+    <string name="review_row_preview">Preview</string>
+    <string name="review_row_edit">Edit</string>
+    <string name="review_row_location">Change location</string>
+
+    <string name="review_edit_heading">Edit before saving</string>
+    <string name="review_edit_title_hint">Title</string>
+    <string name="review_edit_content_hint">Content (Markdown)</string>
+    <string name="review_edit_note">Markdown and [[wiki links]] are kept exactly as typed.</string>
+    <string name="review_edit_save">Keep edits</string>
+
+    <string name="review_location_heading">Where should this go?</string>
+    <string name="review_location_save">Use this location</string>
+    <string name="review_location_empty">No branches or folders to choose from yet.</string>
+
+    <plurals name="review_delete_confirm_title">
+        <item quantity="one">Delete %1$d post permanently?</item>
+        <item quantity="other">Delete %1$d posts permanently?</item>
+    </plurals>
+    <string name="review_delete_bullet">•  %1$s</string>
+    <string name="review_delete_confirm_message">%1$s\n\nTheir tags, links, resources and glossary entries go too. Undo cannot bring them back.</string>
+    <string name="review_delete_apply">Delete and apply</string>
+
+    <plurals name="review_applied">
+        <item quantity="one">Applied %1$d change.</item>
+        <item quantity="other">Applied %1$d changes.</item>
+    </plurals>
+    <string name="review_applied_deleted">Deletions cannot be undone.</string>
+    <string name="review_discarded_done">Discarded — nothing was changed.</string>
+    <string name="review_undo">Undo</string>
+    <string name="review_undo_done">Undone — new items removed, edited posts restored.</string>
+    <string name="review_undo_kept">Undone — but deleted posts stay deleted.</string>
+</resources>

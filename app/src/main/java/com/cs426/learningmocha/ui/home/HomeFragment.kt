@@ -57,12 +57,31 @@ class HomeFragment : Fragment() {
         b.homeFavoritesHeader.setOnClickListener {
             findNavController().navigate(R.id.action_global_favorites)
         }
+        b.homeActionGraph.setOnClickListener {
+            findNavController().navigate(
+                R.id.action_global_graph,
+                bundleOf("focusPostId" to 0L),
+            )
+        }
+        b.homeActionFavorites.setOnClickListener {
+            findNavController().navigate(R.id.action_global_favorites)
+        }
+        b.homeActionDictionary.setOnClickListener {
+            findNavController().navigate(R.id.action_global_dictionary)
+        }
+        b.homeActionTags.setOnClickListener {
+            findNavController().navigate(R.id.action_global_tags)
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     b.homeGreeting.setText(state.greetingRes)
-                    b.homeLibraryCount.text = getString(R.string.home_library_count, state.postCount)
+                    b.homeLibraryCount.text = resources.getQuantityString(
+                        R.plurals.home_library_posts,
+                        state.postCount,
+                        state.postCount,
+                    )
                     ListStateBinder.bind(
                         overlay = b.listState.root,
                         progress = b.listState.listStateProgress,

@@ -3,6 +3,7 @@ package com.cs426.learningmocha.ai.engine
 import androidx.room.withTransaction
 import com.cs426.learningmocha.ai.protocol.KbAction
 import com.cs426.learningmocha.data.local.AppDatabase
+import com.cs426.learningmocha.data.local.entity.DictionaryEntry
 import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeType
@@ -10,10 +11,19 @@ import com.cs426.learningmocha.data.local.entity.ResourceType
 import com.cs426.learningmocha.data.repo.PostRepository
 import com.cs426.learningmocha.data.repo.TreeRepository
 
+/**
+ * What one applied batch has to put back.
+ *
+ * `delete_post` is deliberately absent: a delete cascades to the post's links, tags, references
+ * and glossary rows, and resurrecting that is out of scope — the review screen warns instead.
+ */
 data class UndoSnapshot(
     val createdIds: List<Long>,
     val restored: List<Node>,
     val restoredTags: Map<Long, List<String>>,
+    val insertedResourceIds: List<Long> = emptyList(),
+    val insertedTermIds: List<Long> = emptyList(),
+    val restoredTerms: List<DictionaryEntry> = emptyList(),
 )
 
 class ActionExecutor(
@@ -26,6 +36,9 @@ class ActionExecutor(
         val created = ArrayList<Long>()
         val restored = ArrayList<Node>()
         val restoredTags = HashMap<Long, List<String>>()
+        val insertedResources = ArrayList<Long>()
+        val insertedTerms = ArrayList<Long>()
+        val restoredTerms = ArrayList<DictionaryEntry>()
         db.withTransaction {
             for (action in actions) {
                 when (action.op) {
@@ -74,6 +87,8 @@ class ActionExecutor(
                     }
                     "create_link" -> {
                         val from = requireFrom(action, refs)
+                        // addWikiLink appends `[[Target]]` to the body, so undo needs the content.
+                        snapshot(from, restored, restoredTags)
                         posts.addWikiLink(from.id, action.toTitle.orEmpty())
                     }
                     "remove_link" -> {
@@ -108,7 +123,14 @@ class ActionExecutor(
                         } catch (_: Exception) {
                             ResourceType.OTHER
                         }
-                        posts.addResource(node.id, type, action.title.orEmpty(), action.url.orEmpty())
+                        insertedResources.add(
+                            posts.addResource(
+                                node.id,
+                                type,
+                                action.title.orEmpty(),
+                                action.url.orEmpty(),
+                            ),
+                        )
                     }
                     "add_dictionary_entry" -> {
                         val postId = if (action.postRef != null || !action.postTitle.isNullOrBlank()) {
@@ -116,17 +138,27 @@ class ActionExecutor(
                         } else {
                             null
                         }
-                        posts.addTerm(
+                        // addTerm upserts, so undo has to edit a term back rather than delete it.
+                        val previous = posts.getTerm(postId, action.term.orEmpty())
+                        val termId = posts.addTerm(
                             postId,
                             action.term.orEmpty(),
                             action.definition.orEmpty(),
                             action.meaningVi.orEmpty(),
                         )
+                        if (previous == null) insertedTerms.add(termId) else restoredTerms.add(previous)
                     }
                 }
             }
         }
-        return UndoSnapshot(created, restored, restoredTags)
+        return UndoSnapshot(
+            createdIds = created,
+            restored = restored,
+            restoredTags = restoredTags,
+            insertedResourceIds = insertedResources,
+            insertedTermIds = insertedTerms,
+            restoredTerms = restoredTerms,
+        )
     }
 
     suspend fun undo(snapshot: UndoSnapshot) {
@@ -146,6 +178,15 @@ class ActionExecutor(
                 if (tree.getNode(node.id)?.parentId != node.parentId) {
                     tree.move(node.id, node.parentId)
                 }
+            }
+            for (id in snapshot.insertedResourceIds) {
+                posts.removeResource(id)
+            }
+            for (id in snapshot.insertedTermIds) {
+                posts.removeTerm(id)
+            }
+            for (entry in snapshot.restoredTerms) {
+                posts.updateTerm(entry)
             }
         }
     }

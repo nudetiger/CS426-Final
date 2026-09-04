@@ -1,0 +1,75 @@
+\section{Target users}
+\label{sec:users}
+
+\subsection{Who this is for}
+
+Learning Mocha is built for the \textbf{self-directed technical learner}: a student or working developer
+who reads documentation, courses, papers and videos on their own initiative and wants the result to
+accumulate into something they can navigate a year later. Concretely, the app assumes a user who
+
+\begin{itemize}
+  \item studies subjects with real internal structure --- programming, systems, mathematics, languages
+        --- where topic B genuinely depends on topic A;
+  \item writes their own notes rather than collecting other people's, and is comfortable with Markdown;
+  \item cares that their notes stay theirs: no account, no vendor, no silent upload;
+  \item reads on a phone in short sessions, so ``where was I'' and ``what should I read next'' matter more
+        than word-processing features.
+\end{itemize}
+
+\subsection{Three concrete users}
+
+\begin{mochabox}[title={Minh --- second-year CS student}]
+Studying for a distributed-systems course. He types notes during lectures and wants them to end up in the
+right place in a tree he can revise from. He uses \textbf{status} to mark which lecture notes are still
+half-understood, the \textbf{glossary} because half the vocabulary is new, and he asks the assistant
+``based on what I already have, what am I missing before Raft?'' The answer arrives as a proposed tree of
+posts he can prune before accepting.
+\end{mochabox}
+
+\begin{mochabox}[title={Lan --- backend developer changing stack}]
+Moving from Node to Spring Boot. She keeps a \emph{Backend} branch and writes a post per concept as she
+hits it, linking \code{[[Dependency Injection]]} from five different articles. \textbf{Backlinks} tell her
+which of her own notes depend on a concept she is about to revise; the \textbf{knowledge graph} shows her
+that her \emph{Java} cluster is dense and her \emph{Deployment} cluster is three isolated dots. She uses
+\textbf{Organize} mode to ask the assistant to tidy a branch that grew by accretion.
+\end{mochabox}
+
+\begin{mochabox}[title={Hoa --- learning a language and reading papers}]
+Reads English-language material and stores Vietnamese meanings alongside definitions, which is why the
+glossary has a dedicated \code{meaningVi} field rather than one free-text definition. She attaches
+\textbf{YouTube resources} to posts and watches them inside the article instead of losing her place to the
+browser, and she \textbf{exports} her library to Drive every week because it is the only copy.
+\end{mochabox}
+
+\subsection{Who this is not for}
+
+Saying no is part of the design. Learning Mocha is not a team wiki (no sharing, no permissions, no
+conflict resolution), not a general note-taking app (no images, no attachments, no handwriting, no
+web clipper), and not a flashcard app (no spaced repetition --- \code{status} is a reading state, not a
+memory schedule). Each of those would have pulled the architecture towards accounts and a server, which
+is exactly what commitment~1 in \S\ref{sec:intro} rules out.
+
+\subsection{What the user has to do, and what the app does for them}
+
+\begin{tabularx}{\linewidth}{L{5.4cm} X}
+\toprule
+\textbf{The user does this} & \textbf{So the app can do this} \\
+\midrule
+Writes \code{[[Spring Boot]]} inside a post &
+Resolves it to a real post, renders it as a tap target, records the reverse edge, and keeps it correct
+when either post is renamed \\
+\addlinespace
+Sets a status and a few tags &
+Powers ``continue reading'' on the home screen, the related-posts list, tag browsing, and search filters \\
+\addlinespace
+Pastes a YouTube URL into the body &
+Detects it and offers it as a playable resource card on the article \\
+\addlinespace
+Adds a glossary term &
+Surfaces it as a chip on every article that mentions it, and makes it findable from search \\
+\addlinespace
+Asks the assistant for a learning path &
+Reads only the parts of the library it explicitly queries, proposes a reviewable tree of posts with
+content, links, tags and glossary entries, and writes nothing until it is approved \\
+\bottomrule
+\end{tabularx}

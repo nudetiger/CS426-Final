@@ -127,6 +127,9 @@ class SearchFragment : Fragment() {
         SearchHit.Kind.POST -> getString(R.string.browse_type_post)
         SearchHit.Kind.BRANCH -> getString(R.string.browse_type_branch)
         SearchHit.Kind.DICTIONARY -> hit.caption
+        // A reference hit already carries its URL as the caption, which says more
+        // than the word "reference" would.
+        SearchHit.Kind.RESOURCE -> hit.caption
     }
 
     private fun onHit(item: RowItem) {
@@ -153,6 +156,14 @@ class SearchFragment : Fragment() {
                 } else {
                     findNavController().navigate(R.id.action_global_dictionary)
                 }
+            }
+            // A reference always belongs to a post; open the post that cites it,
+            // where the resource card lives.
+            SearchHit.Kind.RESOURCE -> hit.postId?.let { postId ->
+                findNavController().navigate(
+                    R.id.action_global_open_post,
+                    bundleOf("postId" to postId),
+                )
             }
         }
     }
