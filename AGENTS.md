@@ -2,6 +2,26 @@
 
 Read `docs/plan.md` first. It is the source of truth for architecture and phases.
 
+## Project skills — use them
+
+This repo ships agent skills in `.agents/skills/`, `.cursor/skills/`, and `.claude/skills/`
+(same set, mirrored). **Before starting a task, check whether a skill covers it and follow
+that skill's instructions** (read its `SKILL.md`). Don't cargo-cult a skill onto a task it
+doesn't fit — the ponytail rule (simplest working solution) still governs.
+
+| When the task involves… | Read skill(s) |
+|---|---|
+| Building, running, installing, emulator, screenshots, SDK lookup | `android-cli` |
+| Adding/fixing tests, test infrastructure | `testing-setup` |
+| UI screens, themes, dark mode, styling, accessibility | `ui-styling`, `design-system`, `frontend-checklist-global` |
+| System-bar / IME insets, edge-to-edge (targetSdk 35) | `edge-to-edge` |
+| Adapting to tablets / screen sizes (rubric criterion) | `adaptive` |
+| Writing or editing prose (report, seed content, README) | `humanizer`, `no-ai-slop` |
+| Reviewing a diff before commit | `ponytail-review` (see also `.cursor/rules/ponytail.mdc`) |
+
+Skills not listed (Compose/TV/wear/billing/migration skills, etc.) don't apply to this
+XML-Views phone app — ignore them unless the stack changes.
+
 ## Non-negotiable rules
 
 1. **Local-first**: all knowledge data lives in Room (`data/local`). Never add cloud

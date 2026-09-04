@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/zebra_row_min"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/space_s"
+    android:paddingEnd="@dimen/space_xs">
+
+    <ImageView
+        android:id="@+id/node_icon"
+        android:layout_width="@dimen/icon_list"
+        android:layout_height="@dimen/icon_list"
+        android:contentDescription="@string/cd_folder"
+        android:padding="@dimen/space_s"
+        android:src="@drawable/ic_folder" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_xs"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/node_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Mocha.Body"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/node_caption"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/node_menu"
+        android:layout_width="@dimen/touch_target"
+        android:layout_height="@dimen/touch_target"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/cd_more"
+        android:src="@drawable/ic_more" />
+
+    <ImageView
+        android:id="@+id/node_drag"
+        android:layout_width="@dimen/touch_target"
+        android:layout_height="@dimen/touch_target"
+        android:contentDescription="@string/cd_drag"
+        android:padding="@dimen/space_s"
+        android:src="@drawable/ic_drag" />
+</LinearLayout>

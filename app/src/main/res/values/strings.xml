@@ -9,10 +9,85 @@
     <string name="nav_chat">AI</string>
     <string name="nav_settings">Settings</string>
 
-    <!-- Phase 0 placeholders (replaced as phases land, see docs/plan.md) -->
-    <string name="home_subtitle">Knowledge hub — continue reading, recents and favorites land in Phase 1–2.</string>
-    <string name="browse_subtitle">Branch / folder / post tree with drag-to-organize lands in Phase 1.</string>
+    <!-- Phase 2–4 placeholders -->
     <string name="search_subtitle">Full-text search across titles, content, tags and dictionary lands in Phase 2.</string>
     <string name="chat_subtitle">AI learning assistant (Answer · Suggest · Modify · Organize) lands in Phase 3.</string>
     <string name="settings_subtitle">Theme, backend URL and backup / export / import land in Phase 4.</string>
+
+    <!-- Home -->
+    <string name="home_brand">Learning Mocha</string>
+    <string name="home_tagline">Your personal Wikipedia</string>
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_library_count">%d posts in your library</string>
+    <string name="home_section_continue">Continue reading</string>
+    <string name="home_section_recents">Recent posts</string>
+    <string name="home_section_branches">Branches</string>
+    <string name="home_empty">Your library is empty. Open Browse to create a branch.</string>
+    <string name="home_continue_empty">Nothing in progress — open a post to start reading.</string>
+
+    <!-- Browse -->
+    <string name="browse_library">Library</string>
+    <string name="browse_empty">This folder is empty. Tap + to add a branch, folder, or post.</string>
+    <string name="browse_create">Create</string>
+    <string name="browse_create_title">New item</string>
+    <string name="browse_rename">Rename</string>
+    <string name="browse_move">Move</string>
+    <string name="browse_delete">Delete</string>
+    <string name="browse_delete_confirm_title">Delete “%1$s”?</string>
+    <string name="browse_delete_confirm_message">This also deletes everything inside. This cannot be undone.</string>
+    <string name="browse_move_title">Move “%1$s”</string>
+    <string name="browse_move_root">Library (top level)</string>
+    <string name="browse_type_branch">Branch</string>
+    <string name="browse_type_folder">Folder</string>
+    <string name="browse_type_post">Post</string>
+    <string name="status_reading">Reading</string>
+    <string name="status_in_progress">In progress</string>
+    <string name="node_title_hint">Title</string>
+    <string name="action_create">Create</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_move">Move</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_retry">Retry</string>
+
+    <!-- Reader / editor -->
+    <string name="reader_title">Post</string>
+    <string name="reader_missing">This post is no longer in your library.</string>
+    <string name="reader_not_a_post">That item is not a post.</string>
+    <string name="editor_title">Edit post</string>
+    <string name="editor_new_title">New post</string>
+    <string name="editor_tab_source">Source</string>
+    <string name="editor_tab_preview">Preview</string>
+    <string name="editor_title_hint">Post title</string>
+    <string name="editor_body_hint">Write Markdown here…</string>
+    <string name="editor_preview_empty">Nothing to preview yet.</string>
+    <string name="editor_discard_title">Discard changes?</string>
+    <string name="editor_discard_message">Your edits have not been saved.</string>
+    <string name="editor_discard">Discard</string>
+    <string name="editor_keep_editing">Keep editing</string>
+    <string name="editor_format_bold">Bold</string>
+    <string name="editor_format_italic">Italic</string>
+    <string name="editor_format_heading">Heading</string>
+    <string name="editor_format_list">List</string>
+    <string name="editor_format_link">Link</string>
+    <string name="editor_format_wikilink">Wiki link</string>
+    <string name="editor_saved">Saved</string>
+
+    <!-- List states -->
+    <string name="state_error">Something went wrong loading this list.</string>
+    <string name="state_offline">You are offline. Your library still works; AI chat does not.</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_back">Back</string>
+    <string name="cd_add">Add item</string>
+    <string name="cd_edit">Edit post</string>
+    <string name="cd_more">More actions</string>
+    <string name="cd_drag">Reorder</string>
+    <string name="cd_branch">Branch</string>
+    <string name="cd_folder">Folder</string>
+    <string name="cd_post">Post</string>
 </resources>

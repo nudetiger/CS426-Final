@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/mocha_cream"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/mocha_header_bg"
+        android:gravity="center_vertical"
+        android:minHeight="@dimen/header_min_height"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/space_xs"
+        android:paddingEnd="@dimen/space_s">
+
+        <ImageButton
+            android:id="@+id/editor_back"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_back"
+            android:src="@drawable/ic_back" />
+
+        <TextView
+            android:id="@+id/editor_heading"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/editor_title"
+            android:textAppearance="@style/TextAppearance.Mocha.Title"
+            android:textColor="@color/mocha_brown" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/editor_save"
+            style="@style/Widget.Mocha.ToolbarButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/action_save" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:id="@+id/editor_content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/editor_title_layout"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_m"
+                android:layout_marginTop="@dimen/space_s"
+                android:layout_marginEnd="@dimen/space_m"
+                android:hint="@string/editor_title_hint">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editor_title_input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textCapSentences"
+                    android:maxLines="1" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="@dimen/space_s"
+                android:paddingEnd="@dimen/space_s"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editor_bold"
+                        style="@style/Widget.Mocha.ToolbarButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/editor_format_bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editor_italic"
+                        style="@style/Widget.Mocha.ToolbarButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/editor_format_italic" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editor_format_heading"
+                        style="@style/Widget.Mocha.ToolbarButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/editor_format_heading" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editor_list"
+                        style="@style/Widget.Mocha.ToolbarButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/editor_format_list" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editor_link"
+                        style="@style/Widget.Mocha.ToolbarButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/editor_format_link" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editor_wikilink"
+                        style="@style/Widget.Mocha.ToolbarButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/editor_format_wikilink" />
+                </LinearLayout>
+            </HorizontalScrollView>
+
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/editor_tabs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/mocha_header_bg"
+                app:tabIndicatorColor="@color/mocha_brown"
+                app:tabSelectedTextColor="@color/mocha_brown"
+                app:tabTextAppearance="@style/TextAppearance.Mocha.Caption"
+                app:tabTextColor="@color/mocha_text_secondary">
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/editor_tab_source" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/editor_tab_preview" />
+            </com.google.android.material.tabs.TabLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1">
+
+                <EditText
+                    android:id="@+id/editor_body"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/mocha_surface"
+                    android:fontFamily="monospace"
+                    android:gravity="top|start"
+                    android:hint="@string/editor_body_hint"
+                    android:importantForAutofill="no"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:padding="@dimen/space_m"
+                    android:textColor="@color/mocha_text_primary"
+                    android:textColorHint="@color/mocha_text_secondary"
+                    android:textSize="@dimen/text_body" />
+
+                <androidx.core.widget.NestedScrollView
+                    android:id="@+id/editor_preview_scroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@color/mocha_surface"
+                    android:padding="@dimen/space_m"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/editor_preview"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.Mocha.Body" />
+                </androidx.core.widget.NestedScrollView>
+            </FrameLayout>
+        </LinearLayout>
+
+        <include
+            android:id="@+id/list_state"
+            layout="@layout/view_list_state" />
+    </FrameLayout>
+</LinearLayout>

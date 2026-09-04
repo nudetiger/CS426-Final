@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Top-level destinations match bottom_nav_menu ids so NavigationUI wires tabs for free.
-     Stack destinations (reader, editor, review, …) are added here in later phases. -->
+<!-- Top-level destinations match bottom_nav_menu ids so NavigationUI wires tabs for free. -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
@@ -26,4 +25,37 @@
         android:id="@+id/settingsFragment"
         android:name="com.cs426.learningmocha.ui.settings.SettingsFragment"
         android:label="@string/nav_settings" />
+
+    <fragment
+        android:id="@+id/postReaderFragment"
+        android:name="com.cs426.learningmocha.ui.reader.PostReaderFragment"
+        android:label="@string/reader_title">
+        <argument
+            android:name="postId"
+            app:argType="long" />
+        <action
+            android:id="@+id/action_reader_to_editor"
+            app:destination="@id/postEditorFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/postEditorFragment"
+        android:name="com.cs426.learningmocha.ui.editor.PostEditorFragment"
+        android:label="@string/editor_title">
+        <argument
+            android:name="postId"
+            android:defaultValue="0"
+            app:argType="long" />
+        <argument
+            android:name="parentId"
+            android:defaultValue="-1"
+            app:argType="long" />
+    </fragment>
+
+    <action
+        android:id="@+id/action_global_open_post"
+        app:destination="@id/postReaderFragment" />
+    <action
+        android:id="@+id/action_global_edit_post"
+        app:destination="@id/postEditorFragment" />
 </navigation>

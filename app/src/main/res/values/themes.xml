@@ -9,29 +9,79 @@
         <item name="colorOnSecondary">@color/mocha_on_primary</item>
         <item name="colorError">@color/mocha_error</item>
         <item name="android:colorBackground">@color/mocha_cream</item>
+        <item name="android:windowBackground">@color/mocha_cream</item>
         <item name="colorSurface">@color/mocha_surface</item>
         <item name="android:fontFamily">@font/comfortaa</item>
         <item name="fontFamily">@font/comfortaa</item>
         <item name="android:statusBarColor">@color/mocha_header_bg</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:navigationBarColor">@color/mocha_header_bg</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.Mocha.Dialog</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.Mocha.Dialog</item>
+    </style>
+
+    <style name="ThemeOverlay.Mocha.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="android:fontFamily">@font/comfortaa</item>
+        <item name="fontFamily">@font/comfortaa</item>
+        <item name="colorPrimary">@color/mocha_brown</item>
+        <item name="colorSurface">@color/mocha_surface_elevated</item>
+    </style>
+
+    <style name="TextAppearance.Mocha.Headline" parent="TextAppearance.MaterialComponents.Headline5">
+        <item name="android:textColor">@color/mocha_text_primary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">@dimen/text_headline</item>
+        <item name="android:fontFamily">@font/comfortaa</item>
+        <item name="fontFamily">@font/comfortaa</item>
     </style>
 
     <style name="TextAppearance.Mocha.Title" parent="TextAppearance.MaterialComponents.Headline6">
         <item name="android:textColor">@color/mocha_text_primary</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:textSize">@dimen/text_title</item>
+        <item name="android:fontFamily">@font/comfortaa</item>
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="TextAppearance.Mocha.Section" parent="TextAppearance.MaterialComponents.Subtitle1">
+        <item name="android:textColor">@color/mocha_text_primary</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">@dimen/text_section</item>
+        <item name="android:fontFamily">@font/comfortaa</item>
+        <item name="fontFamily">@font/comfortaa</item>
     </style>
 
     <style name="TextAppearance.Mocha.Body" parent="TextAppearance.MaterialComponents.Body1">
         <item name="android:textColor">@color/mocha_text_primary</item>
         <item name="android:lineSpacingMultiplier">1.5</item>
+        <item name="android:textSize">@dimen/text_body</item>
+        <item name="android:fontFamily">@font/comfortaa</item>
+        <item name="fontFamily">@font/comfortaa</item>
     </style>
 
     <style name="TextAppearance.Mocha.Caption" parent="TextAppearance.MaterialComponents.Caption">
         <item name="android:textColor">@color/mocha_text_secondary</item>
+        <item name="android:textSize">@dimen/text_caption</item>
+        <item name="android:fontFamily">@font/comfortaa</item>
+        <item name="fontFamily">@font/comfortaa</item>
     </style>
 
-    <style name="Widget.Mocha.BottomNav" parent="Widget.MaterialComponents.BottomNavigationView.Colored">
+    <style name="Widget.Mocha.BottomNav" parent="Widget.MaterialComponents.BottomNavigationView">
         <item name="backgroundTint">@color/mocha_header_bg</item>
+        <item name="itemIconTint">@color/bottom_nav_color</item>
+        <item name="itemTextColor">@color/bottom_nav_color</item>
+        <item name="elevation">0dp</item>
+        <item name="android:fontFamily">@font/comfortaa</item>
+        <item name="fontFamily">@font/comfortaa</item>
+    </style>
+
+    <style name="Widget.Mocha.ToolbarButton" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:minWidth">@dimen/toolbar_btn_min_width</item>
+        <item name="android:minHeight">@dimen/touch_target</item>
+        <item name="android:textColor">@color/mocha_brown</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:fontFamily">@font/comfortaa</item>
+        <item name="fontFamily">@font/comfortaa</item>
     </style>
 </resources>

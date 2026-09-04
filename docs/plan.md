@@ -78,8 +78,8 @@ Storage decisions:
 
 | Data | Where |
 |---|---|
-| Tree + posts | `nodes` table (single-table inheritance, see §5) |
-| Search index | FTS5 virtual table (`posts_fts`) kept in sync by Room triggers/DAO writes |
+| Tree + posts | `nodes` table (single-table inheritance, see §5) — **implemented in Phase 1** |
+| Search index | FTS4 virtual table via Room `@Fts4` entity (Room 2.6 has **no FTS5 annotation**; corrected from the first draft of this plan) |
 | Internal links/backlinks | `links` edge table (backlink = reverse query, no duplication) |
 | Settings | SharedPreferences (theme, backend URL, motion) |
 | DB file itself | Backup = export to JSON (not raw file copy) for forward compatibility |
@@ -95,7 +95,7 @@ tags           id PK | name UNIQUE
 post_tags      postId FK | tagId FK  (PK = pair)
 dictionary     id PK | postId FK NULL (null = global) | term | definition | meaningVi
 resources      id PK | postId FK | type: YOUTUBE|ARTICLE|BOOK|OTHER | title | url
-posts_fts      FTS5(title, content, tags)  ← external-content sync with nodes
+posts_fts      FTS4(title, content) via @Fts4(contentEntity=Node) — Room auto-syncs
 chat_sessions  id PK | title | createdAt        (local chat history)
 chat_messages  id PK | sessionId FK | role | text | actionsJson NULL | status
 ```
@@ -125,7 +125,7 @@ reorder/delete cascade) with zero joins; `content/status` are simply unused for 
 
 ## 8. Search
 
-- FTS5 MATCH across title/content/tags; results ranked by `bm25`, highlighted snippets.
+- FTS4 MATCH across title/content (tags matched via normal join); ranked by `bm25`, snippets.
 - Filters: type (post/branch), tag, status, favorites-only.
 - Search screen doubles as **quick-open** (like Ctrl+K): title matches first.
 - Also indexed: dictionary terms (searching "RAG" finds the entry and its post).
@@ -331,7 +331,7 @@ Repo + git init; Android module (Kotlin+Java, Views, AGP 8.7.3/Gradle 8.9, minSd
 mocha theme/tokens imported from CodeCup; single activity + bottom nav with 5 placeholder tabs;
 backend Express skeleton with `/v1/health`; `README.md`, `.gitignore`, `.env.example`.
 
-### Phase 1 — Core knowledge base (~5 h) → *gradable MVP*
+### Phase 1 — Core knowledge base ✅ (~5 h) → *gradable MVP*
 Room schema (`nodes`), tree CRUD (create/rename/move/reorder/delete cascade), Browse tab,
 PostReader + PostEditor (markdown + preview), Home hub with recents. Seed sample branch
 ("Getting Started") on first launch.
@@ -339,7 +339,23 @@ PostReader + PostEditor (markdown + preview), Home hub with recents. Seed sample
 
 ### Phase 2 — Knowledge features (~5 h)
 `links` + `[[wiki-link]]` parser + backlinks + related; tags; favorites; status; dictionary
-(global + per-post, reader popup); resources (YouTube cards); FTS5 search + filters.
+(global + per-post, reader popup); resources (YouTube cards); FTS4 search + filters.
+
+**Prep notes from the Phase 1 implementation (reviewed 2026-09-04):**
+- **DB migration 1 → 2 is required** for `links`, `tags`, `post_tags`, `dictionary`,
+  `resources`, `posts_fts`. Write a real `Migration(1,2)` — *no destructive fallback*:
+  data loss is a grading-critical defect. Flip `AppDatabase.exportSchema` to `true`
+  (+ `room.schemaLocation`) so the migration can be tested.
+- **Already in schema, only UI wiring left:** `status` (reader status chip + editor picker)
+  and `favorite` (reader star toggle, Favorites screen, search filter).
+- **Already in UI, only wiring left:** editor `[[ ]]` toolbar button and seed content already
+  contain wiki-links → build `MarkdownLinkParser.java` (extract `[[title]]` + YouTube URLs),
+  resolve on save inside the post transaction, render clickable spans in the reader.
+- **FTS correction:** use `@Fts4` Room entity (`posts_fts`, `contentEntity = Node::class`) —
+  Room keeps the index in sync automatically; no triggers to maintain.
+- Keep `touch()`-based recency (powers Home "recent"); Phase 2 adds nothing there.
+- `fragment_post_reader.xml` relies on Material's transitive ConstraintLayout — builds fine;
+  leave it (ponytail), but don't add more ConstraintLayout screens without the explicit dep.
 
 ### Phase 3 — AI (~6 h)
 Backend `/v1/chat`; chat UI + local sessions; context tools; action protocol + validator +
