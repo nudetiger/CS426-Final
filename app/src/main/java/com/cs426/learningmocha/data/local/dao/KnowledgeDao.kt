@@ -15,6 +15,23 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface KnowledgeDao {
 
+    // --- Backup dump / restore (see backup/BackupRepository) ---
+
+    @Query("SELECT * FROM links")
+    suspend fun allLinks(): List<Link>
+
+    @Query("SELECT * FROM post_tags")
+    suspend fun allPostTags(): List<PostTag>
+
+    @Query("SELECT * FROM dictionary")
+    suspend fun allDictionary(): List<DictionaryEntry>
+
+    @Query("SELECT * FROM resources")
+    suspend fun allResources(): List<ResourceItem>
+
+    @Query("DELETE FROM tags")
+    suspend fun deleteAllTags()
+
     @Insert
     suspend fun insertLink(link: Link): Long
 

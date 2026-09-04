@@ -26,6 +26,9 @@
     <dimen name="text_caption">13sp</dimen>
     <!-- Long-form reading: comfortable measure on phones and tablets. -->
     <dimen name="reader_max_width">560dp</dimen>
+    <!-- Horizontal breathing room for full-width text screens; widened on tablets
+         (values-sw600dp) so lines do not stretch across the whole display. -->
+    <dimen name="content_gutter">16dp</dimen>
     <dimen name="reader_text">16sp</dimen>
     <dimen name="chat_bubble_max">280dp</dimen>
     <dimen name="chat_bubble_gutter">56dp</dimen>

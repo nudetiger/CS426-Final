@@ -88,4 +88,8 @@ interface NodeDao {
 
     @Query("DELETE FROM nodes WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    /** Replace-mode restore. Cascades to links, post_tags, dictionary and resources. */
+    @Query("DELETE FROM nodes")
+    suspend fun deleteAll()
 }

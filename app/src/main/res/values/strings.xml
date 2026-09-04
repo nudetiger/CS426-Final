@@ -36,7 +36,47 @@
     <string name="review_expand">Preview</string>
     <string name="review_empty">No actions in this proposal.</string>
     <string name="review_undone">Undone</string>
-    <string name="settings_subtitle">Theme, backend URL and backup / export / import land in Phase 4.</string>
+    <string name="settings_subtitle">Theme, backend URL and backup / export / import.</string>
+
+    <!-- Settings -->
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme_system">Follow system</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_backend">AI gateway</string>
+    <string name="settings_backend_hint">http://10.0.2.2:8787/</string>
+    <string name="settings_backend_help">Address of your Learning Mocha backend. Use 10.0.2.2 on the emulator, or your computer\'s LAN address on a real device.</string>
+    <string name="settings_backend_save">Save</string>
+    <string name="settings_backend_reset">Reset</string>
+    <string name="settings_backend_test">Test connection</string>
+    <string name="settings_backend_saved">Gateway address saved.</string>
+    <string name="settings_backend_ok">Connected to the gateway.</string>
+    <string name="settings_backend_failed">Could not reach the gateway. Your library still works.</string>
+    <string name="settings_backend_testing">Testing…</string>
+    <string name="settings_backup">Backup</string>
+    <string name="settings_export">Export library</string>
+    <string name="settings_import">Import library</string>
+    <string name="settings_backup_never">Never exported.</string>
+    <string name="settings_backup_last">Last export: %1$s</string>
+    <string name="settings_backup_reminder">Remind me weekly</string>
+    <string name="settings_export_done">Exported %1$d posts.</string>
+    <string name="settings_export_failed">Export failed: %1$s</string>
+    <string name="settings_import_failed">Import failed: %1$s</string>
+    <string name="settings_import_done">Imported %1$d posts.</string>
+    <string name="settings_import_title">Import backup</string>
+    <string name="settings_import_message">This file holds %1$d posts. Merge it into your library, or replace everything you have now?</string>
+    <string name="settings_import_merge">Merge</string>
+    <string name="settings_import_replace">Replace</string>
+    <string name="settings_import_empty">That backup contains no posts.</string>
+    <string name="settings_export_no_access">Could not open that file.</string>
+    <string name="settings_unknown_error">Unknown error.</string>
+    <string name="settings_privacy">Privacy</string>
+    <string name="settings_privacy_body">Your library lives only on this device. Nothing is uploaded unless you use AI chat, and then only your message plus the specific notes the assistant asked to read. Chat history is never included in exports. The DeepSeek API key stays on your backend, never in this app.</string>
+    <string name="settings_about">Learning Mocha · CS426 final project</string>
+    <string name="backup_channel_name">Backup reminders</string>
+    <string name="backup_channel_description">Occasional nudge to export your library.</string>
+    <string name="backup_reminder_title">Back up your library</string>
+    <string name="backup_reminder_text">It has been a week since your last export.</string>
 
     <!-- Home -->
     <string name="home_brand">Learning Mocha</string>

@@ -380,7 +380,7 @@ learning-path generation; AI post generation with preview.
 - **Reuse UI machinery**: ListState, ChipBar, RowAdapter, and `WikiMarkdown`/Markwon for
   rendering AI markdown in chat bubbles and the review screen.
 
-### Phase 4 — Polish (~4 h)
+### Phase 4 — Polish ✅ (~4 h)
 Backup/export/import; settings (theme toggle, backend URL); all empty/error/offline states;
 dark theme pass; tablet width pass; notification backup reminder; performance pass.
 
@@ -400,13 +400,13 @@ dark theme pass; tablet width pass; notification backup reminder; performance pa
 - **Import must not write DAOs directly.** Go through `PostRepository`/`TreeRepository` (or
   re-run `KnowledgeSync` afterwards) so links/tags/YouTube reindexing stays consistent —
   same rule that governs `ActionExecutor` (AGENTS.md rule 2).
-- **Remaining list states**: `ListStateBinder` is wired in Home, Reader, Editor and Review.
-  Still to audit for loading/empty/error/offline: Browse, Search, Chat list, ChatConversation,
-  Dictionary, Favorites, TagDetail. The offline banner pattern to copy is in ChatConversation.
+- ~~**Remaining list states**~~ — *corrected during Phase 4*: every list screen (Home, Browse,
+  Search, Chat list, ChatConversation, Dictionary, Favorites, TagDetail, Reader, Editor,
+  Review) already binds `ListStateBinder`. Nothing to do here.
 - **Instrumented migration test is now the only untested critical path**: `room-testing` is
-  already a declared `androidTestImplementation` dep and schemas `1/2/3.json` are all exported,
-  so a `MigrationTestHelper` run of 1→2→3 is cheap. `MIGRATION_2_3` was verified by hand
-  against `3.json` (columns, FK, index all match) but never executed.
+  already a declared `androidTestImplementation` dep, so a `MigrationTestHelper` run is cheap.
+  *Note: only `2.json`/`3.json` exist — schema export was switched on in Phase 2, so there is
+  no `1.json` and a v1 fixture has to be built by hand.*
 - **Decide R8 keep rules before Phase 5 flips `minifyEnabled`.** Gson reflects over
   `Envelope`, `KbAction`, `ContextQuery` and the `net/` DTOs; without keep rules the AI
   protocol fails *silently* (fields deserialize to null → every envelope looks like a plain
@@ -429,6 +429,30 @@ dark theme pass; tablet width pass; notification backup reminder; performance pa
 - SSE streaming stayed out of scope (Appendix E), as expected.
 
 ### Phase 5 — Deliverables (~4 h, **start no later than ~6 h before deadline**)
+
+**Prep notes from the Phase 4 implementation (reviewed 2026-09-04):**
+- **R8 is the biggest remaining risk.** `minifyEnabled` is still `false`. Gson reflects over
+  `ai/protocol` (`Envelope`, `ContextQuery`, `KbAction`) and the `net/` DTOs; obfuscating their
+  field names makes every AI reply deserialize to nulls, which the parser then treats as a plain
+  answer — the failure is **silent**, not a crash. Either ship the release build with
+  `minifyEnabled false` (safe, larger APK) or add keep rules for those two packages and re-test
+  an actual AI round trip on the release APK. Do not flip it and assume debug behaviour holds.
+- **Signing**: nothing is configured yet — no keystore, no `signingConfigs`. Budget time for
+  generating one and keep it out of git.
+- **Verified working on the emulator** (Pixel 8, API 36) during Phase 4, so the demo video can
+  rely on these: export → SAF file → import/merge (3 posts became 6, tree and FTS index intact),
+  theme switching, and the weekly backup notification.
+- **Report material already written down**: privacy wording lives in `settings_privacy_body`
+  (strings.xml) and matches §22; undo limitations are listed in the Phase 4 prep notes above;
+  the Phase 3 notes record where the code diverges from this plan.
+- **Test story for the report**: 64 JVM unit tests (protocol validation/parsing, KB index,
+  backup round trip, tree rules, markdown/FTS helpers) plus 2 instrumented Room migration
+  tests covering 1→3 and 2→3 with real rows. Commands: `gradlew test`,
+  `gradlew connectedDebugAndroidTest`.
+- **Known gaps, worth stating honestly in the self-assessment** rather than hiding: no tablet
+  hardware pass (only `values-sw600dp` gutters, unverified on a real tablet), `delete_post` is
+  not undoable, and AI chat needs the local backend running with a DeepSeek key.
+
 Signed release APK (API 24+, install-tested on emulator/device); `report.pdf` (10–30 pages:
 topic, users, architecture, tech, setup, work-division, self-assessment); 5–10 min demo video
 (all members speak) uploaded + `demo-link.txt`; assemble zip

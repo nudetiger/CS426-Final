@@ -43,7 +43,14 @@ XML-Views phone app — ignore them unless the stack changes.
 - Post content = Markdown + `[[Post Title]]` wiki-links (parsed by
   `util/MarkdownLinkParser.java`).
 - Tree model: single `nodes` table (`BRANCH | FOLDER | POST`, `parentId`, `orderIndex`).
-- Search = FTS5 table kept in sync on write.
+- Search = `posts_fts`, an **FTS4** table (`@Fts4(contentEntity = Node::class)` — Room 2.6 has
+  no FTS5 annotation). It is content-backed, so Room's triggers keep it in sync automatically;
+  never write to it by hand.
+- Backup = `.mocha.json` via `util/ExportJsonWriter` + `ImportJsonReader` (pure Java) and
+  `backup/BackupRepository` (Room). Restore always reassigns ids and rewrites foreign keys.
+  Chat history is deliberately never exported.
+- User preferences live in `data/prefs/SettingsStore` (SharedPreferences), read synchronously
+  in `Application.onCreate` to apply the theme before the first inflate.
 - AI protocol envelopes and action ops: see `backend/prompts.js` and plan §11–13;
   keep both sides in sync when changing the schema.
 - Phases: implement in the order of `docs/plan.md` §26; don't start Phase N+1
