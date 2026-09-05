@@ -10,6 +10,7 @@ import com.cs426.learningmocha.data.local.entity.NodeType
 import com.cs426.learningmocha.data.local.entity.ResourceType
 import com.cs426.learningmocha.data.repo.PostRepository
 import com.cs426.learningmocha.data.repo.TreeRepository
+import com.cs426.learningmocha.util.PostMarkCatalog
 
 /**
  * What one applied batch has to put back.
@@ -44,6 +45,7 @@ class ActionExecutor(
         val insertedResources = ArrayList<Long>()
         val insertedTerms = ArrayList<Long>()
         val restoredTerms = ArrayList<DictionaryEntry>()
+        val pendingNext = ArrayList<Pair<Long, KbAction>>()
         db.withTransaction {
             for (action in actions) {
                 when (action.op) {
@@ -71,10 +73,13 @@ class ActionExecutor(
                             content = action.content.orEmpty(),
                             status = parseStatus(action.status) ?: LearningStatus.READING,
                             tagNames = action.tags.orEmpty(),
+                            icon = PostMarkCatalog.icon(action.icon),
+                            color = PostMarkCatalog.color(action.color),
                         )
                         remember(action.ref, id, refs)
                         rememberTitle(action.title, id, createdByTitle)
                         created.add(id)
+                        queueNext(id, action, pendingNext)
                     }
                     "update_post" -> {
                         val node = requirePost(action, refs, createdByTitle)
@@ -90,6 +95,14 @@ class ActionExecutor(
                                 merged(posts.tagsForPost(node.id).map { tag -> tag.name }, it)
                             },
                         )
+                        if (action.icon != null || action.color != null) {
+                            posts.setMark(
+                                node.id,
+                                PostMarkCatalog.icon(action.icon) ?: node.icon,
+                                PostMarkCatalog.color(action.color) ?: node.color,
+                            )
+                        }
+                        queueNext(node.id, action, pendingNext)
                     }
                     "move_post" -> {
                         val node = requirePost(action, refs, createdByTitle)
@@ -169,6 +182,9 @@ class ActionExecutor(
                     }
                 }
             }
+            for ((id, action) in pendingNext) {
+                resolveNext(action, refs, createdByTitle)?.let { posts.setNext(id, it) }
+            }
         }
         return UndoSnapshot(
             createdIds = created,
@@ -194,6 +210,8 @@ class ActionExecutor(
                     tagNames = snapshot.restoredTags[node.id],
                 )
                 posts.setFavorite(node.id, node.favorite)
+                posts.setMark(node.id, node.icon, node.color)
+                posts.setNext(node.id, node.nextPostId)
                 if (tree.getNode(node.id)?.parentId != node.parentId) {
                     tree.move(node.id, node.parentId)
                 }
@@ -235,6 +253,24 @@ class ActionExecutor(
         val seen = existing.mapTo(HashSet()) { it.lowercase() }
         return existing + proposed.map { it.trim() }
             .filter { it.isNotEmpty() && seen.add(it.lowercase()) }
+    }
+
+    private fun queueNext(id: Long, action: KbAction, pending: MutableList<Pair<Long, KbAction>>) {
+        if (action.nextRef.isNullOrBlank() && action.nextTitle.isNullOrBlank()) return
+        pending.add(id to action)
+    }
+
+    private suspend fun resolveNext(
+        action: KbAction,
+        refs: Map<String, Long>,
+        createdByTitle: Map<String, Long>,
+    ): Long? {
+        action.nextRef?.trim()?.takeIf { it.isNotEmpty() }?.let { ref ->
+            return refs[ref]
+        }
+        val title = action.nextTitle?.trim().orEmpty()
+        if (title.isEmpty()) return null
+        return createdByTitle[title.lowercase()] ?: posts.findPostByTitle(title)?.id
     }
 
     /** Null means the library root. A post is a legal parent - that is a sub-post. */

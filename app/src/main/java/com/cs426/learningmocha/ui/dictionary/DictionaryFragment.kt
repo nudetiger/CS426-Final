@@ -25,6 +25,7 @@ import com.cs426.learningmocha.databinding.DialogDictionaryTermBinding
 import com.cs426.learningmocha.databinding.FragmentDictionaryBinding
 import com.cs426.learningmocha.databinding.ItemDictionaryBinding
 import com.cs426.learningmocha.ui.common.ListStateBinder
+import com.cs426.learningmocha.ui.common.stripe
 import com.cs426.learningmocha.viewmodel.DictionaryRow
 import com.cs426.learningmocha.viewmodel.DictionaryScope
 import com.cs426.learningmocha.viewmodel.DictionaryViewModel
@@ -216,7 +217,7 @@ class DictionaryFragment : Fragment() {
         }
 
         override fun onBindViewHolder(holder: Holder, position: Int) {
-            holder.bind(getItem(position), onClick, onMenu)
+            holder.bind(getItem(position), position, onClick, onMenu)
         }
 
         class Holder(
@@ -224,10 +225,12 @@ class DictionaryFragment : Fragment() {
         ) : RecyclerView.ViewHolder(binding.root) {
             fun bind(
                 row: DictionaryRow,
+                position: Int,
                 onClick: (DictionaryRow) -> Unit,
                 onMenu: (View, DictionaryRow) -> Unit,
             ) {
                 val context = binding.root.context
+                binding.root.stripe(position)
                 binding.dictTerm.text = row.entry.term
                 binding.dictDefinition.text = row.entry.definition
                 binding.dictScope.text = when {

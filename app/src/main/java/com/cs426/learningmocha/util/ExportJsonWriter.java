@@ -41,6 +41,9 @@ public final class ExportJsonWriter {
             json.name("orderIndex").value(n.getOrderIndex());
             json.name("createdAt").value(n.getCreatedAt());
             json.name("updatedAt").value(n.getUpdatedAt());
+            json.name("icon").value(n.getIcon());
+            json.name("color").value(n.getColor());
+            json.name("nextPostId").value(n.getNextPostId());
             json.endObject();
         }
         json.endArray();

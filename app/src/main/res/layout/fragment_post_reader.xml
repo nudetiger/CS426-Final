@@ -8,7 +8,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/mochaHeaderBg"
+        android:background="@drawable/bg_header_island"
         android:gravity="center_vertical"
         android:minHeight="@dimen/header_min_height"
         android:orientation="horizontal"
@@ -157,6 +157,32 @@
                     android:maxWidth="@dimen/reader_max_width"
                     android:textAppearance="@style/TextAppearance.Mocha.Body"
                     android:textIsSelectable="true" />
+
+                <LinearLayout
+                    android:id="@+id/reader_next"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_l"
+                    android:background="@drawable/bg_card"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_m"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reader_up_next"
+                        android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+
+                    <TextView
+                        android:id="@+id/reader_next_title"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs"
+                        android:textAppearance="@style/TextAppearance.Mocha.Section"
+                        android:textColor="?attr/mochaBrown" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/reader_resources_header"

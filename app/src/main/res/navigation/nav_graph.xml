@@ -35,6 +35,13 @@
             app:popEnterAnim="@anim/nav_pop_enter"
             app:popExitAnim="@anim/nav_pop_exit" />
         <action
+            android:id="@+id/action_settings_to_profile"
+            app:destination="@id/profileSettingsFragment"
+            app:enterAnim="@anim/nav_enter"
+            app:exitAnim="@anim/nav_exit"
+            app:popEnterAnim="@anim/nav_pop_enter"
+            app:popExitAnim="@anim/nav_pop_exit" />
+        <action
             android:id="@+id/action_settings_to_ai"
             app:destination="@id/aiSettingsFragment"
             app:enterAnim="@anim/nav_enter"
@@ -61,6 +68,11 @@
         android:id="@+id/appearanceSettingsFragment"
         android:name="com.cs426.learningmocha.ui.settings.AppearanceSettingsFragment"
         android:label="@string/settings_appearance" />
+
+    <fragment
+        android:id="@+id/profileSettingsFragment"
+        android:name="com.cs426.learningmocha.ui.settings.ProfileSettingsFragment"
+        android:label="@string/settings_you" />
 
     <fragment
         android:id="@+id/aiSettingsFragment"

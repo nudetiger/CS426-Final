@@ -33,7 +33,7 @@ import com.cs426.learningmocha.data.local.entity.Tag
         ChatSession::class,
         ChatMessage::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 @TypeConverters(NodeConverters::class)
@@ -174,12 +174,21 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** Per-post glyph, tint, and sequential next-post pointer. All nullable: old rows stay unmarked. */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `nodes` ADD COLUMN `icon` TEXT")
+                db.execSQL("ALTER TABLE `nodes` ADD COLUMN `color` TEXT")
+                db.execSQL("ALTER TABLE `nodes` ADD COLUMN `nextPostId` INTEGER")
+            }
+        }
+
         fun build(context: Context): AppDatabase {
             return Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "learning_mocha.db",
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .addCallback(
                     object : RoomDatabase.Callback() {
                         // Fires once, when the file is created — so SeedData can tell a first

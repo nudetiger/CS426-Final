@@ -10,6 +10,7 @@ data class ChatRequest(
     val messages: List<ChatMessageDto>,
     val kbIndex: String,
     val toolResults: String? = null,
+    val userProfile: String? = null,
 )
 
 data class ChatResponse(

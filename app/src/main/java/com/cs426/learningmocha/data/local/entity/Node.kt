@@ -39,7 +39,7 @@ enum class LearningStatus {
         Index("type"),
     ],
 )
-data class Node(
+data class Node @JvmOverloads constructor(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val parentId: Long? = null,
     val type: NodeType,
@@ -50,4 +50,10 @@ data class Node(
     val orderIndex: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
+    /** Catalog key from [com.cs426.learningmocha.ui.common.PostMarks]; null uses the type glyph. */
+    val icon: String? = null,
+    /** Catalog key from PostMarks; null follows status (posts) or type (containers). */
+    val color: String? = null,
+    /** Sequential "up next" post. Null means the reader does not offer a next step. */
+    val nextPostId: Long? = null,
 )

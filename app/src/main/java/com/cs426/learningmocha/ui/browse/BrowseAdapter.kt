@@ -15,6 +15,7 @@ import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeType
 import com.cs426.learningmocha.databinding.ItemTreeNodeBinding
 import com.cs426.learningmocha.ui.common.NodePalette
+import com.cs426.learningmocha.ui.common.PostMarks
 import com.cs426.learningmocha.ui.common.labelRes
 import com.cs426.learningmocha.ui.common.themeColor
 
@@ -92,8 +93,10 @@ class BrowseAdapter(
                 NodePalette.typeInk(node.type)
             }
             binding.nodeAccent.backgroundTintList = ColorStateList.valueOf(color(accent))
-            binding.nodeIcon.setImageResource(NodePalette.icon(node.type, hasChildren))
-            binding.nodeIcon.imageTintList = ColorStateList.valueOf(color(accent))
+            binding.nodeIcon.setImageResource(PostMarks.drawable(node, hasChildren))
+            binding.nodeIcon.imageTintList = ColorStateList.valueOf(
+                color(PostMarks.tintAttr(node, accent)),
+            )
             binding.nodeIcon.contentDescription =
                 context.getString(NodePalette.contentDescriptionRes(node.type))
 

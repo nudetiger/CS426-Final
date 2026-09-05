@@ -102,6 +102,9 @@ interface NodeDao {
     @Update
     suspend fun updateAll(nodes: List<Node>)
 
+    @Query("UPDATE nodes SET nextPostId = NULL WHERE nextPostId = :id")
+    suspend fun clearNextPointingAt(id: Long)
+
     @Query("DELETE FROM nodes WHERE id = :id")
     suspend fun deleteById(id: Long)
 

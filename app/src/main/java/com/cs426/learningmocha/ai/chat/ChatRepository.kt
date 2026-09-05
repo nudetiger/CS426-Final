@@ -35,7 +35,8 @@ import kotlinx.coroutines.flow.update
 
 sealed class SendResult {
     data object Answered : SendResult()
-    data class NeedsReview(val messageId: Long) : SendResult()
+    data class NeedsReview(val messageId: Long, val suggestedMode: String? = null) : SendResult()
+    data class SuggestMode(val suggested: String) : SendResult()
     data class Failed(val message: String, val retryable: Boolean) : SendResult()
 }
 
@@ -61,6 +62,7 @@ class ChatRepository(
     search: SearchRepository,
     posts: PostRepository,
     val executor: ActionExecutor,
+    private val userProfile: () -> String? = { null },
 ) {
     private val chat = db.chatDao()
     private val tools = ContextTools(db, search, posts)
@@ -171,7 +173,7 @@ class ChatRepository(
     suspend fun retry(sessionId: Long, mode: String): SendResult {
         val messages = chat.getMessages(sessionId)
         val last = messages.lastOrNull() ?: return SendResult.Failed("Nothing to retry", false)
-        if (last.status == ChatMessage.STATUS_ERROR) {
+        if (last.role == ChatMessage.ROLE_ASSISTANT && last.status != ChatMessage.STATUS_APPLIED) {
             chat.deleteMessage(last.id)
         }
         if (messages.none { it.role == ChatMessage.ROLE_USER }) {
@@ -234,22 +236,8 @@ class ChatRepository(
                         roundMessages.add(ChatMessageDto(ChatMessage.ROLE_ASSISTANT, reply))
                     }
                     "actions" -> {
-                        // Answer mode is read-only by contract, so a batch proposed there
-                        // is reported as prose instead of a row waiting to be applied.
-                        if (mode == MODE_ANSWER) {
-                            val id = chat.insertMessage(
-                                ChatMessage(
-                                    sessionId = sessionId,
-                                    role = ChatMessage.ROLE_ASSISTANT,
-                                    text = (envelope.summary ?: "I have some changes in mind") +
-                                        "\n\nSwitch to Suggest or Modify to review them.",
-                                    status = ChatMessage.STATUS_OK,
-                                    mode = mode,
-                                ),
-                            )
-                            recordShared(id, sharedNotes)
-                            return SendResult.Answered
-                        }
+                        val suggested = envelope.suggestMode?.trim()?.takeIf { it.isNotEmpty() }
+                            ?: if (mode == MODE_ANSWER) "modify" else null
                         val id = chat.insertMessage(
                             ChatMessage(
                                 sessionId = sessionId,
@@ -261,7 +249,10 @@ class ChatRepository(
                             ),
                         )
                         recordShared(id, sharedNotes)
-                        return SendResult.NeedsReview(id)
+                        return SendResult.NeedsReview(
+                            id,
+                            suggestedMode = suggested.takeIf { mode == MODE_ANSWER },
+                        )
                     }
                     else -> {
                         // Two ways a reply can carry nothing worth showing: an envelope of an
@@ -288,6 +279,10 @@ class ChatRepository(
                             ),
                         )
                         recordShared(id, sharedNotes)
+                        val suggested = envelope.suggestMode?.trim()?.takeIf { it.isNotEmpty() }
+                        if (suggested != null && mode == MODE_ANSWER) {
+                            return SendResult.SuggestMode(suggested)
+                        }
                         return SendResult.Answered
                     }
                 }
@@ -323,7 +318,7 @@ class ChatRepository(
         if (!streaming) return postChat(mode, messages, kbIndex, toolResults)
         val buffer = StringBuilder()
         return try {
-            streamChat(sessionId, buffer, ChatRequest(mode, messages, kbIndex, toolResults))
+            streamChat(sessionId, buffer, ChatRequest(mode, messages, kbIndex, toolResults, userProfile()))
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Exception) {
@@ -405,7 +400,7 @@ class ChatRepository(
         kbIndex: String,
         toolResults: String?,
     ): String {
-        val response = api.chat(ChatRequest(mode, messages, kbIndex, toolResults))
+        val response = api.chat(ChatRequest(mode, messages, kbIndex, toolResults, userProfile()))
         if (response.isSuccessful) {
             val body = response.body() ?: throw ApiError("Empty reply", true)
             if (!body.error.isNullOrBlank()) {

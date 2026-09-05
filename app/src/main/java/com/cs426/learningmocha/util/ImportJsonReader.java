@@ -120,6 +120,9 @@ public final class ImportJsonReader {
         int orderIndex = 0;
         long createdAt = 0;
         long updatedAt = 0;
+        String icon = null;
+        String color = null;
+        Long nextPostId = null;
 
         json.beginObject();
         while (json.hasNext()) {
@@ -135,6 +138,9 @@ public final class ImportJsonReader {
                 case "orderIndex": orderIndex = json.nextInt(); break;
                 case "createdAt": createdAt = json.nextLong(); break;
                 case "updatedAt": updatedAt = json.nextLong(); break;
+                case "icon": icon = nextNullableString(json); break;
+                case "color": color = nextNullableString(json); break;
+                case "nextPostId": nextPostId = nextNullableLong(json); break;
                 default: json.skipValue();
             }
         }
@@ -153,7 +159,10 @@ public final class ImportJsonReader {
                 favorite,
                 orderIndex,
                 createdAt,
-                updatedAt);
+                updatedAt,
+                icon,
+                color,
+                nextPostId);
     }
 
     private static Link readLink(JsonReader json) throws IOException {

@@ -13,6 +13,24 @@ class ActionParserTest {
     }
 
     @Test
+    fun parsesSuggestModeAndPostMarks() {
+        val env = ActionParser.parse(
+            """{"type":"answer","text":"Ready when you are.","suggestMode":"modify+organize"}""",
+        )
+        assertEquals("modify+organize", env.suggestMode)
+
+        val batch = ActionParser.parse(
+            """{"type":"actions","summary":"Alphabet","actions":[
+              {"op":"create_post","title":"Letter A","ref":"a",
+               "icon":"book","color":"amber","nextRef":"b"}
+            ]}""",
+        )
+        assertEquals("book", batch.actions!![0].icon)
+        assertEquals("amber", batch.actions!![0].color)
+        assertEquals("b", batch.actions!![0].nextRef)
+    }
+
+    @Test
     fun parsesFencedActionsAndRefs() {
         val raw = """
             ```json

@@ -44,6 +44,9 @@ class SettingsFragment : Fragment() {
         b.settingsOpenAppearance.setOnClickListener {
             findNavController().navigate(R.id.action_settings_to_appearance)
         }
+        b.settingsOpenProfile.setOnClickListener {
+            findNavController().navigate(R.id.action_settings_to_profile)
+        }
         b.settingsOpenAi.setOnClickListener {
             findNavController().navigate(R.id.action_settings_to_ai)
         }

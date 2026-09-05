@@ -80,6 +80,7 @@ class MigrationTest {
             AppDatabase.MIGRATION_1_2,
             AppDatabase.MIGRATION_2_3,
             AppDatabase.MIGRATION_3_4,
+            AppDatabase.MIGRATION_4_5,
         )
             .allowMainThreadQueries()
             .build()
@@ -153,6 +154,29 @@ class MigrationTest {
             assertTrue("the message survived", c.moveToFirst())
             assertEquals("hello", c.getString(0))
             assertEquals("answer", c.getString(1))
+        }
+    }
+
+    @Test
+    fun migrates4To5AddingPostMarks() {
+        helper.createDatabase(dbName, 4).use { db ->
+            db.execSQL(
+                """
+                INSERT INTO nodes (id, parentId, type, title, content, status, favorite,
+                    orderIndex, createdAt, updatedAt)
+                VALUES (1, NULL, 'POST', 'Raft', '# Raft', 'READING', 0, 0, 1, 1)
+                """.trimIndent(),
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 5, true, AppDatabase.MIGRATION_4_5)
+
+        db.query("SELECT title, icon, color, nextPostId FROM nodes WHERE id = 1").use { c ->
+            assertTrue("the post survived", c.moveToFirst())
+            assertEquals("Raft", c.getString(0))
+            assertTrue(c.isNull(1))
+            assertTrue(c.isNull(2))
+            assertTrue(c.isNull(3))
         }
     }
 }

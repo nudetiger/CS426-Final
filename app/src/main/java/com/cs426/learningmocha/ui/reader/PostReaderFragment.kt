@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -32,9 +33,11 @@ import com.cs426.learningmocha.ui.common.ChipBar
 import com.cs426.learningmocha.ui.common.ListState
 import com.cs426.learningmocha.ui.common.ListStateBinder
 import com.cs426.learningmocha.ui.common.NodePalette
+import com.cs426.learningmocha.ui.common.PostMarks
 import com.cs426.learningmocha.ui.common.WikiMarkdown
 import com.cs426.learningmocha.ui.common.YouTubeThumbnails
 import com.cs426.learningmocha.ui.common.labelRes
+import com.cs426.learningmocha.ui.common.stripe
 import com.cs426.learningmocha.ui.common.themeColor
 import com.cs426.learningmocha.viewmodel.PostReaderViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -161,6 +164,19 @@ class PostReaderFragment : Fragment() {
                         bindNodeRows(b.readerChildrenHeader, b.readerChildren, state.children)
                         bindNodeRows(b.readerBacklinksHeader, b.readerBacklinks, state.backlinks)
                         bindNodeRows(b.readerRelatedHeader, b.readerRelated, state.related)
+                        val next = state.nextPost
+                        b.readerNext.isVisible = next != null
+                        if (next != null) {
+                            b.readerNextTitle.text = next.title
+                            b.readerNext.setOnClickListener {
+                                findNavController().navigate(
+                                    R.id.action_global_open_post,
+                                    bundleOf("postId" to next.id),
+                                )
+                            }
+                        } else {
+                            b.readerNext.setOnClickListener(null)
+                        }
                     }
                 }
             }
@@ -354,10 +370,16 @@ class PostReaderFragment : Fragment() {
     private fun bindNodeRows(header: TextView, container: LinearLayout, nodes: List<Node>) {
         header.isVisible = nodes.isNotEmpty()
         container.removeAllViews()
-        for (node in nodes) {
+        for ((index, node) in nodes.withIndex()) {
             val row = layoutInflater.inflate(R.layout.item_home_row, container, false)
+            row.stripe(index)
             row.findViewById<TextView>(R.id.row_title).text = node.title
             row.findViewById<TextView>(R.id.row_caption).setText(R.string.browse_type_post)
+            PostMarks.paint(
+                row.findViewById<ImageView>(R.id.row_icon),
+                node,
+                fallback = NodePalette.statusInk(node.status),
+            )
             row.setOnClickListener {
                 findNavController().navigate(
                     R.id.action_global_open_post,

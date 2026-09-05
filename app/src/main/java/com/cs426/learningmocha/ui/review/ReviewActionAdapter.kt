@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.cs426.learningmocha.R
 import com.cs426.learningmocha.databinding.ItemReviewActionBinding
+import com.cs426.learningmocha.ui.common.stripe
 import com.cs426.learningmocha.ui.common.themeColor
 import com.cs426.learningmocha.viewmodel.ReviewRow
 
@@ -30,18 +31,20 @@ class ReviewActionAdapter(
     }
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
-        holder.bind(getItem(position), indentPx, onToggle, onOpen, onMenu)
+        holder.bind(getItem(position), position, indentPx, onToggle, onOpen, onMenu)
     }
 
     class Holder(private val binding: ItemReviewActionBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(
             item: ReviewRow,
+            position: Int,
             indentPx: Int,
             onToggle: (Int) -> Unit,
             onOpen: (ReviewRow) -> Unit,
             onMenu: (ReviewRow, View) -> Unit,
         ) {
             val context = binding.root.context
+            binding.root.stripe(position)
             // Indentation is what makes a generated learning path read as a tree.
             binding.root.updatePaddingRelative(start = item.indent * indentPx)
             binding.reviewRowIcon.setImageResource(iconFor(item.op))

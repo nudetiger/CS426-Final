@@ -34,7 +34,8 @@ public class BackupRoundTripTest {
                 LearningStatus.NONE, false, 0, 100L, 200L);
         Node post = new Node(
                 2L, 1L, NodeType.POST, "Raft", "# Raft\nSee [[Paxos]].",
-                LearningStatus.FINISHED, true, 3, 300L, 400L);
+                LearningStatus.FINISHED, true, 3, 300L, 400L,
+                "book", "amber", 1L);
         return new BackupSnapshot(
                 Arrays.asList(branch, post),
                 Collections.singletonList(new Link(7L, 2L, 2L, "Paxos")),
@@ -83,6 +84,9 @@ public class BackupRoundTripTest {
         assertEquals(Long.valueOf(1L), post.getParentId());
         assertEquals(300L, post.getCreatedAt());
         assertEquals(400L, post.getUpdatedAt());
+        assertEquals("book", post.getIcon());
+        assertEquals("amber", post.getColor());
+        assertEquals(Long.valueOf(1L), post.getNextPostId());
 
         assertEquals("đa số", roundTrip(sample()).getDictionary().get(0).getMeaningVi());
     }

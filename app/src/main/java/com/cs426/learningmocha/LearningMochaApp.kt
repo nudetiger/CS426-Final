@@ -45,6 +45,7 @@ class LearningMochaApp : Application() {
             search = searchRepository,
             posts = postRepository,
             executor = actionExecutor,
+            userProfile = { settings.profilePrompt() },
         )
     }
 

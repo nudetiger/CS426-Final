@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/mochaCream"
@@ -8,7 +9,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/mochaHeaderBg"
+        android:background="@drawable/bg_header_island"
         android:orientation="vertical"
         android:paddingStart="@dimen/content_gutter"
         android:paddingTop="@dimen/space_m"
@@ -51,36 +52,45 @@
                     android:id="@+id/search_chip_posts"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/space_s"
                     android:checkable="true"
-                    android:text="@string/search_filter_posts" />
+                    android:text="@string/search_filter_posts"
+                    app:ensureMinTouchTargetSize="false" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/search_chip_branches"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/space_s"
                     android:checkable="true"
-                    android:text="@string/search_filter_branches" />
+                    android:text="@string/search_filter_branches"
+                    app:ensureMinTouchTargetSize="false" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/search_chip_favorites"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/space_s"
                     android:checkable="true"
-                    android:text="@string/search_filter_favorites" />
+                    android:text="@string/search_filter_favorites"
+                    app:ensureMinTouchTargetSize="false" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/search_chip_reading"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/space_s"
                     android:checkable="true"
-                    android:text="@string/status_reading" />
+                    android:text="@string/status_reading"
+                    app:ensureMinTouchTargetSize="false" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/search_chip_finished"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checkable="true"
-                    android:text="@string/status_finished" />
+                    android:text="@string/status_finished"
+                    app:ensureMinTouchTargetSize="false" />
             </LinearLayout>
         </HorizontalScrollView>
     </LinearLayout>

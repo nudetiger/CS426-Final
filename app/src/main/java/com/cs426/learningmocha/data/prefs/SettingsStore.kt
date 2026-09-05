@@ -89,6 +89,62 @@ class SettingsStore(context: Context) {
         get() = prefs.getString(KEY_BROWSE_SORT, null).orEmpty()
         set(value) = prefs.edit().putString(KEY_BROWSE_SORT, value).apply()
 
+    var displayName: String
+        get() = prefs.getString(KEY_NAME, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_NAME, value.trim()).apply()
+
+    /** ISO date `yyyy-MM-dd`, or empty when unset. */
+    var birthDate: String
+        get() = prefs.getString(KEY_BIRTH, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_BIRTH, value).apply()
+
+    /** `male`, `female`, `other`, or empty. */
+    var gender: String
+        get() = prefs.getString(KEY_GENDER, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_GENDER, value).apply()
+
+    /** `warm`, `tutor`, `concise`, `witty`, or `strict`. */
+    var personality: String
+        get() = prefs.getString(KEY_PERSONALITY, PERSONALITY_WARM) ?: PERSONALITY_WARM
+        set(value) = prefs.edit().putString(KEY_PERSONALITY, value).apply()
+
+    /**
+     * Compact learner card for the system prompt. Null when the user has not filled anything in,
+     * so an empty profile never inflates the request.
+     */
+    fun profilePrompt(): String? {
+        val name = displayName
+        val gender = gender
+        val birth = birthDate
+        val age = ageYears()
+        val tone = personality.ifBlank { PERSONALITY_WARM }
+        if (name.isEmpty() && gender.isEmpty() && birth.isEmpty() && tone == PERSONALITY_WARM) {
+            return null
+        }
+        return buildString {
+            append("Learner profile: ")
+            if (name.isNotEmpty()) append("name $name. ")
+            if (age != null) append("age $age. ")
+            if (birth.isNotEmpty()) append("birthDate $birth. ")
+            if (gender.isNotEmpty()) append("gender $gender. ")
+            append("Mocha personality: $tone.")
+        }.trim()
+    }
+
+    fun ageYears(now: Long = System.currentTimeMillis()): Int? {
+        val parts = birthDate.split("-")
+        if (parts.size != 3) return null
+        val year = parts[0].toIntOrNull() ?: return null
+        val month = parts[1].toIntOrNull() ?: return null
+        val day = parts[2].toIntOrNull() ?: return null
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = now }
+        var age = cal.get(java.util.Calendar.YEAR) - year
+        val nowMonth = cal.get(java.util.Calendar.MONTH) + 1
+        val nowDay = cal.get(java.util.Calendar.DAY_OF_MONTH)
+        if (nowMonth < month || (nowMonth == month && nowDay < day)) age--
+        return age.coerceAtLeast(0)
+    }
+
     var backupRemindersEnabled: Boolean
         get() = prefs.getBoolean(KEY_REMINDERS, true)
         set(value) = prefs.edit().putBoolean(KEY_REMINDERS, value).apply()
@@ -124,5 +180,14 @@ class SettingsStore(context: Context) {
         private const val KEY_COLORFUL_LISTS = "colorful_lists"
         private const val KEY_SUGGEST_MODE = "suggest_chat_mode"
         private const val KEY_BROWSE_SORT = "browse_sort"
+        private const val KEY_NAME = "profile_name"
+        private const val KEY_BIRTH = "profile_birth"
+        private const val KEY_GENDER = "profile_gender"
+        private const val KEY_PERSONALITY = "profile_personality"
+
+        const val PERSONALITY_WARM = "warm"
+        const val GENDER_MALE = "male"
+        const val GENDER_FEMALE = "female"
+        const val GENDER_OTHER = "other"
     }
 }

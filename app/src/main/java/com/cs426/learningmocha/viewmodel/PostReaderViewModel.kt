@@ -33,6 +33,7 @@ data class ReaderUiState(
     val resources: List<ResourceItem> = emptyList(),
     val terms: List<DictionaryEntry> = emptyList(),
     val titleToId: Map<String, Long> = emptyMap(),
+    val nextPost: Node? = null,
     val errorMessage: String? = null,
 )
 
@@ -98,6 +99,7 @@ class PostReaderViewModel(
         resources = resources,
         terms = terms,
         titleToId = titleToId,
+        nextPost = nextPost,
     )
 
     companion object {

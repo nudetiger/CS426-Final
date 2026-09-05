@@ -80,4 +80,20 @@ class ChatModeHintTest {
             ChatModeHint.suggest(ChatModes.ANSWER, "WRITE ME A POST on B-trees"),
         )
     }
+
+    @Test
+    fun offersModifyForCreatePostWithoutA() {
+        assertEquals(
+            ChatModes.MODIFY,
+            ChatModeHint.suggest(ChatModes.ANSWER, "create post about alphabet"),
+        )
+    }
+
+    @Test
+    fun offersModifyWhenTheUserWantsToLearnATopic() {
+        assertEquals(
+            ChatModes.MODIFY,
+            ChatModeHint.suggest(ChatModes.ANSWER, "I want to learn the alphabet"),
+        )
+    }
 }

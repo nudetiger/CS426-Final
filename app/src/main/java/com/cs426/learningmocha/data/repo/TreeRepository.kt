@@ -155,6 +155,7 @@ class TreeRepository(private val db: AppDatabase) {
         // last post just vanished would otherwise linger in the tag list — and in what the
         // assistant is told the library contains.
         db.withTransaction {
+            dao.clearNextPointingAt(id)
             dao.deleteById(id)
             db.knowledgeDao().deleteOrphanTags()
         }

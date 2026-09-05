@@ -72,8 +72,15 @@ class BackupRepository(private val db: AppDatabase) {
                         parentId = parent,
                         title = retitled.titleOf(node),
                         content = retitled.contentOf(node),
+                        nextPostId = null,
                     ),
                 )
+            }
+            for (node in data.nodes) {
+                val next = node.nextPostId?.let { nodeIds[it] } ?: continue
+                val newId = nodeIds[node.id] ?: continue
+                val stored = nodes.getById(newId) ?: continue
+                nodes.update(stored.copy(nextPostId = next))
             }
 
             val tagIds = HashMap<Long, Long>()

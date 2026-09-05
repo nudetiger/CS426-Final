@@ -12,12 +12,17 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/mochaHeaderBg"
-        android:gravity="center_vertical"
-        android:minHeight="@dimen/header_min_height"
-        android:orientation="horizontal"
-        android:paddingStart="@dimen/space_xs"
-        android:paddingEnd="@dimen/space_s">
+        android:background="@drawable/bg_header_island"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/header_min_height"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/space_xs"
+            android:paddingEnd="@dimen/space_s">
 
         <ImageButton
             android:id="@+id/editor_back"
@@ -52,15 +57,15 @@
             android:text="@string/action_save" />
     </LinearLayout>
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/editor_tabs"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/mochaHeaderBg"
-        app:tabIndicatorColor="?attr/mochaBrown"
-        app:tabSelectedTextColor="?attr/mochaBrown"
-        app:tabTextAppearance="@style/TextAppearance.Mocha.Caption"
-        app:tabTextColor="?attr/mochaTextSecondary">
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/editor_tabs"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            app:tabIndicatorColor="?attr/mochaBrown"
+            app:tabSelectedTextColor="?attr/mochaBrown"
+            app:tabTextAppearance="@style/TextAppearance.Mocha.Caption"
+            app:tabTextColor="?attr/mochaTextSecondary">
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
@@ -72,6 +77,7 @@
             android:layout_height="wrap_content"
             android:text="@string/editor_tab_source" />
     </com.google.android.material.tabs.TabLayout>
+    </LinearLayout>
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -114,6 +120,84 @@
                             android:inputType="textCapSentences"
                             android:maxLines="1" />
                     </com.google.android.material.textfield.TextInputLayout>
+
+                    <LinearLayout
+                        android:id="@+id/editor_mark_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/content_gutter"
+                        android:layout_marginTop="@dimen/space_m"
+                        android:layout_marginEnd="@dimen/content_gutter"
+                        android:background="@drawable/bg_card"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:minHeight="@dimen/touch_target"
+                        android:orientation="horizontal"
+                        android:padding="@dimen/space_s">
+
+                        <ImageView
+                            android:id="@+id/editor_mark_icon"
+                            android:layout_width="@dimen/icon_small"
+                            android:layout_height="@dimen/icon_small"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_post" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_s"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/editor_section_mark"
+                                android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+
+                            <TextView
+                                android:id="@+id/editor_mark_label"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/editor_mark_none"
+                                android:textAppearance="@style/TextAppearance.Mocha.Body" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/editor_next_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/content_gutter"
+                        android:layout_marginTop="@dimen/space_s"
+                        android:layout_marginEnd="@dimen/content_gutter"
+                        android:background="@drawable/bg_card"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:minHeight="@dimen/touch_target"
+                        android:orientation="horizontal"
+                        android:padding="@dimen/space_s">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/editor_section_next"
+                                android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+
+                            <TextView
+                                android:id="@+id/editor_next_label"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/editor_next_none"
+                                android:textAppearance="@style/TextAppearance.Mocha.Body" />
+                        </LinearLayout>
+                    </LinearLayout>
 
                     <TextView
                         android:layout_width="match_parent"

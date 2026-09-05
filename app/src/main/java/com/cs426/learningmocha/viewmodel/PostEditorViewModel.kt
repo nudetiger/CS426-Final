@@ -56,6 +56,10 @@ data class EditorUiState(
     val resources: List<EditorResource> = emptyList(),
     val pendingTerms: List<DictionaryEntry> = emptyList(),
     val errorMessage: String? = null,
+    val icon: String? = null,
+    val color: String? = null,
+    val nextPostId: Long? = null,
+    val nextTitle: String = "",
 )
 
 /**
@@ -82,6 +86,9 @@ class PostEditorViewModel(
     private var initialContent = ""
     private var initialTags = ""
     private var initialStatus = LearningStatus.READING
+    private var initialIcon: String? = null
+    private var initialColor: String? = null
+    private var initialNext: Long? = null
     private var draftTouched = false
     private var nextPendingKey = -1L
     private val removedResourceIds = LinkedHashSet<Long>()
@@ -124,6 +131,18 @@ class PostEditorViewModel(
         _uiState.update { it.copy(status = status) }
     }
 
+    fun onMarkChanged(icon: String?, color: String?) {
+        if (_uiState.value.icon == icon && _uiState.value.color == color) return
+        draftTouched = true
+        _uiState.update { it.copy(icon = icon, color = color) }
+    }
+
+    fun onNextChanged(id: Long?, title: String) {
+        if (_uiState.value.nextPostId == id) return
+        draftTouched = true
+        _uiState.update { it.copy(nextPostId = id, nextTitle = title) }
+    }
+
     fun addTerm(term: String, definition: String, meaningVi: String) {
         val entry = DictionaryEntry(term = term, definition = definition, meaningVi = meaningVi)
         _uiState.update { it.copy(pendingTerms = it.pendingTerms + entry) }
@@ -161,6 +180,9 @@ class PostEditorViewModel(
             state.content != initialContent ||
             state.tags != initialTags ||
             state.status != initialStatus ||
+            state.icon != initialIcon ||
+            state.color != initialColor ||
+            state.nextPostId != initialNext ||
             state.pendingTerms.isNotEmpty() ||
             removedResourceIds.isNotEmpty() ||
             state.resources.any { it.pending }
@@ -186,6 +208,9 @@ class PostEditorViewModel(
                         state.status,
                         names,
                         state.pendingTerms,
+                        state.icon,
+                        state.color,
+                        state.nextPostId,
                     )
                 } else {
                     app.postRepository.savePost(
@@ -195,6 +220,9 @@ class PostEditorViewModel(
                         state.status,
                         names,
                         state.pendingTerms,
+                        state.icon,
+                        state.color,
+                        state.nextPostId,
                     )
                     postId
                 }
@@ -213,6 +241,9 @@ class PostEditorViewModel(
                 initialContent = state.content
                 initialTags = state.tags
                 initialStatus = state.status
+                initialIcon = state.icon
+                initialColor = state.color
+                initialNext = state.nextPostId
                 _uiState.update {
                     it.copy(
                         title = result.storedTitle,
@@ -250,6 +281,10 @@ class PostEditorViewModel(
             status = detail.post.status,
             resources = detail.resources.map { it.toDraft() },
             isNew = false,
+            icon = detail.post.icon,
+            color = detail.post.color,
+            nextPostId = detail.post.nextPostId,
+            nextTitle = detail.nextPost?.title.orEmpty(),
         )
     }
 
@@ -264,11 +299,18 @@ class PostEditorViewModel(
         status: LearningStatus,
         resources: List<EditorResource>,
         isNew: Boolean,
+        icon: String? = null,
+        color: String? = null,
+        nextPostId: Long? = null,
+        nextTitle: String = "",
     ) {
         initialTitle = if (isNew) "" else title
         initialContent = content
         initialTags = tags
         initialStatus = status
+        initialIcon = icon
+        initialColor = color
+        initialNext = nextPostId
         val current = _uiState.value
         val stored = resources.filterNot { it.storedId in removedResourceIds }
         val savedStatus = savedStateHandle.get<String>(KEY_DRAFT_STATUS)
@@ -294,6 +336,10 @@ class PostEditorViewModel(
             status = if (draftTouched) current.status else savedStatus ?: status,
             resources = stored + current.resources.filter { it.pending },
             errorMessage = null,
+            icon = if (draftTouched) current.icon else icon,
+            color = if (draftTouched) current.color else color,
+            nextPostId = if (draftTouched) current.nextPostId else nextPostId,
+            nextTitle = if (draftTouched) current.nextTitle else nextTitle,
         )
     }
 

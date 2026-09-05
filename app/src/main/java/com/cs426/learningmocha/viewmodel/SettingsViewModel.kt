@@ -8,6 +8,7 @@ import com.cs426.learningmocha.LearningMochaApp
 import com.cs426.learningmocha.R
 import com.cs426.learningmocha.backup.BackupReminder
 import com.cs426.learningmocha.backup.BackupSnapshot
+import com.cs426.learningmocha.data.prefs.SettingsStore
 import com.cs426.learningmocha.net.ApiClient
 import com.cs426.learningmocha.ui.common.AppTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -22,6 +23,10 @@ data class SettingsUiState(
     val readerLineSpacing: Float = 1.5f,
     val colorfulLists: Boolean = true,
     val suggestChatMode: Boolean = true,
+    val displayName: String = "",
+    val birthDate: String = "",
+    val gender: String = "",
+    val personality: String = SettingsStore.PERSONALITY_WARM,
     val backendUrl: String = "",
     val remindersEnabled: Boolean = true,
     val lastBackupAt: Long = 0L,
@@ -46,6 +51,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             readerLineSpacing = settings.readerLineSpacing,
             colorfulLists = settings.colorfulLists,
             suggestChatMode = settings.suggestChatMode,
+            displayName = settings.displayName,
+            birthDate = settings.birthDate,
+            gender = settings.gender,
+            personality = settings.personality,
             backendUrl = settings.backendUrl,
             remindersEnabled = settings.backupRemindersEnabled,
             lastBackupAt = settings.lastBackupAt,
@@ -99,6 +108,26 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setSuggestChatMode(enabled: Boolean) {
         settings.suggestChatMode = enabled
         _uiState.update { it.copy(suggestChatMode = enabled) }
+    }
+
+    fun setDisplayName(value: String) {
+        settings.displayName = value
+        _uiState.update { it.copy(displayName = settings.displayName) }
+    }
+
+    fun setBirthDate(value: String) {
+        settings.birthDate = value
+        _uiState.update { it.copy(birthDate = settings.birthDate) }
+    }
+
+    fun setGender(value: String) {
+        settings.gender = value
+        _uiState.update { it.copy(gender = settings.gender) }
+    }
+
+    fun setPersonality(value: String) {
+        settings.personality = value
+        _uiState.update { it.copy(personality = settings.personality) }
     }
 
     /**

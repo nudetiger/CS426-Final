@@ -15,9 +15,12 @@ package com.cs426.learningmocha.ui.chat
 object ChatModeHint {
 
     private val CREATE_WORDS = listOf(
-        "create a post", "create posts", "create me", "write me", "write a post", "write posts",
+        "create a post", "create post", "create posts", "create me", "create an article",
+        "write me", "write a post", "write posts", "write an article", "write about",
         "make me a", "make a post", "make posts", "new post", "add a post", "add posts",
         "draft a", "draft me", "generate a post", "generate posts", "turn this into a post",
+        "teach me", "a post about", "posts about", "article about", "learning path",
+        "i want to learn", "help me learn",
     )
 
     private val ORGANIZE_WORDS = listOf(

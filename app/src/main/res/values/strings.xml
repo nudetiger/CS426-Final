@@ -35,6 +35,23 @@
     <!-- Settings -->
     <string name="settings_appearance">Appearance</string>
     <string name="settings_appearance_summary">Theme, reading size, list colour</string>
+    <string name="settings_you">You</string>
+    <string name="settings_you_summary">Name, birthday, how Mocha should talk</string>
+    <string name="settings_you_help">Stays on this phone. Mocha reads it when you chat so it can match your age and the tone you picked.</string>
+    <string name="settings_profile_name">Name</string>
+    <string name="settings_profile_name_hint">What should Mocha call you?</string>
+    <string name="settings_profile_birth">Birthday</string>
+    <string name="settings_profile_birth_unset">Tap to set</string>
+    <string name="settings_profile_gender">Gender</string>
+    <string name="settings_gender_male">Male</string>
+    <string name="settings_gender_female">Female</string>
+    <string name="settings_gender_other">Other</string>
+    <string name="settings_personality">Mocha\'s personality</string>
+    <string name="settings_personality_warm">Warm</string>
+    <string name="settings_personality_tutor">Tutor</string>
+    <string name="settings_personality_concise">Concise</string>
+    <string name="settings_personality_witty">Witty</string>
+    <string name="settings_personality_strict">Strict</string>
     <string name="settings_ai_summary">Gateway address and assistant behaviour</string>
     <string name="settings_privacy_summary">What leaves this device</string>
     <string name="settings_theme">Theme</string>

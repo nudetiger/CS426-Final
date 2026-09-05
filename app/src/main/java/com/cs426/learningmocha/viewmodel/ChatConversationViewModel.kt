@@ -58,7 +58,8 @@ class ChatConversationViewModel(
         .map { bubble -> bubble?.takeIf { it.sessionId == sessionId } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val reviewNav = MutableSharedFlow<Long>(extraBufferCapacity = 1)
+    val reviewNav = MutableSharedFlow<SendResult.NeedsReview>(extraBufferCapacity = 1)
+    val modeOffer = MutableSharedFlow<String>(extraBufferCapacity = 1)
 
     private val history = app.chatRepository.observeMessages(sessionId)
         .combine(app.chatRepository.sharedContext) { messages, shared -> messages to shared }
@@ -152,7 +153,8 @@ class ChatConversationViewModel(
                 // error bubble with Retry on it; there is nothing here to navigate to.
                 return@launch
             }
-            if (result is SendResult.NeedsReview) reviewNav.emit(result.messageId)
+            if (result is SendResult.NeedsReview) reviewNav.emit(result)
+            if (result is SendResult.SuggestMode) modeOffer.emit(result.suggested)
         }
     }
 

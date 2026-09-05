@@ -13,7 +13,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?attr/mochaHeaderBg"
+            android:background="@drawable/bg_header_island"
             android:gravity="center_vertical"
             android:minHeight="@dimen/header_min_height"
             android:orientation="horizontal"

@@ -51,7 +51,7 @@ function validate(body) {
       retryable: false,
     };
   }
-  const { mode = "answer", messages = [], kbIndex = "", toolResults } =
+  const { mode = "answer", messages = [], kbIndex = "", toolResults, userProfile } =
     body ?? {};
   if (parseModes(mode) === null) {
     return { status: 400, error: `Unknown mode "${mode}"`, retryable: false };
@@ -63,7 +63,7 @@ function validate(body) {
       retryable: false,
     };
   }
-  return { payloadInput: { mode, kbIndex, messages, toolResults } };
+  return { payloadInput: { mode, kbIndex, messages, toolResults, userProfile } };
 }
 
 function upstreamRequest(payloadInput, { stream }) {
@@ -91,6 +91,7 @@ function upstreamRequest(payloadInput, { stream }) {
 //   messages: [{ role: "user" | "assistant" | "tool", content: string }, ...],
 //   kbIndex: string,            // compact title/id tree, capped by the app
 //   toolResults?: string        // JSON results of context tools (round 2+)
+//   userProfile?: string        // compact learner card from on-device prefs
 // }
 // response: { reply: <model text: a JSON envelope or markdown answer>, usage }
 // ---------------------------------------------------------------------------

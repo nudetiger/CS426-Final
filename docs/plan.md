@@ -168,7 +168,7 @@ Node 24 + Express, single responsibility: hold the key and shape requests.
 
 ```
 POST /v1/chat
-  body: { mode, messages[], kbIndex, toolResults? }
+  body: { mode, messages[], kbIndex, toolResults?, userProfile? }
   → builds DeepSeek chat.completions request (model from env, default deepseek-chat)
   → non-streaming in v1 (streaming via SSE only if time permits)
   → returns { reply: <json-envelope>, usage } ; normalizes 4xx/5xx to { error, retryable }
@@ -188,7 +188,8 @@ JSON envelope validated **on device** before anything executes:
   "actions": [
     {"op":"create_branch","title":"Distributed Systems","ref":"b1"},
     {"op":"create_post","parentRef":"b1","title":"Raft","ref":"p1",
-     "content":"# Raft\n…","tags":["consensus"],"status":"READING"},
+     "content":"# Raft\n…","tags":["consensus"],"status":"READING",
+     "icon":"book","color":"amber","nextRef":"p2"},
     {"op":"create_link","fromRef":"p1","toTitle":"Consensus"},
     {"op":"set_status","postTitle":"Spring Boot","status":"FINISHED"},
     {"op":"add_dictionary_entry","postRef":"p1","term":"Raft",

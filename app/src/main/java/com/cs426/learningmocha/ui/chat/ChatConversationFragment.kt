@@ -89,11 +89,17 @@ class ChatConversationFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.ping()
                 launch {
-                    viewModel.reviewNav.collect { messageId ->
-                        findNavController().navigate(
-                            R.id.action_global_review_changes,
-                            bundleOf("messageId" to messageId),
-                        )
+                    viewModel.reviewNav.collect { offer ->
+                        if (offer.suggestedMode != null) {
+                            askAboutReview(offer.suggestedMode, offer.messageId)
+                        } else {
+                            openReviewId(offer.messageId)
+                        }
+                    }
+                }
+                launch {
+                    viewModel.modeOffer.collect { suggested ->
+                        askAboutRetry(suggested)
                     }
                 }
                 viewModel.uiState.collect { state ->
@@ -250,9 +256,62 @@ class ChatConversationFragment : Fragment() {
     }
 
     private fun openReview(message: ChatMessage) {
+        openReviewId(message.id)
+    }
+
+    private fun openReviewId(messageId: Long) {
         findNavController().navigate(
             R.id.action_global_review_changes,
-            bundleOf("messageId" to message.id),
+            bundleOf("messageId" to messageId),
         )
+    }
+
+    private fun actionModeOrNull(raw: String): String? {
+        val joined = ChatModes.join(ChatModes.parse(raw))
+        return joined.takeIf { ChatModes.proposesChanges(it) }
+    }
+
+    private fun askAboutReview(suggested: String, messageId: Long) {
+        val mode = actionModeOrNull(suggested) ?: ChatModes.MODIFY
+        val fields = DialogModeSwitchBinding.inflate(layoutInflater)
+        fields.modeSwitchMessage.text = getString(
+            R.string.chat_mode_switch_review_message,
+            modeLabel(mode),
+        )
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.chat_mode_switch_title)
+            .setView(fields.root)
+            .setNegativeButton(R.string.chat_mode_switch_keep) { _, _ ->
+                if (fields.modeSwitchRemember.isChecked) viewModel.stopSuggestingModes()
+            }
+            .setPositiveButton(R.string.chat_mode_switch_accept_review) { _, _ ->
+                if (fields.modeSwitchRemember.isChecked) viewModel.stopSuggestingModes()
+                applyModeChips(mode)
+                viewModel.setMode(mode)
+                openReviewId(messageId)
+            }
+            .show()
+    }
+
+    private fun askAboutRetry(suggested: String) {
+        val mode = actionModeOrNull(suggested) ?: return
+        val fields = DialogModeSwitchBinding.inflate(layoutInflater)
+        fields.modeSwitchMessage.text = getString(
+            R.string.chat_mode_switch_after_message,
+            modeLabel(mode),
+        )
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.chat_mode_switch_after_title)
+            .setView(fields.root)
+            .setNegativeButton(R.string.chat_mode_switch_keep) { _, _ ->
+                if (fields.modeSwitchRemember.isChecked) viewModel.stopSuggestingModes()
+            }
+            .setPositiveButton(R.string.chat_mode_switch_retry) { _, _ ->
+                if (fields.modeSwitchRemember.isChecked) viewModel.stopSuggestingModes()
+                applyModeChips(mode)
+                viewModel.setMode(mode)
+                viewModel.retry()
+            }
+            .show()
     }
 }

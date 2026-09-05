@@ -9,40 +9,44 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/mochaHeaderBg"
-        android:gravity="center_vertical"
-        android:minHeight="@dimen/header_min_height"
-        android:orientation="horizontal"
-        android:paddingStart="@dimen/space_xs"
-        android:paddingEnd="@dimen/space_s">
+        android:background="@drawable/bg_header_island"
+        android:orientation="vertical">
 
-        <ImageButton
-            android:id="@+id/conversation_back"
-            android:layout_width="@dimen/touch_target"
-            android:layout_height="@dimen/touch_target"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/cd_back"
-            android:src="@drawable/ic_back" />
-
-        <TextView
-            android:id="@+id/conversation_title"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ellipsize="end"
-            android:maxLines="1"
-            android:textAppearance="@style/TextAppearance.Mocha.Title"
-            android:textColor="?attr/mochaBrown" />
-    </LinearLayout>
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/header_min_height"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/space_xs"
+            android:paddingEnd="@dimen/space_s">
 
-    <HorizontalScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="?attr/mochaHeaderBg"
-        android:paddingStart="@dimen/space_m"
-        android:paddingEnd="@dimen/space_m"
-        android:paddingBottom="@dimen/space_s"
-        android:scrollbars="none">
+            <ImageButton
+                android:id="@+id/conversation_back"
+                android:layout_width="@dimen/touch_target"
+                android:layout_height="@dimen/touch_target"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/cd_back"
+                android:src="@drawable/ic_back" />
+
+            <TextView
+                android:id="@+id/conversation_title"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="@style/TextAppearance.Mocha.Title"
+                android:textColor="?attr/mochaBrown" />
+        </LinearLayout>
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingStart="@dimen/space_m"
+            android:paddingEnd="@dimen/space_m"
+            android:paddingBottom="@dimen/space_s"
+            android:scrollbars="none">
 
         <!-- Multi-select: the three action modes combine, and picking any of them clears
              Answer. The fragment enforces that, because a ChipGroup cannot express it. -->
@@ -50,6 +54,7 @@
             android:id="@+id/conversation_modes"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:chipSpacingHorizontal="@dimen/space_s"
             app:singleSelection="false">
 
             <com.google.android.material.chip.Chip
@@ -77,7 +82,8 @@
                 android:layout_height="wrap_content"
                 android:text="@string/chat_mode_organize" />
         </com.google.android.material.chip.ChipGroup>
-    </HorizontalScrollView>
+        </HorizontalScrollView>
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/conversation_banner"

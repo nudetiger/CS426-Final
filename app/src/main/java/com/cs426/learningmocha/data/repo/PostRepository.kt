@@ -30,6 +30,7 @@ data class PostDetail(
     val resources: List<ResourceItem>,
     val terms: List<DictionaryEntry>,
     val titleToId: Map<String, Long>,
+    val nextPost: Node? = null,
 )
 
 class PostRepository(private val db: AppDatabase) {
@@ -60,6 +61,8 @@ class PostRepository(private val db: AppDatabase) {
                 resources = InlineResources.merge(id, content, knowledge.resourcesForPost(id)),
                 terms = terms,
                 titleToId = dao.postTitleIds().associate { it.title.lowercase() to it.id },
+                nextPost = node.nextPostId?.let { dao.getById(it) }
+                    ?.takeIf { it.type == NodeType.POST },
             )
         }
     }
@@ -119,6 +122,9 @@ class PostRepository(private val db: AppDatabase) {
         status: LearningStatus = LearningStatus.READING,
         tagNames: List<String> = emptyList(),
         terms: List<DictionaryEntry> = emptyList(),
+        icon: String? = null,
+        color: String? = null,
+        nextPostId: Long? = null,
     ): Long {
         val wanted = title.trim()
         require(wanted.isNotEmpty()) { "Title is required" }
@@ -136,6 +142,9 @@ class PostRepository(private val db: AppDatabase) {
                     orderIndex = max + 1,
                     createdAt = now,
                     updatedAt = now,
+                    icon = icon,
+                    color = color,
+                    nextPostId = nextPostId?.takeUnless { it == 0L },
                 ),
             )
             KnowledgeSync.reindex(db, id, content)
@@ -154,6 +163,10 @@ class PostRepository(private val db: AppDatabase) {
         status: LearningStatus,
         tagNames: List<String>,
         terms: List<DictionaryEntry>,
+        icon: String? = null,
+        color: String? = null,
+        nextPostId: Long? = null,
+        writeMarks: Boolean = true,
     ) {
         val trimmed = title.trim()
         require(trimmed.isNotEmpty()) { "Title is required" }
@@ -169,6 +182,13 @@ class PostRepository(private val db: AppDatabase) {
                     content = content,
                     status = status,
                     updatedAt = System.currentTimeMillis(),
+                    icon = if (writeMarks) icon else node.icon,
+                    color = if (writeMarks) color else node.color,
+                    nextPostId = if (writeMarks) {
+                        nextPostId?.takeUnless { it == 0L || it == id }
+                    } else {
+                        node.nextPostId
+                    },
                 ),
             )
             KnowledgeSync.reindex(db, id, content)
@@ -177,6 +197,17 @@ class PostRepository(private val db: AppDatabase) {
                 KnowledgeSync.addTerm(db, id, term.term, term.definition, term.meaningVi)
             }
         }
+    }
+
+    suspend fun setMark(id: Long, icon: String?, color: String?) {
+        val node = dao.getById(id) ?: return
+        dao.update(node.copy(icon = icon, color = color, updatedAt = System.currentTimeMillis()))
+    }
+
+    suspend fun setNext(id: Long, nextPostId: Long?) {
+        val node = dao.getById(id) ?: return
+        val next = nextPostId?.takeUnless { it == 0L || it == id }
+        dao.update(node.copy(nextPostId = next, updatedAt = System.currentTimeMillis()))
     }
 
     suspend fun setFavorite(id: Long, favorite: Boolean) {
@@ -252,6 +283,7 @@ class PostRepository(private val db: AppDatabase) {
             status = status ?: node.status,
             tagNames = tags,
             terms = emptyList(),
+            writeMarks = false,
         )
     }
 

@@ -11,7 +11,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/mochaHeaderBg"
+        android:background="@drawable/bg_header_island"
         android:gravity="center_vertical"
         android:minHeight="@dimen/header_min_height"
         android:orientation="horizontal"
@@ -68,6 +68,44 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/settings_appearance_summary"
+                        android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="@dimen/icon_small"
+                    android:layout_height="@dimen/icon_small"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chevron_right" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/settings_open_profile"
+                style="@style/Widget.Mocha.SettingsGroup">
+
+                <ImageView
+                    android:layout_width="@dimen/settings_group_icon"
+                    android:layout_height="@dimen/settings_group_icon"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_nav_home"
+                    app:tint="?attr/mochaBrown" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_m"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_you"
+                        android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_you_summary"
                         android:textAppearance="@style/TextAppearance.Mocha.Caption" />
                 </LinearLayout>
 

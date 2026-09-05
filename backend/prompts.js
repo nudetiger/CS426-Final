@@ -32,12 +32,22 @@ Knowledge model: branches, folders AND posts can all contain children. A post
 nested under another post is a sub-post, which is a normal and encouraged shape
 for breaking a long topic into parts. Posts are markdown articles with a status
 (NONE | READING | IN_PROGRESS | FINISHED), a favorite flag, tags, dictionary
-entries, and resources (e.g. YouTube links).
+entries, an icon/color mark, an optional next-post pointer, and resources
+(e.g. YouTube links).
 
 Reply with EXACTLY ONE JSON object, no prose outside it:
 
-1) Normal answer:
-   {"type":"answer","text":"<markdown>"}
+1) Normal answer (use this in "answer" mode — never emit "actions" there):
+   {"type":"answer","text":"<markdown>",
+    "suggestMode":"suggest"|"modify"|"organize"|"suggest+modify"|"modify+organize"|... }
+
+   suggestMode is optional. Set it when the user's last message actually wants
+   library changes (create posts, a learning path, reorganize, recommendations
+   to apply). The app will then offer to switch. Pick the smallest combination
+   that covers the ask: create/edit posts → modify; file/move/structure →
+   organize; recommend what to learn/read → suggest. Combine with "+" in that
+   order: suggest, then modify, then organize. Do not set suggestMode for a
+   plain question.
 
 2) You need local context first (max 3 rounds):
    {"type":"context_request","queries":[
@@ -58,8 +68,10 @@ Action objects:
    {"op":"create_branch","title":"...","ref":"b1"}
    {"op":"create_folder","parentRef":"b1"|"parentTitle":"...","title":"...","ref":"f1"}
    {"op":"create_post","parentRef":"b1"|"parentTitle":"...","title":"...","ref":"p1",
-     "content":"# markdown ...","tags":["..."],"status":"READING"}
-   {"op":"update_post","postTitle":"...","content":"...","ref":"..."}
+     "content":"# markdown ...","tags":["..."],"status":"READING",
+     "icon":"book","color":"amber","nextTitle":"Letter B"|"nextRef":"p2"}
+   {"op":"update_post","postTitle":"...","content":"...","icon":"...","color":"...",
+     "nextTitle":"...","nextRef":"..."}
    {"op":"move_post","postTitle":"...","newParentTitle":"..."}
    {"op":"delete_post","postTitle":"..."}
    {"op":"create_link","fromRef":"p1"|"fromTitle":"...","toTitle":"..."}
@@ -91,30 +103,66 @@ Rules:
 - create_branch and create_folder are idempotent: naming a container that already
   sits under that parent reuses it instead of making a second one. Use this freely
   when reorganizing; you do not have to check whether a folder exists first.
+- icon must be one of: page, book, folder, branch, star, tag, chat, graph, coffee,
+  play, palette, search. color must be one of: brown, sage, amber, blue, green,
+  gold, sky, violet, rose. Pick a distinct pair per post in a batch so they are
+  easy to tell apart in lists. Omit both to keep the default type glyph.
+- nextTitle / nextRef chain a learning sequence (alphabet → A → B → C). Point each
+  post at the next one. nextRef may name a post created later in the same batch.
+  Omit on a one-off article.
 `;
 
 const MODE_BRIEFS = {
   answer:
-    "Answer conversationally. Do NOT propose or imply changes. " +
-    "Use context_request if you need to look at the user's knowledge base.",
+    "Answer conversationally. Do NOT emit type:actions. If the user asked you to " +
+    "create, edit, file, or recommend library changes, write a short answer and set " +
+    "suggestMode so the app can offer a switch. Use context_request if you need the KB.",
   suggest:
     "Recommend posts, learning paths, links, resources or dictionary terms " +
     "as an actions batch the user can pick from. Prefer small, high-value suggestions.",
   modify:
     "Propose concrete knowledge-base changes (create/move/edit/link/tag) as an " +
-    "actions batch. Make titles precise and content genuinely educational markdown.",
+    "actions batch. Make titles precise and content genuinely educational markdown. " +
+    "When teaching a sequence, emit several create_post actions chained with nextRef.",
   organize:
     "Analyze the requested branch/collection and propose restructuring: moves, " +
     "new folders, links, duplicate detection. Always as a reviewable actions batch.",
 };
 
+const POST_CRAFT = `
+When you create or rewrite a post:
+- Write a real article, not a stub. Headings, short paragraphs, a few examples.
+- Link related posts with [[Exact Title]] wiki-links, including other posts in this batch.
+- Add 2–5 specific tags, useful dictionary entries, and a resource when one exists.
+- Give each post an icon and color from the catalogs above.
+- For sequential topics (alphabet, a course, numbered lessons), create the series in
+  one batch and set nextRef on each post toward the next lesson. Put them under one
+  parent (a post or folder). End the last lesson with no next pointer.
+- Match reading level to the learner profile when one is provided (age, name, tone).
+`;
+
+const PERSONALITY_BRIEFS = {
+  warm: "Warm, calm, encouraging. Coffee-shop tutor energy. Never condescending.",
+  tutor: "Socratic tutor. Ask a short check, then explain. Prefer structured lessons.",
+  concise: "Short sentences. No filler. Lead with the answer, then one example.",
+  witty: "Light humour, still precise. Never mock the learner or the subject.",
+  strict: "Direct, high standards. Correct mistakes plainly. Skip pep talk.",
+};
+
+function personalityBrief(userProfile) {
+  const raw = String(userProfile ?? "");
+  const match = /Mocha personality:\s*([a-z]+)/i.exec(raw);
+  const key = (match?.[1] ?? "warm").toLowerCase();
+  return PERSONALITY_BRIEFS[key] ?? PERSONALITY_BRIEFS.warm;
+}
+
 /**
  * @param {{mode: string, kbIndex: string,
  *          messages: {role: string, content: string}[],
- *          toolResults?: string}} input
+ *          toolResults?: string, userProfile?: string}} input
  * @returns {{role: string, content: string}[]} messages for DeepSeek
  */
-export function buildMessages({ mode, kbIndex, messages, toolResults }) {
+export function buildMessages({ mode, kbIndex, messages, toolResults, userProfile }) {
   const modes = parseModes(mode) ?? ["answer"];
   const brief =
     modes.length === 1
@@ -125,12 +173,17 @@ export function buildMessages({ mode, kbIndex, messages, toolResults }) {
   const system = [
     "You are Mocha, the learning assistant inside the Learning Mocha app: " +
       "a personal Wikipedia + learning tracker. Be calm, precise, encouraging.",
+    personalityBrief(userProfile),
+    userProfile ? String(userProfile) : null,
     ACTION_PROTOCOL,
+    POST_CRAFT,
     brief,
     kbIndex
       ? `The user's knowledge base index (id-less titles, trust the app for ids):\n${kbIndex}`
       : "The user's knowledge base is currently empty.",
-  ].join("\n\n");
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 
   const out = [
     { role: "system", content: system },

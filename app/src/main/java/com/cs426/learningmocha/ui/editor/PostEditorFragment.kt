@@ -26,7 +26,9 @@ import com.cs426.learningmocha.databinding.DialogResourceBinding
 import com.cs426.learningmocha.databinding.FragmentPostEditorBinding
 import com.cs426.learningmocha.ui.common.ListState
 import com.cs426.learningmocha.ui.common.ListStateBinder
+import com.cs426.learningmocha.ui.common.PostMarks
 import com.cs426.learningmocha.ui.common.WikiMarkdown
+import com.cs426.learningmocha.ui.common.themeColor
 import com.cs426.learningmocha.viewmodel.EditorResource
 import com.cs426.learningmocha.viewmodel.PostEditorViewModel
 import com.google.android.material.chip.Chip
@@ -90,6 +92,8 @@ class PostEditorFragment : Fragment() {
         b.editorWikilink.setOnClickListener { insertWikiLink() }
         b.editorTerm.setOnClickListener { addTerm() }
         b.editorAddResource.setOnClickListener { addResource() }
+        b.editorMarkRow.setOnClickListener { pickMark() }
+        b.editorNextRow.setOnClickListener { pickNext() }
         b.editorPreviewToggle.setOnClickListener { showPreview(!previewing) }
 
         // Every edit goes to the ViewModel first; the collector below renders back from state.
@@ -130,6 +134,10 @@ class PostEditorFragment : Fragment() {
                             setIfChanged(b.editorBody, state.content)
                             setIfChanged(b.editorTagsInput, state.tags)
                             checkStatus(state.status)
+                            renderMark(state.icon, state.color)
+                            b.editorNextLabel.text = state.nextTitle.ifBlank {
+                                getString(R.string.editor_next_none)
+                            }
                         }
                         val error = state.errorMessage
                         if (error != null && state.listState == ListState.CONTENT) {
@@ -387,6 +395,75 @@ class PostEditorFragment : Fragment() {
             LearningStatus.READING -> R.id.editor_status_reading
         }
         if (b.editorStatus.checkedChipId != target) b.editorStatus.check(target)
+    }
+
+    private fun renderMark(icon: String?, color: String?) {
+        val b = binding ?: return
+        val glyph = PostMarks.iconOf(icon)
+        val tint = PostMarks.tintOf(color)
+        if (glyph == null) {
+            b.editorMarkIcon.setImageResource(R.drawable.ic_post)
+            b.editorMarkIcon.imageTintList = android.content.res.ColorStateList.valueOf(
+                requireContext().themeColor(R.attr.typePostInk),
+            )
+            b.editorMarkLabel.setText(R.string.editor_mark_none)
+            return
+        }
+        b.editorMarkIcon.setImageResource(glyph.drawable)
+        b.editorMarkIcon.imageTintList = android.content.res.ColorStateList.valueOf(
+            requireContext().themeColor(tint?.attr ?: R.attr.typePostInk),
+        )
+        b.editorMarkLabel.text = if (tint == null) {
+            getString(glyph.label)
+        } else {
+            getString(R.string.editor_mark_picked, getString(glyph.label), getString(tint.label))
+        }
+    }
+
+    private fun pickMark() {
+        val icons = PostMarks.ICONS
+        val labels = (listOf(getString(R.string.editor_mark_none)) + icons.map { getString(it.label) })
+            .toTypedArray()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.mark_dialog_title)
+            .setItems(labels) { _, which ->
+                if (which == 0) {
+                    viewModel.onMarkChanged(null, null)
+                    return@setItems
+                }
+                val icon = icons[which - 1]
+                val tints = PostMarks.TINTS
+                val tintLabels = tints.map { getString(it.label) }.toTypedArray()
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(icon.label)
+                    .setItems(tintLabels) { _, tintWhich ->
+                        viewModel.onMarkChanged(icon.key, tints[tintWhich].key)
+                    }
+                    .show()
+            }
+            .show()
+    }
+
+    private fun pickNext() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val own = viewModel.uiState.value.title
+            val titles = viewModel.postTitles().filter { !it.equals(own, ignoreCase = true) }
+            val options = (listOf(getString(R.string.editor_next_none)) + titles).toTypedArray()
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.editor_pick_next)
+                .setItems(options) { _, which ->
+                    if (which == 0) {
+                        viewModel.onNextChanged(null, "")
+                        return@setItems
+                    }
+                    val title = titles[which - 1]
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        val id = viewModel.titleToId()[title.lowercase()]
+                        viewModel.onNextChanged(id, title)
+                    }
+                }
+                .show()
+        }
     }
 
     private fun wrapSelection(prefix: String, suffix: String) {
