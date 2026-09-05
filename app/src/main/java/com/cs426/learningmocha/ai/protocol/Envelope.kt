@@ -6,7 +6,7 @@ data class Envelope(
     val queries: List<ContextQuery>? = null,
     val summary: String? = null,
     val actions: List<KbAction>? = null,
-    /** Mode the app should offer after an Answer reply, e.g. "modify" or "modify+organize". */
+    /** Mode the app should offer after an Answer reply. Only ever "assist". */
     val suggestMode: String? = null,
 )
 
@@ -46,4 +46,6 @@ data class KbAction(
     val color: String? = null,
     val nextTitle: String? = null,
     val nextRef: String? = null,
+    val requiresTitle: String? = null,
+    val requiresRef: String? = null,
 )

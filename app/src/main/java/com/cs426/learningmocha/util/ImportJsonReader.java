@@ -7,6 +7,7 @@ import com.cs426.learningmocha.data.local.entity.Link;
 import com.cs426.learningmocha.data.local.entity.Node;
 import com.cs426.learningmocha.data.local.entity.NodeType;
 import com.cs426.learningmocha.data.local.entity.PostTag;
+import com.cs426.learningmocha.data.local.entity.Prerequisite;
 import com.cs426.learningmocha.data.local.entity.ResourceItem;
 import com.cs426.learningmocha.data.local.entity.ResourceType;
 import com.google.gson.stream.JsonReader;
@@ -38,6 +39,7 @@ public final class ImportJsonReader {
         List<Link> links = new ArrayList<>();
         List<com.cs426.learningmocha.data.local.entity.Tag> tags = new ArrayList<>();
         List<PostTag> postTags = new ArrayList<>();
+        List<Prerequisite> prerequisites = new ArrayList<>();
         List<DictionaryEntry> dictionary = new ArrayList<>();
         List<ResourceItem> resources = new ArrayList<>();
 
@@ -70,6 +72,11 @@ public final class ImportJsonReader {
                 case "postTags":
                     readArray(json, postTags, ImportJsonReader::readPostTag);
                     break;
+                // Absent in a v1 file written before prerequisites existed; the default
+                // switch arm skips unknown names, so an older backup still imports.
+                case "prerequisites":
+                    readArray(json, prerequisites, ImportJsonReader::readPrerequisite);
+                    break;
                 case "dictionary":
                     readArray(json, dictionary, ImportJsonReader::readEntry);
                     break;
@@ -89,7 +96,8 @@ public final class ImportJsonReader {
             throw new InvalidBackupException(
                     "This backup was written by a newer version of the app");
         }
-        return new BackupSnapshot(nodes, links, tags, postTags, dictionary, resources);
+        return new BackupSnapshot(
+                nodes, links, tags, postTags, dictionary, resources, prerequisites);
     }
 
     private interface RowReader<T> {
@@ -198,6 +206,22 @@ public final class ImportJsonReader {
         }
         json.endObject();
         return new com.cs426.learningmocha.data.local.entity.Tag(id, name == null ? "" : name);
+    }
+
+    private static Prerequisite readPrerequisite(JsonReader json) throws IOException {
+        long postId = 0;
+        long requiresId = 0;
+        json.beginObject();
+        while (json.hasNext()) {
+            String field = json.nextName();
+            switch (field) {
+                case "postId": postId = json.nextLong(); break;
+                case "requiresId": requiresId = json.nextLong(); break;
+                default: json.skipValue();
+            }
+        }
+        json.endObject();
+        return new Prerequisite(postId, requiresId);
     }
 
     private static PostTag readPostTag(JsonReader json) throws IOException {

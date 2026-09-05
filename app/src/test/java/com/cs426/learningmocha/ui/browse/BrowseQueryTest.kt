@@ -3,6 +3,7 @@ package com.cs426.learningmocha.ui.browse
 import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeType
+import com.cs426.learningmocha.ui.common.Readiness
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -169,5 +170,122 @@ class BrowseQueryTest {
         assertEquals(BrowseSort.TITLE_ASC, BrowseSort.from("SOMETHING_ELSE"))
         assertEquals(BrowseSort.TITLE_ASC, BrowseSort.from(null))
         assertEquals(BrowseSort.STATUS, BrowseSort.from("STATUS"))
+    }
+
+    // --- Readiness: sorting and filtering by whether the prerequisites have been started ---
+
+    /** Every post is ready when nothing requires anything, which is the default library. */
+    private fun readiness(vararg entries: Pair<Long, List<Node>>): Map<Long, Readiness> =
+        entries.associate { (id, required) -> id to Readiness(required) }
+
+    @Test
+    fun readyPostsSortBeforeBlockedOnes() {
+        val basics = post(1, "Basics", LearningStatus.FINISHED)
+        val advanced = post(2, "Advanced")
+        val standalone = post(3, "Standalone")
+        val nodes = listOf(advanced, standalone)
+        val index = readiness(2L to listOf(post(9, "Untouched", LearningStatus.NONE)))
+        assertEquals(
+            listOf("Standalone", "Advanced"),
+            titles(BrowseQuery.apply(nodes, BrowseFilter(), BrowseSort.READY_FIRST, index)),
+        )
+        // Basics is unused here beyond documenting that a finished prerequisite is the
+        // ready case covered below.
+        assertEquals(LearningStatus.FINISHED, basics.status)
+    }
+
+    @Test
+    fun amongBlockedPostsTheClosestToReadyComesFirst() {
+        val nearly = post(1, "Nearly")
+        val barely = post(2, "Barely")
+        val index = readiness(
+            1L to listOf(
+                post(9, "A", LearningStatus.READING),
+                post(10, "B", LearningStatus.NONE),
+            ),
+            2L to listOf(
+                post(11, "C", LearningStatus.NONE),
+                post(12, "D", LearningStatus.NONE),
+            ),
+        )
+        assertEquals(
+            listOf("Nearly", "Barely"),
+            titles(
+                BrowseQuery.apply(
+                    listOf(barely, nearly),
+                    BrowseFilter(),
+                    BrowseSort.READY_FIRST,
+                    index,
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun titleStillBreaksTiesWithinReadyFirst() {
+        val nodes = listOf(post(1, "Zulu"), post(2, "Alpha"))
+        assertEquals(
+            listOf("Alpha", "Zulu"),
+            titles(BrowseQuery.apply(nodes, BrowseFilter(), BrowseSort.READY_FIRST, emptyMap())),
+        )
+    }
+
+    @Test
+    fun readyOnlyFilterHidesBlockedPosts() {
+        val nodes = listOf(post(1, "Blocked"), post(2, "Open"))
+        val index = readiness(1L to listOf(post(9, "Untouched", LearningStatus.NONE)))
+        assertEquals(
+            listOf("Open"),
+            titles(
+                BrowseQuery.apply(
+                    nodes,
+                    BrowseFilter(readyOnly = true),
+                    BrowseSort.TITLE_ASC,
+                    index,
+                ),
+            ),
+        )
+    }
+
+    /** Same rule the status filter follows: hiding the folder makes the filter unusable. */
+    @Test
+    fun readyOnlyFilterKeepsContainersVisible() {
+        val nodes = listOf(folder(1, "Deeper"), post(2, "Blocked"))
+        val index = readiness(2L to listOf(post(9, "Untouched", LearningStatus.NONE)))
+        assertEquals(
+            listOf("Deeper"),
+            titles(
+                BrowseQuery.apply(
+                    nodes,
+                    BrowseFilter(readyOnly = true),
+                    BrowseSort.TITLE_ASC,
+                    index,
+                ),
+            ),
+        )
+    }
+
+    /** An index with no entry for a post means no prerequisites, which is ready, not blocked. */
+    @Test
+    fun aPostMissingFromTheIndexIsTreatedAsReady() {
+        val nodes = listOf(post(1, "Unknown"))
+        assertEquals(
+            listOf("Unknown"),
+            titles(
+                BrowseQuery.apply(
+                    nodes,
+                    BrowseFilter(readyOnly = true),
+                    BrowseSort.TITLE_ASC,
+                    emptyMap(),
+                ),
+            ),
+        )
+    }
+
+    @Test
+    fun readyOnlyCountsTowardTheFilterBadge() {
+        val filter = BrowseFilter(readyOnly = true)
+        assertTrue(filter.isActive)
+        assertEquals(1, filter.activeCount)
     }
 }

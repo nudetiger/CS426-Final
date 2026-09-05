@@ -81,6 +81,7 @@ class MigrationTest {
             AppDatabase.MIGRATION_2_3,
             AppDatabase.MIGRATION_3_4,
             AppDatabase.MIGRATION_4_5,
+            AppDatabase.MIGRATION_5_6,
         )
             .allowMainThreadQueries()
             .build()
@@ -99,6 +100,10 @@ class MigrationTest {
                     assertEquals(1, c.getInt(0))
                 }
             db.query("SELECT COUNT(*) FROM chat_sessions", null).use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(0, c.getInt(0))
+            }
+            db.query("SELECT COUNT(*) FROM prerequisites", null).use { c ->
                 assertTrue(c.moveToFirst())
                 assertEquals(0, c.getInt(0))
             }
@@ -177,6 +182,51 @@ class MigrationTest {
             assertTrue(c.isNull(1))
             assertTrue(c.isNull(2))
             assertTrue(c.isNull(3))
+        }
+    }
+
+    /**
+     * A library upgraded to v6 gains an empty prerequisite graph, and the cascade is live from
+     * the first write: deleting a post must take its edges with it, or the reader would show a
+     * requirement pointing at a post that is gone.
+     */
+    @Test
+    fun migrates5To6AddingPrerequisites() {
+        helper.createDatabase(dbName, 5).use { db ->
+            db.execSQL(
+                """
+                INSERT INTO nodes (id, parentId, type, title, content, status, favorite,
+                    orderIndex, createdAt, updatedAt, icon, color, nextPostId)
+                VALUES (1, NULL, 'POST', 'Networking', '# Net', 'FINISHED', 0, 0, 1, 1,
+                    NULL, NULL, NULL)
+                """.trimIndent(),
+            )
+            db.execSQL(
+                """
+                INSERT INTO nodes (id, parentId, type, title, content, status, favorite,
+                    orderIndex, createdAt, updatedAt, icon, color, nextPostId)
+                VALUES (2, NULL, 'POST', 'Raft', '# Raft', 'NONE', 0, 0, 2, 2,
+                    NULL, NULL, NULL)
+                """.trimIndent(),
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 6, true, AppDatabase.MIGRATION_5_6)
+
+        db.query("SELECT title FROM nodes WHERE id = 2").use { c ->
+            assertTrue("the post survived", c.moveToFirst())
+            assertEquals("Raft", c.getString(0))
+        }
+        db.execSQL("PRAGMA foreign_keys = ON")
+        db.execSQL("INSERT INTO prerequisites (postId, requiresId) VALUES (2, 1)")
+        db.query("SELECT COUNT(*) FROM prerequisites").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(1, c.getInt(0))
+        }
+        db.execSQL("DELETE FROM nodes WHERE id = 1")
+        db.query("SELECT COUNT(*) FROM prerequisites").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("the edge went with the post it required", 0, c.getInt(0))
         }
     }
 }

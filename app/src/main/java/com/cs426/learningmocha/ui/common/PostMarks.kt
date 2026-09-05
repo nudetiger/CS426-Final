@@ -41,9 +41,9 @@ object PostMarks {
         Tint("amber", R.attr.statusReadingInk, R.string.mark_color_amber),
         Tint("blue", R.attr.statusProgressInk, R.string.mark_color_blue),
         Tint("green", R.attr.statusFinishedInk, R.string.mark_color_green),
-        Tint("gold", R.attr.modeSuggestInk, R.string.mark_color_gold),
-        Tint("sky", R.attr.modeModifyInk, R.string.mark_color_sky),
-        Tint("violet", R.attr.modeOrganizeInk, R.string.mark_color_violet),
+        Tint("gold", R.attr.markGoldInk, R.string.mark_color_gold),
+        Tint("sky", R.attr.markSkyInk, R.string.mark_color_sky),
+        Tint("violet", R.attr.markVioletInk, R.string.mark_color_violet),
         Tint("rose", R.attr.mochaFavorite, R.string.mark_color_rose),
     )
 

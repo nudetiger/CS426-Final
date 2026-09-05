@@ -154,7 +154,7 @@ object SeedData {
         ## A quick tour
 
         1. **Home** — jump back into recent posts and open a branch.
-        2. **Browse** — walk the tree, create items, drag to reorder, swipe to delete.
+        2. **Browse** — walk the tree, create items, sort and filter, swipe a row to delete.
         3. Tap a post to **read** it, then **Edit** to change the markdown.
 
         The sample branch *Getting Started* is only a seed. Rename it, move it, or delete it whenever you like.

@@ -172,15 +172,13 @@ class ChatMessageAdapter(
         private const val TYPE_STREAMING = 2
 
         /**
-         * Names the mode on the pill and paints it. A combined mode gets both labels, so
-         * "Modify · Organize" is distinguishable from either on its own.
+         * Names the mode on the pill and paints it. Reads through [ChatModes.parse], so a
+         * bubble stored under one of the pre-merge modes is labelled Assist rather than left
+         * showing a mode the app no longer has.
          */
         private fun tintMode(pill: TextView, mode: String) {
             val context = pill.context
-            val parts = ChatModes.parse(mode)
-            pill.text = parts.joinToString(" · ") {
-                context.getString(NodePalette.modeLabelRes(it))
-            }
+            pill.text = context.getString(NodePalette.modeLabelRes(mode))
             pill.setTextColor(context.themeColor(NodePalette.modeInk(mode)))
             pill.backgroundTintList = ColorStateList.valueOf(
                 context.themeColor(NodePalette.modeWash(mode)),

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Branch reading: walking one branch end to end without going back to Browse between posts. -->
+<resources>
+    <string name="browse_read_branch">Read this branch</string>
+    <string name="browse_read_branch_empty">Nothing to read in there yet.</string>
+
+    <string name="branch_position">%1$s · %2$d of %3$d</string>
+    <string name="branch_prev">Previous post in this branch</string>
+    <string name="branch_next">Next post in this branch</string>
+    <string name="branch_outline">Branch structure</string>
+    <string name="branch_outline_empty">This branch is empty.</string>
+</resources>

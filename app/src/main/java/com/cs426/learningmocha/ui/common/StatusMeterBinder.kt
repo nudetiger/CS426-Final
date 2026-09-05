@@ -27,15 +27,21 @@ object StatusMeterBinder {
     /**
      * @param onPick invoked with the status whose legend column was tapped; null makes the
      *   legend inert, which is what a read-only summary wants
+     * @param showSummary false drops the "N posts in here" line. Declared before [onPick] so
+     *   a trailing lambda at a call site still binds to [onPick]. The prerequisite card in the
+     *   reader carries its own caption ("1 of 2 started"), and the folder wording underneath it
+     *   both repeats the count and calls a list of prerequisites a folder.
      */
     fun bind(
         binding: ViewStatusMeterBinding,
         stats: SubtreeStats,
+        showSummary: Boolean = true,
         onPick: ((LearningStatus) -> Unit)? = null,
     ) {
         val context = binding.root.context
         val resources = context.resources
 
+        binding.meterSummary.isVisible = showSummary
         binding.meterSummary.text = if (stats.isEmpty) {
             context.getString(R.string.browse_meter_empty)
         } else {

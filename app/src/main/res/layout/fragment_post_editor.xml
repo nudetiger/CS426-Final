@@ -199,6 +199,43 @@
                         </LinearLayout>
                     </LinearLayout>
 
+                    <!-- The other direction from "next post": what should come *before* this
+                         one. Several, unlike next, because a topic often converges. -->
+                    <LinearLayout
+                        android:id="@+id/editor_prereq_row"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/content_gutter"
+                        android:layout_marginTop="@dimen/space_s"
+                        android:layout_marginEnd="@dimen/content_gutter"
+                        android:background="@drawable/bg_card"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:minHeight="@dimen/touch_target"
+                        android:orientation="horizontal"
+                        android:padding="@dimen/space_s">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/editor_section_prereq"
+                                android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+
+                            <TextView
+                                android:id="@+id/editor_prereq_label"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/editor_prereq_none"
+                                android:textAppearance="@style/TextAppearance.Mocha.Body" />
+                        </LinearLayout>
+                    </LinearLayout>
+
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

@@ -18,6 +18,7 @@ import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeConverters
 import com.cs426.learningmocha.data.local.entity.PostFts
 import com.cs426.learningmocha.data.local.entity.PostTag
+import com.cs426.learningmocha.data.local.entity.Prerequisite
 import com.cs426.learningmocha.data.local.entity.ResourceItem
 import com.cs426.learningmocha.data.local.entity.Tag
 
@@ -27,13 +28,14 @@ import com.cs426.learningmocha.data.local.entity.Tag
         Link::class,
         Tag::class,
         PostTag::class,
+        Prerequisite::class,
         DictionaryEntry::class,
         ResourceItem::class,
         PostFts::class,
         ChatSession::class,
         ChatMessage::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 @TypeConverters(NodeConverters::class)
@@ -183,12 +185,41 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Adds `prerequisites`. Nothing is back-filled: a library from before this migration
+         * simply has no declared reading order, which is exactly what it had.
+         */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `prerequisites` (
+                        `postId` INTEGER NOT NULL,
+                        `requiresId` INTEGER NOT NULL,
+                        PRIMARY KEY(`postId`, `requiresId`),
+                        FOREIGN KEY(`postId`) REFERENCES `nodes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(`requiresId`) REFERENCES `nodes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_prerequisites_requiresId` ON `prerequisites` (`requiresId`)",
+                )
+            }
+        }
+
         fun build(context: Context): AppDatabase {
             return Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "learning_mocha.db",
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            ).addMigrations(
+                MIGRATION_1_2,
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+            )
                 .addCallback(
                     object : RoomDatabase.Callback() {
                         // Fires once, when the file is created — so SeedData can tell a first

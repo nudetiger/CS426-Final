@@ -45,12 +45,11 @@
         <item name="typePostWash">@color/rp_type_post_wash</item>
         <item name="modeAnswerInk">@color/rp_mode_answer_ink</item>
         <item name="modeAnswerWash">@color/rp_mode_answer_wash</item>
-        <item name="modeSuggestInk">@color/rp_mode_suggest_ink</item>
-        <item name="modeSuggestWash">@color/rp_mode_suggest_wash</item>
-        <item name="modeModifyInk">@color/rp_mode_modify_ink</item>
-        <item name="modeModifyWash">@color/rp_mode_modify_wash</item>
-        <item name="modeOrganizeInk">@color/rp_mode_organize_ink</item>
-        <item name="modeOrganizeWash">@color/rp_mode_organize_wash</item>
+        <item name="modeAssistInk">@color/rp_mode_assist_ink</item>
+        <item name="modeAssistWash">@color/rp_mode_assist_wash</item>
+        <item name="markGoldInk">@color/rp_mark_gold_ink</item>
+        <item name="markSkyInk">@color/rp_mark_sky_ink</item>
+        <item name="markVioletInk">@color/rp_mark_violet_ink</item>
     </style>
 
     <!-- Catppuccin Mocha -->
@@ -89,12 +88,11 @@
         <item name="typePostWash">@color/ctp_type_post_wash</item>
         <item name="modeAnswerInk">@color/ctp_mode_answer_ink</item>
         <item name="modeAnswerWash">@color/ctp_mode_answer_wash</item>
-        <item name="modeSuggestInk">@color/ctp_mode_suggest_ink</item>
-        <item name="modeSuggestWash">@color/ctp_mode_suggest_wash</item>
-        <item name="modeModifyInk">@color/ctp_mode_modify_ink</item>
-        <item name="modeModifyWash">@color/ctp_mode_modify_wash</item>
-        <item name="modeOrganizeInk">@color/ctp_mode_organize_ink</item>
-        <item name="modeOrganizeWash">@color/ctp_mode_organize_wash</item>
+        <item name="modeAssistInk">@color/ctp_mode_assist_ink</item>
+        <item name="modeAssistWash">@color/ctp_mode_assist_wash</item>
+        <item name="markGoldInk">@color/ctp_mark_gold_ink</item>
+        <item name="markSkyInk">@color/ctp_mark_sky_ink</item>
+        <item name="markVioletInk">@color/ctp_mark_violet_ink</item>
     </style>
 
     <!-- Nord -->
@@ -133,11 +131,10 @@
         <item name="typePostWash">@color/nord_type_post_wash</item>
         <item name="modeAnswerInk">@color/nord_mode_answer_ink</item>
         <item name="modeAnswerWash">@color/nord_mode_answer_wash</item>
-        <item name="modeSuggestInk">@color/nord_mode_suggest_ink</item>
-        <item name="modeSuggestWash">@color/nord_mode_suggest_wash</item>
-        <item name="modeModifyInk">@color/nord_mode_modify_ink</item>
-        <item name="modeModifyWash">@color/nord_mode_modify_wash</item>
-        <item name="modeOrganizeInk">@color/nord_mode_organize_ink</item>
-        <item name="modeOrganizeWash">@color/nord_mode_organize_wash</item>
+        <item name="modeAssistInk">@color/nord_mode_assist_ink</item>
+        <item name="modeAssistWash">@color/nord_mode_assist_wash</item>
+        <item name="markGoldInk">@color/nord_mark_gold_ink</item>
+        <item name="markSkyInk">@color/nord_mark_sky_ink</item>
+        <item name="markVioletInk">@color/nord_mark_violet_ink</item>
     </style>
 </resources>

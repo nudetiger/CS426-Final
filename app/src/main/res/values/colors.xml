@@ -42,12 +42,13 @@
          through a conversation shows at a glance what each exchange was asking for. -->
     <color name="mode_answer_ink">#5E7F6B</color>
     <color name="mode_answer_wash">#E2EDE6</color>
-    <color name="mode_suggest_ink">#C68A1E</color>
-    <color name="mode_suggest_wash">#FBEED2</color>
-    <color name="mode_modify_ink">#3B7BAE</color>
-    <color name="mode_modify_wash">#DCE9F5</color>
-    <color name="mode_organize_ink">#8257C4</color>
-    <color name="mode_organize_wash">#EBE2F8</color>
+    <color name="mode_assist_ink">#3B7BAE</color>
+    <color name="mode_assist_wash">#DCE9F5</color>
+
+    <!-- Post-mark hues that no status or mode already covers. -->
+    <color name="mark_gold_ink">#C68A1E</color>
+    <color name="mark_sky_ink">#3B7BAE</color>
+    <color name="mark_violet_ink">#8257C4</color>
 
     <!-- Zebra striping for list rows. The odd row is barely tinted: enough to follow a long
          row across the screen, not enough to read as a different kind of item. -->

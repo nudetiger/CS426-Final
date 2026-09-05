@@ -16,7 +16,7 @@
     <string name="chat_mode_switch_after_title">Use a different mode?</string>
     <string name="chat_mode_switch_after_message">That sounds like a %1$s request. Switch now and I will try again with permission to change your library.</string>
     <string name="chat_mode_switch_retry">Switch and retry</string>
-    <string name="chat_modes_hint">Pick one or more. Suggest, Modify and Organize can be combined.</string>
+    <string name="chat_modes_hint">Answer never changes your library. Assist proposes changes for you to review.</string>
 
     <plurals name="chat_shared_with_ai">
         <item quantity="one">Shared with AI: %1$d note</item>

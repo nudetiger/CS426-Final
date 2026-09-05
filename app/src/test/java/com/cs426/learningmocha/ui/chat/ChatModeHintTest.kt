@@ -7,93 +7,70 @@ import org.junit.Test
 class ChatModeHintTest {
 
     @Test
-    fun offersModifyWhenAnswerModeIsAskedToWrite() {
+    fun `a request to write a post offers assist`() {
         assertEquals(
-            ChatModes.MODIFY,
+            ChatModes.ASSIST,
             ChatModeHint.suggest(ChatModes.ANSWER, "Write me a post about Raft"),
         )
     }
 
     @Test
-    fun offersOrganizeForARestructureRequest() {
+    fun `a request to reorganize offers assist`() {
         assertEquals(
-            ChatModes.ORGANIZE,
+            ChatModes.ASSIST,
             ChatModeHint.suggest(ChatModes.ANSWER, "Please reorganize my whole library"),
         )
     }
 
-    // The request that made combined modes necessary: create something and file it in one go.
     @Test
-    fun offersBothWhenTheMessageAsksForBoth() {
+    fun `a request for recommendations offers assist`() {
         assertEquals(
-            "modify+organize",
-            ChatModeHint.suggest(
-                ChatModes.ANSWER,
-                "Write me a post on Paxos and reorganize the consensus folder",
-            ),
+            ChatModes.ASSIST,
+            ChatModeHint.suggest(ChatModes.ANSWER, "suggest what I should read next"),
         )
     }
 
     @Test
-    fun staysQuietWhenTheModeAlreadyCoversTheRequest() {
-        assertNull(ChatModeHint.suggest(ChatModes.MODIFY, "Write me a post about Raft"))
-        assertNull(ChatModeHint.suggest("modify+organize", "Write a post and reorganize things"))
-    }
-
-    // A user who picked more than the message needs made a choice; do not second-guess it.
-    @Test
-    fun staysQuietWhenTheModeIsBroaderThanTheRequest() {
-        assertNull(ChatModeHint.suggest("modify+organize", "Write me a post about Raft"))
+    fun `an action request already in assist is left alone`() {
+        assertNull(ChatModeHint.suggest(ChatModes.ASSIST, "Write me a post about Raft"))
     }
 
     @Test
-    fun offersAnswerForAPlainQuestionInAnActionMode() {
+    fun `a plain question in assist offers the way back to answer`() {
         assertEquals(
             ChatModes.ANSWER,
-            ChatModeHint.suggest(ChatModes.MODIFY, "What is the Raft leader election?"),
-        )
-    }
-
-    // A question that also asks for a post is not a question; it must not be steered back.
-    @Test
-    fun prefersTheActionWhenAQuestionAlsoAsksForAPost() {
-        assertNull(
-            ChatModeHint.suggest(ChatModes.MODIFY, "What is Raft? Write me a post about it"),
+            ChatModeHint.suggest(ChatModes.ASSIST, "What is the Raft leader election?"),
         )
     }
 
     @Test
-    fun staysQuietOnAnOrdinaryQuestionInAnswerMode() {
+    fun `a plain question in answer is left alone`() {
         assertNull(ChatModeHint.suggest(ChatModes.ANSWER, "What is Raft?"))
     }
 
-    // Nothing here is a keyword either way; a guess would only get in the user's way.
     @Test
-    fun staysQuietOnAmbiguousText() {
+    fun `small talk is left alone`() {
         assertNull(ChatModeHint.suggest(ChatModes.ANSWER, "thanks, that helped a lot"))
     }
 
+    /** "What is Raft — and write it up" is a work order with a question attached, not a question. */
     @Test
-    fun isCaseInsensitive() {
+    fun `a message that both asks and instructs counts as an action`() {
+        assertNull(ChatModeHint.suggest(ChatModes.ASSIST, "What is Raft? Write me a post about it"))
+    }
+
+    @Test
+    fun `matching ignores case`() {
         assertEquals(
-            ChatModes.MODIFY,
+            ChatModes.ASSIST,
             ChatModeHint.suggest(ChatModes.ANSWER, "WRITE ME A POST on B-trees"),
         )
     }
 
+    /** A conversation left open from before the merge still holds "modify" as its mode. */
     @Test
-    fun offersModifyForCreatePostWithoutA() {
-        assertEquals(
-            ChatModes.MODIFY,
-            ChatModeHint.suggest(ChatModes.ANSWER, "create post about alphabet"),
-        )
-    }
-
-    @Test
-    fun offersModifyWhenTheUserWantsToLearnATopic() {
-        assertEquals(
-            ChatModes.MODIFY,
-            ChatModeHint.suggest(ChatModes.ANSWER, "I want to learn the alphabet"),
-        )
+    fun `a legacy mode is read as the assist it folds to`() {
+        assertNull(ChatModeHint.suggest("modify", "Write me a post about Raft"))
+        assertEquals(ChatModes.ANSWER, ChatModeHint.suggest("organize", "What is Raft?"))
     }
 }

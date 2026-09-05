@@ -9,6 +9,7 @@ import com.cs426.learningmocha.data.local.entity.DictionaryEntry
 import com.cs426.learningmocha.data.local.entity.Link
 import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.PostTag
+import com.cs426.learningmocha.data.local.entity.Prerequisite
 import com.cs426.learningmocha.data.local.entity.ResourceItem
 import com.cs426.learningmocha.data.local.entity.Tag
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +37,9 @@ interface KnowledgeDao {
 
     @Query("SELECT * FROM resources")
     suspend fun allResources(): List<ResourceItem>
+
+    @Query("SELECT * FROM prerequisites")
+    suspend fun allPrerequisites(): List<Prerequisite>
 
     @Query("DELETE FROM tags")
     suspend fun deleteAllTags()
@@ -75,6 +79,29 @@ interface KnowledgeDao {
         """,
     )
     suspend fun outgoingTargets(postId: Long): List<Node>
+
+    // --- Prerequisites (see entity/Prerequisite) ---
+
+    /** IGNORE, because the pair is the key: asking for the same prerequisite twice is a no-op. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertPrerequisite(prerequisite: Prerequisite)
+
+    @Query("DELETE FROM prerequisites WHERE postId = :postId AND requiresId = :requiresId")
+    suspend fun deletePrerequisite(postId: Long, requiresId: Long)
+
+    @Query("DELETE FROM prerequisites WHERE postId = :postId")
+    suspend fun clearPrerequisites(postId: Long)
+
+    /** The posts [postId] is waiting on, resolved and ordered for the reader's list. */
+    @Query(
+        """
+        SELECT n.* FROM prerequisites p
+        JOIN nodes n ON n.id = p.requiresId
+        WHERE p.postId = :postId AND n.type = 'POST'
+        ORDER BY n.title COLLATE NOCASE
+        """,
+    )
+    suspend fun prerequisitesFor(postId: Long): List<Node>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTag(tag: Tag): Long

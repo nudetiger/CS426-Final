@@ -5,6 +5,7 @@ import com.cs426.learningmocha.data.local.AppDatabase
 import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeType
 import com.cs426.learningmocha.data.local.entity.PostTag
+import com.cs426.learningmocha.data.local.entity.Prerequisite
 import com.cs426.learningmocha.util.ExportJsonWriter
 import com.cs426.learningmocha.util.ImportJsonReader
 import com.cs426.learningmocha.util.ImportTitles
@@ -37,6 +38,7 @@ class BackupRepository(private val db: AppDatabase) {
             postTags = knowledge.allPostTags(),
             dictionary = knowledge.allDictionary(),
             resources = knowledge.allResources(),
+            prerequisites = knowledge.allPrerequisites(),
         )
     }
 
@@ -111,6 +113,15 @@ class BackupRepository(private val db: AppDatabase) {
             for (item in data.resources) {
                 val post = nodeIds[item.postId] ?: continue
                 knowledge.insertResource(item.copy(id = 0, postId = post))
+            }
+
+            // An edge is only meaningful when both ends came through. A prerequisite whose
+            // required post was not in the file would show in a readiness bar as a requirement
+            // that can never be met, so it is dropped with the post it pointed at.
+            for (edge in data.prerequisites) {
+                val post = nodeIds[edge.postId] ?: continue
+                val requires = nodeIds[edge.requiresId] ?: continue
+                knowledge.insertPrerequisite(Prerequisite(post, requires))
             }
         }
         return data.postCount

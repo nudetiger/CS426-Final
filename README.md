@@ -116,7 +116,11 @@ offline-tolerant as an afterthought.
   Vietnamese meaning) reachable without leaving the article.
 - **Search** — SQLite FTS4 across titles and content, plus tags, dictionary terms and
   resources, with type/status/favourite filters.
-- **AI assistant** — four modes (Answer · Suggest · Modify · Organize). It reads your
+- **Prerequisites** — say which posts come first, and every post shows how far through its
+  prerequisites you are. Browse can sort and filter by what you are actually ready to read.
+- **Branch reading** — open a branch and read it end to end, in an order that respects the
+  prerequisites you set, with the structure a tap away.
+- **AI assistant** — two modes (Answer · Assist). It reads your
   library only through explicit read-only context tools, streams its replies, and can
   never write to the database: it proposes a batch of structured actions that you
   review item by item before a single Room transaction applies them.

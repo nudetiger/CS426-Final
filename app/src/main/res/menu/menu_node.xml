@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
+        android:id="@+id/action_read_branch"
+        android:title="@string/browse_read_branch" />
+    <item
         android:id="@+id/action_rename"
         android:title="@string/browse_rename" />
     <item

@@ -54,17 +54,34 @@ XML-Views phone app — ignore them unless the stack changes.
   ("Raft (2)"), and `TreeRepository.createContainer` reuses a container that is already under
   that parent instead of making a second one. Renaming still refuses a taken title.
 - Browse has no manual reordering; `orderIndex` survives only as a tiebreaker for legacy rows.
-  Order comes from `ui/browse/BrowseQuery` (sort + filter).
+  Order comes from `ui/browse/BrowseQuery` (sort + filter). Swipe a row left to delete it —
+  `ui/common/SwipeToDelete` draws the reveal and Browse and the chat list share it.
+- **Prerequisites** (`prerequisites` table, DB v6): a user-declared "read that first" edge
+  between two posts. Deliberately *not* in `links`, which `KnowledgeSync.reindex` rebuilds from
+  markdown on every save and would therefore wipe. Direct only — never walked transitively.
+  Cycles are refused by `util/PrereqRules` at the repository, the validator and the executor.
+  `ui/common/Readiness` turns the edges into the reader's progress bar and Browse's
+  "ready to read" sort and filter; it reuses `SubtreeStats` so the meter is the same widget.
+- **Branch reading**: "Read this branch" opens the first post with `branchId` set as a nav
+  argument. `ui/browse/BranchReading` decides the order — tree order as the baseline, pulled
+  earlier by prerequisite and `nextPostId` edges *inside* that branch, cycle-safe. Prev/next
+  replace the reader destination rather than stacking it, so Back always leaves the branch.
 - Search = `posts_fts`, an **FTS4** table (`@Fts4(contentEntity = Node::class)` — Room 2.6 has
   no FTS5 annotation). It is content-backed, so Room's triggers keep it in sync automatically;
   never write to it by hand.
 - Backup = `.mocha.json` via `util/ExportJsonWriter` + `ImportJsonReader` (pure Java) and
-  `backup/BackupRepository` (Room). Restore always reassigns ids and rewrites foreign keys.
-  Chat history is deliberately never exported.
+  `backup/BackupRepository` (Room). Restore always reassigns ids and rewrites foreign keys;
+  a prerequisite edge is dropped unless *both* ends came through the file. Chat history is
+  deliberately never exported. `BackupSnapshot` is `@JvmOverloads` so the pure-Java round-trip
+  tests keep compiling as fields are added.
 - User preferences live in `data/prefs/SettingsStore` (SharedPreferences), read synchronously
   in `Application.onCreate` to apply the theme before the first inflate.
-- AI protocol envelopes and action ops: see `backend/prompts.js` and plan §11–13;
+- AI protocol envelopes and action ops (sixteen): see `backend/prompts.js` and plan §11–13;
   keep both sides in sync when changing the schema.
+- Chat has **two** modes, `answer` and `assist` (`ui/chat/ChatModes`). It had four; the three
+  action modes all produced the same reviewable batch, so they merged. `ChatModes.parse` folds
+  the legacy values, which is why no migration was needed — and why an unrecognised mode must
+  keep falling back to `answer`, never `assist`.
 - Phases: implement in the order of `docs/plan.md` §26; don't start Phase N+1
   features before Phase N works end-to-end.
 

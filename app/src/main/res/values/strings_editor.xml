@@ -11,6 +11,19 @@
     <string name="editor_section_status">Status</string>
     <string name="editor_next_none">None — this is the last in the series</string>
     <string name="editor_pick_next">What comes after this?</string>
+
+    <!-- Prerequisites: the other direction from "next post". -->
+    <string name="editor_section_prereq">Prerequisites</string>
+    <string name="editor_prereq_none">None — this post stands on its own</string>
+    <string name="editor_pick_prereq">What should be read first?</string>
+    <plurals name="editor_prereq_count">
+        <item quantity="one">%1$d post</item>
+        <item quantity="other">%1$d posts</item>
+    </plurals>
+    <plurals name="editor_prereq_refused">
+        <item quantity="one">%1$d prerequisite was dropped: it would have made a loop.</item>
+        <item quantity="other">%1$d prerequisites were dropped: they would have made a loop.</item>
+    </plurals>
     <string name="editor_clear_next">Clear</string>
     <string name="reader_up_next">Up next</string>
     <string name="mark_icon_page">Page</string>

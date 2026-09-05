@@ -90,7 +90,8 @@ Storage decisions:
 nodes          id PK | parentId FK→nodes (null=root branch level) | type: BRANCH|FOLDER|POST
                | title | content (markdown, posts only) | status: NONE|READING|IN_PROGRESS|FINISHED
                | favorite: 0/1 | orderIndex | createdAt | updatedAt
-links          id PK | fromPostId FK | toPostId FK | anchorText
+links          id PK | fromPostId FK | toPostId FK | anchorText  (derived from markdown)
+prerequisites  postId FK | requiresId FK  (PK = pair) — user-declared "read that first"
 tags           id PK | name UNIQUE
 post_tags      postId FK | tagId FK  (PK = pair)
 dictionary     id PK | postId FK NULL (null = global) | term | definition | meaningVi
@@ -143,7 +144,11 @@ reorder/delete cascade) with zero joins; `content/status` are simply unused for 
 
 - Chat tab: session list + message bubbles, markdown-rendered AI replies, typing indicator,
   offline banner when backend unreachable.
-- Chat modes (selector, maps to the 4 levels): **Answer · Suggest · Modify · Organize**.
+- Chat modes (selector): **Answer · Assist**. Answer is read-only by contract; Assist may
+  propose changes, which the user reviews before anything is written. (These were four
+  chips — Answer/Suggest/Modify/Organize — until the last three were merged: they all
+  produce the same reviewable actions batch, so the split only asked the user to
+  pre-classify their own sentence.)
   Mode is sent to the backend and shapes the system prompt + whether actions are allowed.
 - Messages + sessions persisted locally (`chat_sessions/chat_messages`) so history survives restarts.
 
@@ -225,12 +230,12 @@ AI envelope → ActionParser (Kotlin, Gson) → ActionValidator (against live DB
 each row: icon, human description ("Create post *Raft* under *Distributed Systems*"),
 tap to expand (full generated markdown preview / before-after diff for edits).
 Checkbox per change (deselect = skip; transaction skips rejected ops and re-validates).
-Buttons: **Apply selected** / **Discard all**. Same screen serves Modify, Organize,
+Buttons: **Apply selected** / **Discard all**. Same screen serves every Assist batch,
 learning-path and post-generation flows.
 
 ## 16. AI-generated learning paths
 
-Signature feature. Flow: user says "I want to learn Distributed Systems" in Modify/Organize mode →
+Signature feature. Flow: user says "I want to learn Distributed Systems" in Assist mode →
 AI uses context tools to inspect what exists → proposes a tree (branches→posts with short
 descriptions) as an action batch → Review screen shows it as an **indented tree preview** →
 Apply → posts are created with AI skeleton content + inter-post links + dictionary terms.
@@ -247,7 +252,7 @@ is shown and changeable via a folder picker.
 Single `MainActivity`, bottom nav (5 tabs), Navigation Component:
 
 - **Home / Knowledge Hub** — continue reading, recent, favorites strip, branch shortcuts.
-- **Browse** — tree explorer (expand/collapse, drag to reorder, swipe for actions, breadcrumbs).
+- **Browse** — tree explorer (walk in/out, sort + filter, swipe a row to delete, breadcrumbs).
 - **Search** — quick-open + filters.
 - **AI** — chat list/conversation (+ mode selector).
 - **Settings** — theme, backend URL, backup/export/import, about/privacy.
@@ -360,7 +365,7 @@ PostReader + PostEditor (markdown + preview), Home hub with recents. Seed sample
 
 ### Phase 3 — AI ✅ (~6 h)
 Backend `/v1/chat`; chat UI + local sessions; context tools; action protocol + validator +
-transaction executor; ReviewChanges screen; modes Answer/Suggest/Modify/Organize;
+transaction executor; ReviewChanges screen; modes Answer/Assist;
 learning-path generation; AI post generation with preview.
 
 **Prep notes from the Phase 2 implementation (reviewed 2026-09-04):**
@@ -506,7 +511,7 @@ CS426-Final/
 user message → app: build kbIndex → POST /v1/chat → DeepSeek
    ← answer              → render chat bubble
    ← context_request     → run ContextTools locally → resend with toolResults (≤3 rounds)
-   ← actions (Modify/Organize) → validate → ReviewChanges screen
+   ← actions (Assist) → validate → ReviewChanges screen
         → user approves → Room transaction → snackbar + Undo
         → user rejects  → logged in chat as "discarded", nothing touched
 ```

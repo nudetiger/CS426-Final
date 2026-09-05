@@ -15,16 +15,20 @@ import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
+import com.cs426.learningmocha.MainActivity
 import com.cs426.learningmocha.R
 import com.cs426.learningmocha.data.local.entity.DictionaryEntry
 import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
+import com.cs426.learningmocha.data.local.entity.NodeType
 import com.cs426.learningmocha.data.local.entity.ResourceItem
 import com.cs426.learningmocha.data.local.entity.ResourceType
 import com.cs426.learningmocha.databinding.FragmentPostReaderBinding
@@ -33,12 +37,16 @@ import com.cs426.learningmocha.ui.common.ChipBar
 import com.cs426.learningmocha.ui.common.ListState
 import com.cs426.learningmocha.ui.common.ListStateBinder
 import com.cs426.learningmocha.ui.common.NodePalette
+import com.cs426.learningmocha.ui.browse.OutlineRow
 import com.cs426.learningmocha.ui.common.PostMarks
+import com.cs426.learningmocha.ui.common.Readiness
+import com.cs426.learningmocha.ui.common.StatusMeterBinder
 import com.cs426.learningmocha.ui.common.WikiMarkdown
 import com.cs426.learningmocha.ui.common.YouTubeThumbnails
 import com.cs426.learningmocha.ui.common.labelRes
 import com.cs426.learningmocha.ui.common.stripe
 import com.cs426.learningmocha.ui.common.themeColor
+import com.cs426.learningmocha.viewmodel.BranchSession
 import com.cs426.learningmocha.viewmodel.PostReaderViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -79,6 +87,12 @@ class PostReaderFragment : Fragment() {
         b.readerBody.setLineSpacing(0f, settings.readerLineSpacing)
 
         b.readerBack.setOnClickListener { findNavController().popBackStack() }
+        b.readerHome.setOnClickListener {
+            // Home is the graph's start destination, so it is always the bottom of the stack:
+            // one pop clears however many posts the trail collected on the way here.
+            findNavController().popBackStack(R.id.homeFragment, false)
+        }
+        bindNavOnScroll(b)
         b.readerFavorite.setOnClickListener { viewModel.toggleFavorite() }
         b.readerGraph.setOnClickListener {
             findNavController().navigate(
@@ -95,6 +109,7 @@ class PostReaderFragment : Fragment() {
                 ),
             )
         }
+        b.readerBranchOutline.setOnClickListener { showOutline() }
         b.readerStatus.setOnClickListener { pickStatus() }
         b.readerDictionaryAll.setOnClickListener {
             findNavController().navigate(R.id.action_global_dictionary)
@@ -142,6 +157,8 @@ class PostReaderFragment : Fragment() {
                             getString(post.status.labelRes()),
                         )
                         bindBreadcrumbs(b.readerPath, state.breadcrumbs)
+                        bindPrerequisites(b, state.readiness)
+                        bindBranch(b, state.branch)
                         ChipBar.bind(b.readerTags, state.tags.map { tag ->
                             tag.name to {
                                 findNavController().navigate(
@@ -187,6 +204,29 @@ class PostReaderFragment : Fragment() {
         super.onDestroyView()
         binding = null
         markwon = null
+    }
+
+    /**
+     * Hands the tab bar back to the reader while the user is going down the page, and returns
+     * it the moment they scroll up — the direction people already move in when they are looking
+     * for a way out. Purely presentational: nothing here changes what is on the back stack.
+     *
+     * The threshold keeps a fling's overscroll wobble from flickering the bar, and the last
+     * branch guarantees a post too short to reach it never strands the user without tabs.
+     */
+    private fun bindNavOnScroll(b: FragmentPostReaderBinding) {
+        val slop = (SCROLL_SLOP_DP * resources.displayMetrics.density).toInt()
+        b.readerContent.setOnScrollChangeListener(
+            NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, oldScrollY ->
+                val host = activity as? MainActivity ?: return@OnScrollChangeListener
+                val delta = scrollY - oldScrollY
+                when {
+                    scrollY <= slop -> host.setBottomNavVisible(true)
+                    delta > slop -> host.setBottomNavVisible(false)
+                    delta < -slop -> host.setBottomNavVisible(true)
+                }
+            },
+        )
     }
 
     private fun buildMarkwon(): Markwon {
@@ -277,6 +317,156 @@ class PostReaderFragment : Fragment() {
             setContentView(content)
             show()
         }
+    }
+
+    /**
+     * The branch strip. Prev and next *replace* the reader rather than stacking on it, so
+     * walking twelve posts does not leave twelve entries to press Back through — Back still
+     * means "leave this branch", from anywhere in it.
+     */
+    private fun bindBranch(b: FragmentPostReaderBinding, branch: BranchSession?) {
+        b.readerBranch.isVisible = branch != null
+        if (branch == null) return
+        b.readerBranchTitle.text = getString(
+            R.string.branch_position,
+            branch.title,
+            branch.position,
+            branch.total,
+        )
+        // Disabled rather than hidden at the ends, so the two arrows do not shuffle sideways
+        // as you move through the branch.
+        b.readerBranchPrev.isEnabled = branch.previousId != null
+        b.readerBranchPrev.alpha = if (branch.previousId != null) 1f else DISABLED_ALPHA
+        b.readerBranchNext.isEnabled = branch.nextId != null
+        b.readerBranchNext.alpha = if (branch.nextId != null) 1f else DISABLED_ALPHA
+        b.readerBranchPrev.setOnClickListener { branch.previousId?.let(::openInBranch) }
+        b.readerBranchNext.setOnClickListener { branch.nextId?.let(::openInBranch) }
+    }
+
+    private fun openInBranch(postId: Long) {
+        findNavController().navigate(
+            R.id.postReaderFragment,
+            bundleOf("postId" to postId, "branchId" to viewModel.branchId),
+            navOptions {
+                popUpTo(R.id.postReaderFragment) { inclusive = true }
+                anim {
+                    enter = R.anim.nav_enter
+                    exit = R.anim.nav_exit
+                    popEnter = R.anim.nav_pop_enter
+                    popExit = R.anim.nav_pop_exit
+                }
+            },
+        )
+    }
+
+    /**
+     * The branch's folders and posts, indented, with the post being read marked. This is the
+     * "show me the actual structure" half of branch reading: the strip says where you are in
+     * the sequence, this says where that is in the tree.
+     */
+    private fun showOutline() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val rows = viewModel.outline()
+            val context = requireContext()
+            val gutter = resources.getDimensionPixelSize(R.dimen.space_m)
+            val indent = resources.getDimensionPixelSize(R.dimen.space_l)
+            val content = LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setBackgroundColor(context.themeColor(R.attr.mochaCream))
+                setPadding(0, gutter, 0, gutter)
+            }
+            val sheet = BottomSheetDialog(context)
+            content.addView(
+                TextView(context).apply {
+                    setTextAppearance(R.style.TextAppearance_Mocha_Title)
+                    setTextColor(context.themeColor(R.attr.mochaBrown))
+                    setText(R.string.branch_outline)
+                    setPadding(gutter, 0, gutter, gutter)
+                },
+            )
+            if (rows.isEmpty()) {
+                content.addView(
+                    TextView(context).apply {
+                        setTextAppearance(R.style.TextAppearance_Mocha_Body)
+                        setText(R.string.branch_outline_empty)
+                        setPadding(gutter, 0, gutter, 0)
+                    },
+                )
+            }
+            rows.forEachIndexed { index, entry -> content.addView(outlineRow(entry, index, indent, sheet)) }
+            sheet.setContentView(
+                androidx.core.widget.NestedScrollView(context).apply { addView(content) },
+            )
+            sheet.show()
+        }
+    }
+
+    private fun outlineRow(
+        entry: OutlineRow,
+        index: Int,
+        indent: Int,
+        sheet: BottomSheetDialog,
+    ): View {
+        val row = layoutInflater.inflate(R.layout.item_home_row, null, false)
+        row.stripe(index)
+        row.setPadding(indent * entry.depth, row.paddingTop, 0, row.paddingBottom)
+        val title = row.findViewById<TextView>(R.id.row_title)
+        title.text = entry.node.title
+        // The post you are on is the one thing the sheet has to answer at a glance.
+        val current = entry.node.id == viewModel.postId
+        title.setTextColor(
+            requireContext().themeColor(
+                if (current) R.attr.mochaBrown else R.attr.mochaTextPrimary,
+            ),
+        )
+        row.findViewById<TextView>(R.id.row_caption)
+            .setText(NodePalette.typeLabelRes(entry.node.type))
+        PostMarks.paint(
+            row.findViewById<ImageView>(R.id.row_icon),
+            entry.node,
+            fallback = NodePalette.typeInk(entry.node.type),
+        )
+        if (entry.node.type == NodeType.POST) {
+            row.setOnClickListener {
+                sheet.dismiss()
+                if (!current) openInBranch(entry.node.id)
+            }
+        }
+        return row
+    }
+
+    /**
+     * The readiness card. Absent entirely on a post with no prerequisites, which is most of
+     * them — an empty "Prerequisites: 0 of 0" would be noise on every article in the library.
+     *
+     * Being unready is never a lock. The rows say what is missing and the caption offers to
+     * read on anyway: this is a learning tracker, not a course with gates in it.
+     */
+    private fun bindPrerequisites(b: FragmentPostReaderBinding, readiness: Readiness) {
+        b.readerPrereq.isVisible = readiness.total > 0
+        if (readiness.total == 0) return
+        b.readerPrereqSummary.text = buildString {
+            append(
+                getString(R.string.reader_prereq_summary, readiness.started, readiness.total),
+            )
+            append(" · ")
+            append(
+                getString(
+                    if (readiness.isReady) {
+                        R.string.reader_prereq_ready
+                    } else {
+                        R.string.reader_prereq_blocked
+                    },
+                ),
+            )
+        }
+        // Read-only here: tapping a share on a post's own bar has nothing to filter, and the
+        // caption above already gives the count the meter would otherwise repeat.
+        StatusMeterBinder.bind(b.readerPrereqMeter, readiness.stats, showSummary = false)
+        bindNodeRows(b.readerPrereqHeader, b.readerPrereqList, readiness.required)
+        // bindNodeRows hides its header when the list is empty; this one is never empty here,
+        // and the card's own visibility already answers that question.
+        b.readerPrereqHeader.isVisible = true
     }
 
     private fun bindBreadcrumbs(path: TextView, crumbs: List<Node>) {
@@ -388,6 +578,14 @@ class PostReaderFragment : Fragment() {
             }
             container.addView(row)
         }
+    }
+
+    private companion object {
+        /** Ignore anything smaller: a fling's settle wobbles by a pixel or two either way. */
+        const val SCROLL_SLOP_DP = 6f
+
+        /** Greyed rather than hidden, so the arrows keep their places at the ends of a branch. */
+        const val DISABLED_ALPHA = 0.35f
     }
 }
 

@@ -36,12 +36,11 @@
 
     <color name="mode_answer_ink">#9DC0AB</color>
     <color name="mode_answer_wash">#28362D</color>
-    <color name="mode_suggest_ink">#E7BE6A</color>
-    <color name="mode_suggest_wash">#3F3320</color>
-    <color name="mode_modify_ink">#83B6DE</color>
-    <color name="mode_modify_wash">#25384A</color>
-    <color name="mode_organize_ink">#B79AE8</color>
-    <color name="mode_organize_wash">#332A47</color>
+    <color name="mode_assist_ink">#83B6DE</color>
+    <color name="mode_assist_wash">#25384A</color>
+    <color name="mark_gold_ink">#E7BE6A</color>
+    <color name="mark_sky_ink">#83B6DE</color>
+    <color name="mark_violet_ink">#B79AE8</color>
 
     <color name="mocha_row_even">#332C27</color>
     <color name="mocha_row_odd">#3B332D</color>

@@ -7,6 +7,7 @@ import com.cs426.learningmocha.data.local.entity.Link;
 import com.cs426.learningmocha.data.local.entity.Node;
 import com.cs426.learningmocha.data.local.entity.NodeType;
 import com.cs426.learningmocha.data.local.entity.PostTag;
+import com.cs426.learningmocha.data.local.entity.Prerequisite;
 import com.cs426.learningmocha.data.local.entity.ResourceItem;
 import com.cs426.learningmocha.data.local.entity.ResourceType;
 import com.cs426.learningmocha.data.local.entity.Tag;
@@ -45,7 +46,8 @@ public class BackupRoundTripTest {
                         new DictionaryEntry(9L, 2L, "quorum", "A majority", "đa số"),
                         new DictionaryEntry(10L, null, "global term", "Not tied to a post", "")),
                 Collections.singletonList(
-                        new ResourceItem(11L, 2L, ResourceType.YOUTUBE, "Raft talk", "https://y.t/1")));
+                        new ResourceItem(11L, 2L, ResourceType.YOUTUBE, "Raft talk", "https://y.t/1")),
+                Collections.singletonList(new Prerequisite(2L, 12L)));
     }
 
     private static BackupSnapshot roundTrip(BackupSnapshot in) throws IOException {
@@ -64,7 +66,31 @@ public class BackupRoundTripTest {
         assertEquals(1, back.getPostTags().size());
         assertEquals(2, back.getDictionary().size());
         assertEquals(1, back.getResources().size());
+        assertEquals(1, back.getPrerequisites().size());
         assertEquals(1, back.getPostCount());
+    }
+
+    @Test
+    public void carriesPrerequisiteEdgesWithBothEnds() throws IOException {
+        Prerequisite edge = roundTrip(sample()).getPrerequisites().get(0);
+        assertEquals(2L, edge.getPostId());
+        assertEquals(12L, edge.getRequiresId());
+    }
+
+    /**
+     * A file written before prerequisites existed has no such key. The reader has to treat that
+     * as "none", not as a parse failure — every user upgrading from an earlier build has one.
+     */
+    @Test
+    public void readsABackupWithNoPrerequisitesKey() throws IOException {
+        String legacy = "{\"format\":\"mocha.backup\",\"version\":1,\"exportedAt\":1,"
+                + "\"nodes\":[{\"id\":1,\"parentId\":null,\"type\":\"POST\",\"title\":\"Raft\","
+                + "\"content\":null,\"status\":\"NONE\",\"favorite\":false,\"orderIndex\":0,"
+                + "\"createdAt\":1,\"updatedAt\":1}],"
+                + "\"links\":[],\"tags\":[],\"postTags\":[],\"dictionary\":[],\"resources\":[]}";
+        BackupSnapshot back = ImportJsonReader.read(new StringReader(legacy));
+        assertEquals(1, back.getNodes().size());
+        assertTrue(back.getPrerequisites().isEmpty());
     }
 
     @Test

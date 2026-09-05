@@ -42,9 +42,6 @@ class ChatConversationFragment : Fragment() {
     private val viewModel: ChatConversationViewModel by viewModels()
     private var adapter: ChatMessageAdapter? = null
 
-    /** The three combinable action chips; Answer is handled apart because it is exclusive. */
-    private var modeChips: Map<Chip, String> = emptyMap()
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -71,17 +68,10 @@ class ChatConversationFragment : Fragment() {
         b.conversationSend.setOnClickListener { send() }
         b.conversationBannerRetry.setOnClickListener { viewModel.ping() }
 
-        modeChips = mapOf(
-            b.chipSuggest to ChatModes.SUGGEST,
-            b.chipModify to ChatModes.MODIFY,
-            b.chipOrganize to ChatModes.ORGANIZE,
-        )
-        b.chipAnswer.setOnClickListener { pickMode(ChatModes.ANSWER, checked = true) }
-        modeChips.forEach { (chip, mode) ->
-            chip.setOnClickListener { pickMode(mode, chip.isChecked) }
-        }
+        b.chipAnswer.setOnClickListener { pickMode(ChatModes.ANSWER) }
+        b.chipAssist.setOnClickListener { pickMode(ChatModes.ASSIST) }
         paintModeChip(b.chipAnswer, ChatModes.ANSWER)
-        modeChips.forEach { (chip, mode) -> paintModeChip(chip, mode) }
+        paintModeChip(b.chipAssist, ChatModes.ASSIST)
         applyModeChips(ChatModes.ANSWER)
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -145,7 +135,6 @@ class ChatConversationFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         adapter = null
-        modeChips = emptyMap()
         binding = null
     }
 
@@ -203,30 +192,17 @@ class ChatConversationFragment : Fragment() {
         }
     }
 
-    /**
-     * Applies the exclusivity a ChipGroup cannot express: the three action modes combine with
-     * each other, Answer clears them, and unchecking the last action chip falls back to Answer
-     * rather than leaving the conversation with no mode at all.
-     */
-    private fun pickMode(mode: String, checked: Boolean) {
-        val current = ChatModes.parse(viewModel.uiState.value.mode).toMutableSet()
-        if (mode == ChatModes.ANSWER) {
-            current.clear()
-        } else {
-            current.remove(ChatModes.ANSWER)
-            if (checked) current.add(mode) else current.remove(mode)
-        }
-        val next = ChatModes.join(current)
-        viewModel.setMode(next)
-        applyModeChips(next)
+    private fun pickMode(mode: String) {
+        viewModel.setMode(mode)
+        applyModeChips(mode)
     }
 
     /**
-     * Gives each mode chip the colour its replies are already drawn in — green Answer, amber
-     * Suggest, blue Modify, violet Organize — taken from the same [NodePalette] the bubbles and
-     * their mode pills use. The row was four identical brown chips before, which made the one
-     * control that changes what the assistant is allowed to do the least visible thing on the
-     * screen, and left the bubble colours looking arbitrary.
+     * Gives each mode chip the colour its replies are already drawn in — green Answer, blue
+     * Assist — taken from the same [NodePalette] the bubbles and their mode pills use. The row
+     * was identical brown chips before, which made the one control that decides what the
+     * assistant is allowed to do the least visible thing on the screen, and left the bubble
+     * colours looking arbitrary.
      *
      * The ink stays on the outline and the label whether or not the chip is checked, so the row
      * reads as a colour key at rest; checking one fills it with the matching wash instead of
@@ -247,17 +223,21 @@ class ChatConversationFragment : Fragment() {
         chip.checkedIconTint = ColorStateList.valueOf(ink)
     }
 
+    /**
+     * Checks the winning chip and lets the group clear the other. Done the other way round it
+     * would silently leave both checked: with `selectionRequired` on, a ChipGroup refuses to
+     * uncheck the only chip that is checked.
+     */
     private fun applyModeChips(mode: String) {
         val b = binding ?: return
-        val parts = ChatModes.parse(mode)
-        b.chipAnswer.isChecked = ChatModes.ANSWER in parts
-        modeChips.forEach { (chip, value) -> chip.isChecked = value in parts }
+        if (ChatModes.parse(mode) == ChatModes.ASSIST) {
+            b.chipAssist.isChecked = true
+        } else {
+            b.chipAnswer.isChecked = true
+        }
     }
 
-    private fun modeLabel(mode: String): String =
-        ChatModes.parse(mode).joinToString(" + ") {
-            getString(NodePalette.modeLabelRes(it))
-        }
+    private fun modeLabel(mode: String): String = getString(NodePalette.modeLabelRes(mode))
 
     private fun buildRows(state: ChatConversationUiState): List<ChatRow> {
         val rows = state.messages.map { message ->
@@ -330,13 +310,11 @@ class ChatConversationFragment : Fragment() {
         )
     }
 
-    private fun actionModeOrNull(raw: String): String? {
-        val joined = ChatModes.join(ChatModes.parse(raw))
-        return joined.takeIf { ChatModes.proposesChanges(it) }
-    }
+    private fun actionModeOrNull(raw: String): String? =
+        ChatModes.ASSIST.takeIf { ChatModes.proposesChanges(raw) }
 
     private fun askAboutReview(suggested: String, messageId: Long) {
-        val mode = actionModeOrNull(suggested) ?: ChatModes.MODIFY
+        val mode = actionModeOrNull(suggested) ?: ChatModes.ASSIST
         val fields = DialogModeSwitchBinding.inflate(layoutInflater)
         fields.modeSwitchMessage.text = getString(
             R.string.chat_mode_switch_review_message,

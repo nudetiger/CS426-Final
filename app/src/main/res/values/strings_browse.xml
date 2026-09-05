@@ -12,6 +12,7 @@
     <string name="browse_sort_updated_asc">Least recently updated</string>
     <string name="browse_sort_created_desc">Newest first</string>
     <string name="browse_sort_status">Learning status</string>
+    <string name="browse_sort_ready">Ready to read</string>
 
     <!-- Filtering -->
     <string name="browse_filter">Filter</string>
@@ -55,4 +56,8 @@
 
     <string name="cd_favorite_add">Add to favorites</string>
     <string name="cd_favorite_remove">Remove from favorites</string>
+
+    <!-- Prerequisite filter: only posts whose prerequisites have all been started. -->
+    <string name="browse_filter_ready">Ready to read</string>
+    <string name="browse_filter_ready_hint">Hide posts whose prerequisites you have not started</string>
 </resources>

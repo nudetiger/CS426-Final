@@ -17,9 +17,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.cs426.learningmocha.R
 import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
@@ -30,6 +28,7 @@ import com.cs426.learningmocha.databinding.DialogNodeTitleBinding
 import com.cs426.learningmocha.databinding.FragmentBrowseBinding
 import com.cs426.learningmocha.ui.common.ListStateBinder
 import com.cs426.learningmocha.ui.common.StatusMeterBinder
+import com.cs426.learningmocha.ui.common.SwipeToDelete
 import com.cs426.learningmocha.ui.common.labelRes
 import com.cs426.learningmocha.viewmodel.BrowseLocatorViewModel
 import com.cs426.learningmocha.viewmodel.BrowseUiState
@@ -92,7 +91,10 @@ class BrowseFragment : Fragment() {
         b.browseList.adapter = adapter
         // Swipe-to-delete only. Drag reordering is gone: it described one folder at a time,
         // could not be undone, and sorting says something the order of a drag never did.
-        ItemTouchHelper(swipeToDelete).attachToRecyclerView(b.browseList)
+        SwipeToDelete.attach(b.browseList) { position, restore ->
+            val node = adapter.currentList.getOrNull(position)?.node
+            if (node == null) restore() else confirmDelete(node, onCancel = restore)
+        }
 
         b.browseFab.setOnClickListener { showCreateDialog() }
         b.browseSort.setOnClickListener { showSortMenu(it) }
@@ -249,6 +251,7 @@ class BrowseFragment : Fragment() {
         fields.filterStatusProgress.isChecked = LearningStatus.IN_PROGRESS in current.statuses
         fields.filterStatusFinished.isChecked = LearningStatus.FINISHED in current.statuses
         fields.filterFavorites.isChecked = current.favoritesOnly
+        fields.filterReady.isChecked = current.readyOnly
 
         MaterialAlertDialogBuilder(requireContext())
             .setView(fields.root)
@@ -267,7 +270,12 @@ class BrowseFragment : Fragment() {
                     if (fields.filterStatusFinished.isChecked) add(LearningStatus.FINISHED)
                 }
                 viewModel.setFilter(
-                    BrowseFilter(types, statuses, fields.filterFavorites.isChecked),
+                    BrowseFilter(
+                        types,
+                        statuses,
+                        fields.filterFavorites.isChecked,
+                        fields.filterReady.isChecked,
+                    ),
                 )
             }
             .show()
@@ -277,8 +285,15 @@ class BrowseFragment : Fragment() {
         PopupMenu(requireContext(), anchor).apply {
             menuInflater.inflate(R.menu.menu_node, menu)
             menu.findItem(R.id.action_set_status)?.isVisible = node.type == NodeType.POST
+            // Only containers: reading "a branch" from a post would mean the post plus its
+            // sub-posts, which is what tapping the post already does.
+            menu.findItem(R.id.action_read_branch)?.isVisible = node.type != NodeType.POST
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
+                    R.id.action_read_branch -> {
+                        readBranch(node)
+                        true
+                    }
                     R.id.action_rename -> {
                         showRenameDialog(node)
                         true
@@ -390,25 +405,31 @@ class BrowseFragment : Fragment() {
             .show()
     }
 
+    /**
+     * Jumps to the first post of [node]'s subtree and stays inside it: the reader gets a strip
+     * with prev/next and the branch's structure, so a whole branch can be read without coming
+     * back here between posts.
+     */
+    private fun readBranch(node: Node) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val first = viewModel.firstPostOf(node.id)
+            val root = binding?.root ?: return@launch
+            if (first == null) {
+                Snackbar.make(root, R.string.browse_read_branch_empty, Snackbar.LENGTH_LONG).show()
+                return@launch
+            }
+            findNavController().navigate(
+                R.id.action_global_open_post,
+                bundleOf("postId" to first, "branchId" to node.id),
+            )
+        }
+    }
+
     private fun openPost(postId: Long) {
         findNavController().navigate(
             R.id.action_global_open_post,
             bundleOf("postId" to postId),
         )
-    }
-
-    private val swipeToDelete = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.START) {
-        override fun onMove(
-            recyclerView: RecyclerView,
-            viewHolder: RecyclerView.ViewHolder,
-            target: RecyclerView.ViewHolder,
-        ): Boolean = false
-
-        override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-            val position = viewHolder.bindingAdapterPosition
-            val node = adapter.currentList.getOrNull(position)?.node ?: return
-            confirmDelete(node, onCancel = { adapter.notifyItemChanged(position) })
-        }
     }
 
     private companion object {

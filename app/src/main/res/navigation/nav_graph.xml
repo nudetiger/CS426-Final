@@ -96,6 +96,13 @@
         <argument
             android:name="postId"
             app:argType="long" />
+        <!-- Set when the post was opened as part of "Read this branch"; 0 means a normal
+             open. It is a nav argument rather than session state so it survives process
+             death with the post it belongs to. -->
+        <argument
+            android:name="branchId"
+            android:defaultValue="0L"
+            app:argType="long" />
         <action
             android:id="@+id/action_reader_to_editor"
             app:destination="@id/postEditorFragment"

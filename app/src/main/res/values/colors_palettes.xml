@@ -43,12 +43,11 @@
     <color name="rp_type_post_wash">#3A2B2C</color>
     <color name="rp_mode_answer_ink">#7FB69B</color>
     <color name="rp_mode_answer_wash">#233830</color>
-    <color name="rp_mode_suggest_ink">#F6C177</color>
-    <color name="rp_mode_suggest_wash">#3D3324</color>
-    <color name="rp_mode_modify_ink">#9CCFD8</color>
-    <color name="rp_mode_modify_wash">#21343A</color>
-    <color name="rp_mode_organize_ink">#C4A7E7</color>
-    <color name="rp_mode_organize_wash">#2F2942</color>
+    <color name="rp_mode_assist_ink">#9CCFD8</color>
+    <color name="rp_mode_assist_wash">#21343A</color>
+    <color name="rp_mark_gold_ink">#F6C177</color>
+    <color name="rp_mark_sky_ink">#9CCFD8</color>
+    <color name="rp_mark_violet_ink">#C4A7E7</color>
 
     <!-- Catppuccin Mocha -->
     <color name="ctp_cream">#1E1E2E</color>
@@ -84,12 +83,11 @@
     <color name="ctp_type_post_wash">#3F2F24</color>
     <color name="ctp_mode_answer_ink">#A6E3A1</color>
     <color name="ctp_mode_answer_wash">#273B2A</color>
-    <color name="ctp_mode_suggest_ink">#F9E2AF</color>
-    <color name="ctp_mode_suggest_wash">#3F3A26</color>
-    <color name="ctp_mode_modify_ink">#89B4FA</color>
-    <color name="ctp_mode_modify_wash">#26314A</color>
-    <color name="ctp_mode_organize_ink">#CBA6F7</color>
-    <color name="ctp_mode_organize_wash">#33294A</color>
+    <color name="ctp_mode_assist_ink">#89B4FA</color>
+    <color name="ctp_mode_assist_wash">#26314A</color>
+    <color name="ctp_mark_gold_ink">#F9E2AF</color>
+    <color name="ctp_mark_sky_ink">#89B4FA</color>
+    <color name="ctp_mark_violet_ink">#CBA6F7</color>
 
     <!-- Nord -->
     <color name="nord_cream">#2E3440</color>
@@ -125,10 +123,9 @@
     <color name="nord_type_post_wash">#3D3129</color>
     <color name="nord_mode_answer_ink">#A3BE8C</color>
     <color name="nord_mode_answer_wash">#333D32</color>
-    <color name="nord_mode_suggest_ink">#EBCB8B</color>
-    <color name="nord_mode_suggest_wash">#3E3A2C</color>
-    <color name="nord_mode_modify_ink">#81A1C1</color>
-    <color name="nord_mode_modify_wash">#2F3948</color>
-    <color name="nord_mode_organize_ink">#B48EAD</color>
-    <color name="nord_mode_organize_wash">#3A3040</color>
+    <color name="nord_mode_assist_ink">#81A1C1</color>
+    <color name="nord_mode_assist_wash">#2F3948</color>
+    <color name="nord_mark_gold_ink">#EBCB8B</color>
+    <color name="nord_mark_sky_ink">#81A1C1</color>
+    <color name="nord_mark_violet_ink">#B48EAD</color>
 </resources>

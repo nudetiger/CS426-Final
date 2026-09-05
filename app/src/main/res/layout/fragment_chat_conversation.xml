@@ -48,14 +48,16 @@
             android:paddingBottom="@dimen/space_s"
             android:scrollbars="none">
 
-        <!-- Multi-select: the three action modes combine, and picking any of them clears
-             Answer. The fragment enforces that, because a ChipGroup cannot express it. -->
+        <!-- Two exclusive modes, so the ChipGroup enforces this itself now. It used to take a
+             hand-rolled listener: three of the four chips combined and the fourth cleared them,
+             which is not a rule a ChipGroup can express. -->
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/conversation_modes"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:chipSpacingHorizontal="@dimen/space_s"
-            app:singleSelection="false">
+            app:selectionRequired="true"
+            app:singleSelection="true">
 
             <com.google.android.material.chip.Chip
                 android:id="@+id/chip_answer"
@@ -65,22 +67,10 @@
                 android:text="@string/chat_mode_answer" />
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chip_suggest"
+                android:id="@+id/chip_assist"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/chat_mode_suggest" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_modify"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/chat_mode_modify" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_organize"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/chat_mode_organize" />
+                android:text="@string/chat_mode_assist" />
         </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
     </LinearLayout>

@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
@@ -94,6 +95,7 @@ class PostEditorFragment : Fragment() {
         b.editorAddResource.setOnClickListener { addResource() }
         b.editorMarkRow.setOnClickListener { pickMark() }
         b.editorNextRow.setOnClickListener { pickNext() }
+        b.editorPrereqRow.setOnClickListener { pickPrerequisites() }
         b.editorPreviewToggle.setOnClickListener { showPreview(!previewing) }
 
         // Every edit goes to the ViewModel first; the collector below renders back from state.
@@ -138,6 +140,19 @@ class PostEditorFragment : Fragment() {
                             b.editorNextLabel.text = state.nextTitle.ifBlank {
                                 getString(R.string.editor_next_none)
                             }
+                            b.editorPrereqLabel.text = when {
+                                state.prerequisiteTitles.isEmpty() ->
+                                    getString(R.string.editor_prereq_none)
+                                // Two fit on the row; beyond that the count says more than a
+                                // truncated list of titles would.
+                                state.prerequisiteTitles.size <= 2 ->
+                                    state.prerequisiteTitles.joinToString(", ")
+                                else -> resources.getQuantityString(
+                                    R.plurals.editor_prereq_count,
+                                    state.prerequisiteTitles.size,
+                                    state.prerequisiteTitles.size,
+                                )
+                            }
                         }
                         val error = state.errorMessage
                         if (error != null && state.listState == ListState.CONTENT) {
@@ -170,6 +185,19 @@ class PostEditorFragment : Fragment() {
                 }
                 launch {
                     viewModel.savedFlow.collect { result ->
+                        // A Toast, not a Snackbar: the next few lines navigate away, and a
+                        // Snackbar anchored to this fragment's view goes with it.
+                        if (result.refusedPrerequisites > 0) {
+                            Toast.makeText(
+                                requireContext(),
+                                resources.getQuantityString(
+                                    R.plurals.editor_prereq_refused,
+                                    result.refusedPrerequisites,
+                                    result.refusedPrerequisites,
+                                ),
+                                Toast.LENGTH_LONG,
+                            ).show()
+                        }
                         // A numbered title is not a failure, but the user has to be told:
                         // they typed one name and the library stored another.
                         if (result.renamed) {
@@ -442,6 +470,42 @@ class PostEditorFragment : Fragment() {
                     .show()
             }
             .show()
+    }
+
+    /**
+     * Multi-select, unlike the next-post picker: a topic often converges on several things you
+     * need first. The post itself is left out of the list — a self-prerequisite would be
+     * refused on save anyway, and offering it invites the question.
+     */
+    private fun pickPrerequisites() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val own = viewModel.uiState.value.title
+            val titles = viewModel.postTitles().filter { !it.equals(own, ignoreCase = true) }
+            if (titles.isEmpty()) {
+                Toast.makeText(requireContext(), R.string.editor_prereq_none, Toast.LENGTH_SHORT)
+                    .show()
+                return@launch
+            }
+            val chosen = viewModel.uiState.value.prerequisiteTitles.toMutableSet()
+            val checked = BooleanArray(titles.size) { titles[it] in chosen }
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.editor_pick_prereq)
+                .setMultiChoiceItems(titles.toTypedArray(), checked) { _, which, isChecked ->
+                    checked[which] = isChecked
+                }
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.action_save) { _, _ ->
+                    val picked = titles.filterIndexed { index, _ -> checked[index] }
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        val byTitle = viewModel.titleToId()
+                        viewModel.onPrerequisitesChanged(
+                            picked.mapNotNull { byTitle[it.lowercase()] },
+                            picked,
+                        )
+                    }
+                }
+                .show()
+        }
     }
 
     private fun pickNext() {

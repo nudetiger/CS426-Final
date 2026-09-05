@@ -39,10 +39,12 @@
     <attr name="typePostWash" format="color|reference" />
     <attr name="modeAnswerInk" format="color|reference" />
     <attr name="modeAnswerWash" format="color|reference" />
-    <attr name="modeSuggestInk" format="color|reference" />
-    <attr name="modeSuggestWash" format="color|reference" />
-    <attr name="modeModifyInk" format="color|reference" />
-    <attr name="modeModifyWash" format="color|reference" />
-    <attr name="modeOrganizeInk" format="color|reference" />
-    <attr name="modeOrganizeWash" format="color|reference" />
+    <attr name="modeAssistInk" format="color|reference" />
+    <attr name="modeAssistWash" format="color|reference" />
+    <!-- Post marks. These three hues used to be borrowed from the chat-mode palette, which
+         quietly tied a user's chosen post colour to how many chat modes the app happened to
+         have; merging the modes broke them. They are their own tokens now. -->
+    <attr name="markGoldInk" format="color|reference" />
+    <attr name="markSkyInk" format="color|reference" />
+    <attr name="markVioletInk" format="color|reference" />
 </resources>

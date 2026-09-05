@@ -5,6 +5,7 @@ import com.cs426.learningmocha.data.local.entity.DictionaryEntry;
 import com.cs426.learningmocha.data.local.entity.Link;
 import com.cs426.learningmocha.data.local.entity.Node;
 import com.cs426.learningmocha.data.local.entity.PostTag;
+import com.cs426.learningmocha.data.local.entity.Prerequisite;
 import com.cs426.learningmocha.data.local.entity.ResourceItem;
 import com.cs426.learningmocha.data.local.entity.Tag;
 import com.google.gson.stream.JsonWriter;
@@ -63,6 +64,15 @@ public final class ExportJsonWriter {
             json.beginObject();
             json.name("id").value(t.getId());
             json.name("name").value(t.getName());
+            json.endObject();
+        }
+        json.endArray();
+
+        json.name("prerequisites").beginArray();
+        for (Prerequisite p : data.getPrerequisites()) {
+            json.beginObject();
+            json.name("postId").value(p.getPostId());
+            json.name("requiresId").value(p.getRequiresId());
             json.endObject();
         }
         json.endArray();

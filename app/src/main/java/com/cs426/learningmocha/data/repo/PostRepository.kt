@@ -10,9 +10,11 @@ import com.cs426.learningmocha.data.local.entity.DictionaryEntry
 import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeType
+import com.cs426.learningmocha.data.local.entity.Prerequisite
 import com.cs426.learningmocha.data.local.entity.ResourceItem
 import com.cs426.learningmocha.data.local.entity.ResourceType
 import com.cs426.learningmocha.data.local.entity.Tag
+import com.cs426.learningmocha.util.PrereqRules
 import com.cs426.learningmocha.util.TitleDedup
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -31,6 +33,8 @@ data class PostDetail(
     val terms: List<DictionaryEntry>,
     val titleToId: Map<String, Long>,
     val nextPost: Node? = null,
+    /** Posts this one should be read after. Direct only — see [com.cs426.learningmocha.ui.common.Readiness]. */
+    val prerequisites: List<Node> = emptyList(),
 )
 
 class PostRepository(private val db: AppDatabase) {
@@ -63,6 +67,7 @@ class PostRepository(private val db: AppDatabase) {
                 titleToId = dao.postTitleIds().associate { it.title.lowercase() to it.id },
                 nextPost = node.nextPostId?.let { dao.getById(it) }
                     ?.takeIf { it.type == NodeType.POST },
+                prerequisites = knowledge.prerequisitesFor(id),
             )
         }
     }
@@ -208,6 +213,56 @@ class PostRepository(private val db: AppDatabase) {
         val node = dao.getById(id) ?: return
         val next = nextPostId?.takeUnless { it == 0L || it == id }
         dao.update(node.copy(nextPostId = next, updatedAt = System.currentTimeMillis()))
+    }
+
+    /** Post id → the ids it directly requires. One query; the shape the cycle check wants. */
+    suspend fun prerequisiteEdges(): Map<Long, List<Long>> =
+        knowledge.allPrerequisites().groupBy({ it.postId }, { it.requiresId })
+
+    suspend fun prerequisitesOf(postId: Long): List<Node> = knowledge.prerequisitesFor(postId)
+
+    /**
+     * Replaces [postId]'s prerequisites wholesale, which is what the editor's picker saves.
+     *
+     * @return the ids that were refused because they would close a loop. Refusing one and
+     *   keeping the rest beats failing the save: the user picked several things and only one of
+     *   them was impossible, and a thrown exception would lose the others along with it.
+     */
+    suspend fun setPrerequisites(postId: Long, requiredIds: List<Long>): List<Long> =
+        db.withTransaction {
+            // The edges being replaced are left out: a post cannot cycle against a requirement
+            // it is in the middle of dropping.
+            val edges = HashMap<Long, MutableList<Long>>()
+            knowledge.allPrerequisites()
+                .filter { it.postId != postId }
+                .forEach { edges.getOrPut(it.postId) { ArrayList() }.add(it.requiresId) }
+
+            knowledge.clearPrerequisites(postId)
+            val refused = ArrayList<Long>()
+            for (id in requiredIds.distinct()) {
+                if (PrereqRules.wouldCycle(postId, id, edges)) {
+                    refused.add(id)
+                    continue
+                }
+                knowledge.insertPrerequisite(Prerequisite(postId, id))
+                // Recorded as we go, so two picks that would only cycle *together* are caught.
+                edges.getOrPut(postId) { ArrayList() }.add(id)
+            }
+            refused
+        }
+
+    /** @return false when the edge was refused as a loop. Used by the AI action executor. */
+    suspend fun addPrerequisite(postId: Long, requiresId: Long): Boolean =
+        db.withTransaction {
+            if (PrereqRules.wouldCycle(postId, requiresId, prerequisiteEdges())) {
+                return@withTransaction false
+            }
+            knowledge.insertPrerequisite(Prerequisite(postId, requiresId))
+            true
+        }
+
+    suspend fun removePrerequisite(postId: Long, requiresId: Long) {
+        knowledge.deletePrerequisite(postId, requiresId)
     }
 
     suspend fun setFavorite(id: Long, favorite: Boolean) {

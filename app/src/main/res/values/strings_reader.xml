@@ -16,6 +16,14 @@
     <string name="youtube_sheet_open">Open in YouTube</string>
     <string name="youtube_sheet_unavailable">Video unavailable offline. Open it in YouTube to try again.</string>
 
+    <string name="reader_home">Back to home</string>
+
+    <!-- Prerequisites: what this post expects you to have read first. -->
+    <string name="reader_prereq">Prerequisites</string>
+    <string name="reader_prereq_summary">%1$d of %2$d started</string>
+    <string name="reader_prereq_ready">You are ready for this one.</string>
+    <string name="reader_prereq_blocked">Start the ones below first, or read on anyway.</string>
+
     <string name="reader_cd_resource">Resource</string>
     <string name="reader_cd_thumbnail">Video thumbnail</string>
     <string name="reader_cd_favorite_add">Add to favorites</string>

@@ -353,4 +353,77 @@ class ActionValidatorTest {
         )
         assertEquals(emptyList<String>(), ActionValidator.validate(actions, nodes))
     }
+
+    @Test
+    fun acceptsAPrerequisiteBetweenTwoExistingPosts() {
+        val nodes = listOf(branch(1, "A"), post(2, "Raft"), post(3, "Consensus"))
+        val actions = listOf(
+            KbAction(op = "add_prerequisite", postTitle = "Consensus", requiresTitle = "Raft"),
+        )
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, nodes))
+    }
+
+    @Test
+    fun aPrerequisiteNeedsSomethingToRequire() {
+        val nodes = listOf(branch(1, "A"), post(2, "Raft"))
+        val actions = listOf(KbAction(op = "add_prerequisite", postTitle = "Raft"))
+        assertTrue(
+            ActionValidator.validate(actions, nodes).any { it.contains("requiresTitle") },
+        )
+    }
+
+    /** Unlike a wiki-link, a prerequisite has to resolve: a bar cannot count a post that isn't. */
+    @Test
+    fun aPrerequisiteMustNameAPostThatExists() {
+        val nodes = listOf(branch(1, "A"), post(2, "Raft"))
+        val actions = listOf(
+            KbAction(op = "add_prerequisite", postTitle = "Raft", requiresTitle = "Nowhere"),
+        )
+        assertTrue(ActionValidator.validate(actions, nodes).isNotEmpty())
+    }
+
+    @Test
+    fun aPostCannotBeItsOwnPrerequisite() {
+        val nodes = listOf(branch(1, "A"), post(2, "Raft"))
+        val actions = listOf(
+            KbAction(op = "add_prerequisite", postTitle = "Raft", requiresTitle = "Raft"),
+        )
+        assertTrue(ActionValidator.validate(actions, nodes).any { it.contains("itself") })
+    }
+
+    /** A learning path is written and chained in one batch, so refs have to work here too. */
+    @Test
+    fun aPrerequisiteCanNameAPostCreatedInTheSameBatch() {
+        val actions = listOf(
+            KbAction(op = "create_post", title = "Letter A", ref = "p1"),
+            KbAction(op = "create_post", title = "Letter B", ref = "p2"),
+            KbAction(op = "add_prerequisite", postRef = "p2", requiresRef = "p1"),
+        )
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, emptyList()))
+    }
+
+    @Test
+    fun aPrerequisiteRefMustNameAPostNotAContainer() {
+        val actions = listOf(
+            KbAction(op = "create_branch", title = "Alphabet", ref = "b1"),
+            KbAction(op = "create_post", title = "Letter A", parentRef = "b1", ref = "p1"),
+            KbAction(op = "add_prerequisite", postRef = "p1", requiresRef = "b1"),
+        )
+        assertTrue(ActionValidator.validate(actions, emptyList()).isNotEmpty())
+    }
+
+    @Test
+    fun removePrerequisiteIsValidatedLikeAdd() {
+        val nodes = listOf(branch(1, "A"), post(2, "Raft"), post(3, "Consensus"))
+        val actions = listOf(
+            KbAction(op = "remove_prerequisite", postTitle = "Consensus", requiresTitle = "Raft"),
+        )
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, nodes))
+    }
+
+    @Test
+    fun bothPrerequisiteOpsAreKnown() {
+        assertTrue(ActionValidator.isKnownOp("add_prerequisite"))
+        assertTrue(ActionValidator.isKnownOp("remove_prerequisite"))
+    }
 }

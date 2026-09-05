@@ -3,7 +3,10 @@ package com.cs426.learningmocha
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
+import androidx.transition.Slide
+import androidx.transition.TransitionManager
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -56,16 +59,10 @@ class MainActivity : AppCompatActivity() {
         val navController = navHost.navController
         binding.bottomNav.setupWithNavController(navController)
 
-        val topLevel = setOf(
-            R.id.homeFragment,
-            R.id.browseFragment,
-            R.id.searchFragment,
-            R.id.chatFragment,
-            R.id.settingsFragment,
-        )
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            binding.bottomNav.visibility =
-                if (destination.id in topLevel) View.VISIBLE else View.GONE
+            // Snapped rather than slid: a destination change already animates the whole screen,
+            // and a second 180 ms slide underneath it reads as the bar lagging behind.
+            setBottomNavVisible(destination.id in TABS_VISIBLE_ON, animate = false)
             // Navigating is an answer too: the walkthrough ends rather than following the user
             // to a screen its current card is not about.
             coach?.skip()
@@ -76,6 +73,31 @@ class MainActivity : AppCompatActivity() {
         if (!settings.onboarded) {
             startActivity(Intent(this, OnboardingActivity::class.java))
         }
+    }
+
+    /**
+     * Shows or hides the tab bar. The reader drives this from its scroll position so the tabs
+     * are out of the way while you read and back the moment you reach for them; every other
+     * screen only ever gets the [animate]-less call from the destination listener.
+     *
+     * The bar is a LinearLayout sibling of the NavHost rather than an overlay, so hiding it
+     * gives the content its height back. That is deliberate: an overlaying bar would have to be
+     * paid for with bottom padding on all five tab screens, and a post is the one place where
+     * the extra 56dp of prose is worth having.
+     */
+    fun setBottomNavVisible(visible: Boolean, animate: Boolean = true) {
+        val nav = binding.bottomNav
+        if ((nav.visibility == View.VISIBLE) == visible) return
+        if (animate) {
+            TransitionManager.beginDelayedTransition(
+                binding.root,
+                Slide(Gravity.BOTTOM).apply {
+                    duration = NAV_SLIDE_MS
+                    addTarget(nav)
+                },
+            )
+        }
+        nav.visibility = if (visible) View.VISIBLE else View.GONE
     }
 
     override fun onResume() {
@@ -95,5 +117,26 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         coach?.dismiss()
         coach = null
+    }
+
+    private companion object {
+        /** Matches the 180 ms of res/anim/nav_*, so the bar moves at the app's own pace. */
+        const val NAV_SLIDE_MS = 180L
+
+        /**
+         * The five tabs, plus the reader — a post is where a reading trail gets deep enough
+         * that popping back one screen at a time stops being a way out.
+         *
+         * The editor, the review screen and the Settings sub-screens stay off this list: each
+         * is a task with a save or discard at the end, and a tab tap mid-edit is a lost draft.
+         */
+        val TABS_VISIBLE_ON = setOf(
+            R.id.homeFragment,
+            R.id.browseFragment,
+            R.id.searchFragment,
+            R.id.chatFragment,
+            R.id.settingsFragment,
+            R.id.postReaderFragment,
+        )
     }
 }

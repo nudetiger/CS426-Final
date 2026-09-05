@@ -9,16 +9,14 @@
     <string name="nav_chat">AI</string>
     <string name="nav_settings">Settings</string>
 
-    <string name="chat_tagline">Answer · Suggest · Modify · Organize</string>
+    <string name="chat_tagline">Answer · Assist</string>
     <string name="chat_empty">No conversations yet. Tap + to ask Mocha.</string>
-    <string name="chat_conversation_empty">Ask anything about your library, or switch to Modify to generate posts.</string>
+    <string name="chat_conversation_empty">Ask anything about your library, or switch to Assist to change it.</string>
     <string name="chat_offline">AI unavailable — your library still works.</string>
     <string name="chat_input_hint">Message Mocha…</string>
     <string name="chat_send">Send</string>
     <string name="chat_mode_answer">Answer</string>
-    <string name="chat_mode_suggest">Suggest</string>
-    <string name="chat_mode_modify">Modify</string>
-    <string name="chat_mode_organize">Organize</string>
+    <string name="chat_mode_assist">Assist</string>
     <string name="chat_review_action">Review changes</string>
     <string name="chat_applied">Applied</string>
     <string name="chat_discarded">Discarded</string>

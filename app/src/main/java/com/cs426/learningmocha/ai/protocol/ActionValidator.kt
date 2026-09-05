@@ -24,6 +24,7 @@ object ActionValidator {
         "move_post", "delete_post", "create_link", "remove_link",
         "add_tag", "remove_tag", "set_status", "set_favorite",
         "add_resource", "add_dictionary_entry",
+        "add_prerequisite", "remove_prerequisite",
     )
 
     /**
@@ -138,6 +139,10 @@ object ActionValidator {
                     resolvePost(action, n, scope, errors)
                     if (action.tag.isNullOrBlank()) errors.add("Action $n: tag is required")
                 }
+                "add_prerequisite", "remove_prerequisite" -> {
+                    resolvePost(action, n, scope, errors)
+                    checkRequires(action, n, scope, errors)
+                }
                 "set_status" -> {
                     resolvePost(action, n, scope, errors)
                     checkStatus(action.status, n, errors, required = true)
@@ -210,6 +215,48 @@ object ActionValidator {
         // The parent only has to exist, either already or as an earlier action in this batch.
         if (scope.byTitle[key] == null && key !in scope.newContainers && key !in scope.newPosts) {
             errors.add("Action $n: parent \"${action.parentTitle}\" does not exist")
+        }
+    }
+
+    /**
+     * The other end of a prerequisite edge. Stricter than [create_link]'s `toTitle`, which is
+     * allowed to name a post that does not exist yet: a wiki-link to nothing renders as plain
+     * text, but a prerequisite pointing at nothing would sit in a readiness bar as a
+     * requirement that can never be met.
+     */
+    private fun checkRequires(
+        action: KbAction,
+        n: Int,
+        scope: Scope,
+        errors: MutableList<String>,
+    ) {
+        val ref = action.requiresRef?.trim().orEmpty()
+        if (ref.isNotEmpty()) {
+            when {
+                ref !in scope.refs -> errors.add("Action $n: unknown requiresRef \"$ref\"")
+                ref !in scope.postRefs -> errors.add("Action $n: \"$ref\" is not a post")
+            }
+            if (ref == action.postRef?.trim()) {
+                errors.add("Action $n: a post cannot require itself")
+            }
+            return
+        }
+        val title = action.requiresTitle?.trim().orEmpty()
+        if (title.isEmpty()) {
+            errors.add("Action $n: requiresTitle is required")
+            return
+        }
+        val key = title.lowercase()
+        val existing = scope.byTitle[key]
+        when {
+            existing != null && existing.type != NodeType.POST ->
+                errors.add("Action $n: \"$title\" is not a post")
+            existing == null && key !in scope.newPosts ->
+                errors.add("Action $n: post \"$title\" does not exist")
+        }
+        val own = (action.postTitle ?: action.title)?.trim()?.lowercase()
+        if (own != null && own == key) {
+            errors.add("Action $n: a post cannot require itself")
         }
     }
 
@@ -324,6 +371,10 @@ object ActionLabels {
             "set_favorite" -> if (action.favorite == true) "Star $title" else "Unstar $title"
             "add_resource" -> "Add ${action.type ?: "resource"} to $title"
             "add_dictionary_entry" -> "Add term ${action.term}"
+            "add_prerequisite" ->
+                "$title requires ${action.requiresTitle ?: action.requiresRef}"
+            "remove_prerequisite" ->
+                "$title no longer requires ${action.requiresTitle ?: action.requiresRef}"
             else -> action.op.orEmpty()
         }
     }

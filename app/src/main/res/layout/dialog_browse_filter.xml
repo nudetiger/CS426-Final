@@ -107,6 +107,20 @@
             android:text="@string/browse_filter_favorites"
             android:textAppearance="@style/TextAppearance.Mocha.Body" />
 
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/filter_ready"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_target"
+            android:text="@string/browse_filter_ready"
+            android:textAppearance="@style/TextAppearance.Mocha.Body" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/browse_filter_ready_hint"
+            android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

@@ -68,12 +68,11 @@
         <item name="typePostWash">@color/type_post_wash</item>
         <item name="modeAnswerInk">@color/mode_answer_ink</item>
         <item name="modeAnswerWash">@color/mode_answer_wash</item>
-        <item name="modeSuggestInk">@color/mode_suggest_ink</item>
-        <item name="modeSuggestWash">@color/mode_suggest_wash</item>
-        <item name="modeModifyInk">@color/mode_modify_ink</item>
-        <item name="modeModifyWash">@color/mode_modify_wash</item>
-        <item name="modeOrganizeInk">@color/mode_organize_ink</item>
-        <item name="modeOrganizeWash">@color/mode_organize_wash</item>
+        <item name="modeAssistInk">@color/mode_assist_ink</item>
+        <item name="modeAssistWash">@color/mode_assist_wash</item>
+        <item name="markGoldInk">@color/mark_gold_ink</item>
+        <item name="markSkyInk">@color/mark_sky_ink</item>
+        <item name="markVioletInk">@color/mark_violet_ink</item>
     </style>
 
     <style name="Theme.LearningMocha" parent="Theme.Mocha.Base" />

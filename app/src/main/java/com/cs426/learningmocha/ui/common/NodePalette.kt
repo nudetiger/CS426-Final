@@ -5,6 +5,7 @@ import androidx.annotation.DrawableRes
 import com.cs426.learningmocha.R
 import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.NodeType
+import com.cs426.learningmocha.ui.chat.ChatModes
 
 /**
  * The one place that decides what colour a learning status or a node type is drawn in.
@@ -72,33 +73,24 @@ object NodePalette {
     }
 
     /**
-     * Chat modes, keyed by the stored mode string. A combined mode ("modify+organize") takes
-     * the colour of its first part: the bubble only has to say which family of request it was,
-     * and the mode chips above it still show the exact combination.
+     * Chat modes, keyed by the stored mode string. [ChatModes.parse] does the reading, so a
+     * bubble written before the modes merged still gets a colour rather than falling through
+     * to Answer's green and claiming a reply changed nothing when it proposed a batch.
      */
     @AttrRes
-    fun modeInk(mode: String): Int = when (primary(mode)) {
-        "suggest" -> R.attr.modeSuggestInk
-        "modify" -> R.attr.modeModifyInk
-        "organize" -> R.attr.modeOrganizeInk
+    fun modeInk(mode: String): Int = when (ChatModes.parse(mode)) {
+        ChatModes.ASSIST -> R.attr.modeAssistInk
         else -> R.attr.modeAnswerInk
     }
 
     @AttrRes
-    fun modeWash(mode: String): Int = when (primary(mode)) {
-        "suggest" -> R.attr.modeSuggestWash
-        "modify" -> R.attr.modeModifyWash
-        "organize" -> R.attr.modeOrganizeWash
+    fun modeWash(mode: String): Int = when (ChatModes.parse(mode)) {
+        ChatModes.ASSIST -> R.attr.modeAssistWash
         else -> R.attr.modeAnswerWash
     }
 
-    fun modeLabelRes(mode: String): Int = when (primary(mode)) {
-        "suggest" -> R.string.chat_mode_suggest
-        "modify" -> R.string.chat_mode_modify
-        "organize" -> R.string.chat_mode_organize
+    fun modeLabelRes(mode: String): Int = when (ChatModes.parse(mode)) {
+        ChatModes.ASSIST -> R.string.chat_mode_assist
         else -> R.string.chat_mode_answer
     }
-
-    private fun primary(mode: String): String =
-        mode.substringBefore('+').trim().lowercase()
 }

@@ -44,6 +44,12 @@ data class EditorSaved(
     val postId: Long,
     val storedTitle: String,
     val renamed: Boolean,
+    /**
+     * Prerequisites the save dropped because they would have closed a loop. Reported on the
+     * event rather than in [EditorUiState]: saving navigates straight back to the reader, so
+     * a message left on the editor's own state is destroyed before anyone reads it.
+     */
+    val refusedPrerequisites: Int = 0,
 )
 
 data class EditorUiState(
@@ -60,6 +66,9 @@ data class EditorUiState(
     val color: String? = null,
     val nextPostId: Long? = null,
     val nextTitle: String = "",
+    /** Posts this one should be read after. Order is the picker's, resolved on save. */
+    val prerequisiteIds: List<Long> = emptyList(),
+    val prerequisiteTitles: List<String> = emptyList(),
 )
 
 /**
@@ -89,6 +98,7 @@ class PostEditorViewModel(
     private var initialIcon: String? = null
     private var initialColor: String? = null
     private var initialNext: Long? = null
+    private var initialPrereqs: List<Long> = emptyList()
     private var draftTouched = false
     private var nextPendingKey = -1L
     private val removedResourceIds = LinkedHashSet<Long>()
@@ -137,6 +147,12 @@ class PostEditorViewModel(
         _uiState.update { it.copy(icon = icon, color = color) }
     }
 
+    fun onPrerequisitesChanged(ids: List<Long>, titles: List<String>) {
+        if (_uiState.value.prerequisiteIds == ids) return
+        draftTouched = true
+        _uiState.update { it.copy(prerequisiteIds = ids, prerequisiteTitles = titles) }
+    }
+
     fun onNextChanged(id: Long?, title: String) {
         if (_uiState.value.nextPostId == id) return
         draftTouched = true
@@ -183,6 +199,7 @@ class PostEditorViewModel(
             state.icon != initialIcon ||
             state.color != initialColor ||
             state.nextPostId != initialNext ||
+            state.prerequisiteIds != initialPrereqs ||
             state.pendingTerms.isNotEmpty() ||
             removedResourceIds.isNotEmpty() ||
             state.resources.any { it.pending }
@@ -228,13 +245,24 @@ class PostEditorViewModel(
                 }
                 // After the post write, so a reindex can never drop a reference added here.
                 removedResourceIds.forEach { app.postRepository.removeResource(it) }
+                // A new post has no id until the line above, so its prerequisites can only be
+                // written now. Refusals come back rather than throwing: one impossible pick
+                // must not cost the user the other four, or the article they just typed.
+                val refusedPrereqs = app.postRepository
+                    .setPrerequisites(id, state.prerequisiteIds)
+                    .size
                 state.resources.filter { it.pending }.forEach { item ->
                     app.postRepository.addResource(id, item.type, item.title, item.url)
                 }
                 // Read the title back rather than trusting the draft: createPost numbers a
                 // duplicate, and the editor has to show what was actually written.
                 val storedTitle = app.treeRepository.getNode(id)?.title ?: state.title
-                EditorSaved(id, storedTitle, renamed = storedTitle != state.title.trim())
+                EditorSaved(
+                    id,
+                    storedTitle,
+                    renamed = storedTitle != state.title.trim(),
+                    refusedPrerequisites = refusedPrereqs,
+                )
             }.onSuccess { result ->
                 removedResourceIds.clear()
                 initialTitle = result.storedTitle
@@ -244,6 +272,7 @@ class PostEditorViewModel(
                 initialIcon = state.icon
                 initialColor = state.color
                 initialNext = state.nextPostId
+                initialPrereqs = state.prerequisiteIds
                 _uiState.update {
                     it.copy(
                         title = result.storedTitle,
@@ -285,6 +314,7 @@ class PostEditorViewModel(
             color = detail.post.color,
             nextPostId = detail.post.nextPostId,
             nextTitle = detail.nextPost?.title.orEmpty(),
+            prerequisites = detail.prerequisites,
         )
     }
 
@@ -303,6 +333,7 @@ class PostEditorViewModel(
         color: String? = null,
         nextPostId: Long? = null,
         nextTitle: String = "",
+        prerequisites: List<com.cs426.learningmocha.data.local.entity.Node> = emptyList(),
     ) {
         initialTitle = if (isNew) "" else title
         initialContent = content
@@ -311,6 +342,7 @@ class PostEditorViewModel(
         initialIcon = icon
         initialColor = color
         initialNext = nextPostId
+        initialPrereqs = prerequisites.map { it.id }
         val current = _uiState.value
         val stored = resources.filterNot { it.storedId in removedResourceIds }
         val savedStatus = savedStateHandle.get<String>(KEY_DRAFT_STATUS)
@@ -340,6 +372,16 @@ class PostEditorViewModel(
             color = if (draftTouched) current.color else color,
             nextPostId = if (draftTouched) current.nextPostId else nextPostId,
             nextTitle = if (draftTouched) current.nextTitle else nextTitle,
+            prerequisiteIds = if (draftTouched) {
+                current.prerequisiteIds
+            } else {
+                prerequisites.map { it.id }
+            },
+            prerequisiteTitles = if (draftTouched) {
+                current.prerequisiteTitles
+            } else {
+                prerequisites.map { it.title }
+            },
         )
     }
 

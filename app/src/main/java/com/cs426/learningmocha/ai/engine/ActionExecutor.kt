@@ -25,6 +25,9 @@ data class UndoSnapshot(
     val insertedResourceIds: List<Long> = emptyList(),
     val insertedTermIds: List<Long> = emptyList(),
     val restoredTerms: List<DictionaryEntry> = emptyList(),
+    /** Prerequisite edges this batch added, as (post, requires) pairs. */
+    val insertedPrerequisites: List<Pair<Long, Long>> = emptyList(),
+    val removedPrerequisites: List<Pair<Long, Long>> = emptyList(),
 )
 
 class ActionExecutor(
@@ -46,6 +49,9 @@ class ActionExecutor(
         val insertedTerms = ArrayList<Long>()
         val restoredTerms = ArrayList<DictionaryEntry>()
         val pendingNext = ArrayList<Pair<Long, KbAction>>()
+        val pendingPrereqs = ArrayList<Pair<Long, KbAction>>()
+        val insertedPrereqs = ArrayList<Pair<Long, Long>>()
+        val removedPrereqs = ArrayList<Pair<Long, Long>>()
         db.withTransaction {
             for (action in actions) {
                 when (action.op) {
@@ -138,6 +144,20 @@ class ActionExecutor(
                         snapshot(node, restored, restoredTags)
                         posts.removeTag(node.id, action.tag.orEmpty())
                     }
+                    "add_prerequisite" -> {
+                        val node = requirePost(action, refs, createdByTitle)
+                        // The required post may be created further down this same batch, so
+                        // the edge waits until every create has an id — the same deferral
+                        // nextRef needs, for the same reason.
+                        pendingPrereqs.add(node.id to action)
+                    }
+                    "remove_prerequisite" -> {
+                        val node = requirePost(action, refs, createdByTitle)
+                        resolveRequires(action, refs, createdByTitle)?.let { requiredId ->
+                            posts.removePrerequisite(node.id, requiredId)
+                            removedPrereqs.add(node.id to requiredId)
+                        }
+                    }
                     "set_status" -> {
                         val node = requirePost(action, refs, createdByTitle)
                         snapshot(node, restored, restoredTags)
@@ -185,6 +205,15 @@ class ActionExecutor(
             for ((id, action) in pendingNext) {
                 resolveNext(action, refs, createdByTitle)?.let { posts.setNext(id, it) }
             }
+            for ((id, action) in pendingPrereqs) {
+                val requiredId = resolveRequires(action, refs, createdByTitle) ?: continue
+                // A loop is dropped rather than failing the batch. The rest of a good plan
+                // should still land, and refusing the one impossible edge is exactly what the
+                // editor's own picker does with a pick that would cycle.
+                if (posts.addPrerequisite(id, requiredId)) {
+                    insertedPrereqs.add(id to requiredId)
+                }
+            }
         }
         return UndoSnapshot(
             createdIds = created,
@@ -193,6 +222,8 @@ class ActionExecutor(
             insertedResourceIds = insertedResources,
             insertedTermIds = insertedTerms,
             restoredTerms = restoredTerms,
+            insertedPrerequisites = insertedPrereqs,
+            removedPrerequisites = removedPrereqs,
         )
     }
 
@@ -224,6 +255,12 @@ class ActionExecutor(
             }
             for (entry in snapshot.restoredTerms) {
                 posts.updateTerm(entry)
+            }
+            for ((postId, requiresId) in snapshot.insertedPrerequisites) {
+                posts.removePrerequisite(postId, requiresId)
+            }
+            for ((postId, requiresId) in snapshot.removedPrerequisites) {
+                posts.addPrerequisite(postId, requiresId)
             }
         }
     }
@@ -269,6 +306,20 @@ class ActionExecutor(
             return refs[ref]
         }
         val title = action.nextTitle?.trim().orEmpty()
+        if (title.isEmpty()) return null
+        return createdByTitle[title.lowercase()] ?: posts.findPostByTitle(title)?.id
+    }
+
+    /** Same ref-or-title resolution as [resolveNext], for the prerequisite ops. */
+    private suspend fun resolveRequires(
+        action: KbAction,
+        refs: Map<String, Long>,
+        createdByTitle: Map<String, Long>,
+    ): Long? {
+        action.requiresRef?.trim()?.takeIf { it.isNotEmpty() }?.let { ref ->
+            return refs[ref]
+        }
+        val title = action.requiresTitle?.trim().orEmpty()
         if (title.isEmpty()) return null
         return createdByTitle[title.lowercase()] ?: posts.findPostByTitle(title)?.id
     }

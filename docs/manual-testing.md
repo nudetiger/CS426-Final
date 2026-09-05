@@ -379,12 +379,13 @@ gateway, type `http://<your-computer-LAN-IP>:8787/`, tap Save, then
 **Test 5.2 — create a conversation**
 
 - Do: Chat tab → tap the **+** FAB.
-- Expect: an empty conversation opens with 4 mode chips: **Answer**,
-  **Suggest**, **Modify**, **Organize**. Answer is selected.
-- Expect: each chip carries its own colour — green Answer, amber Suggest, blue
-  Modify, violet Organize — on the outline and the label even when unselected.
-  Selecting one fills it with the same colour, and it is the colour the replies
-  sent in that mode are drawn in.
+- Expect: an empty conversation opens with 2 mode chips: **Answer** and
+  **Assist**. Answer is selected.
+- Expect: each chip carries its own colour — green Answer, blue Assist — on the
+  outline and the label even when unselected. Selecting one fills it with the
+  same colour, and it is the colour the replies sent in that mode are drawn in.
+- Expect: they are mutually exclusive. Tapping Assist unselects Answer; tapping
+  the chip that is already selected leaves it selected rather than clearing it.
 
 **Test 5.3 — Answer mode, plain question**
 
@@ -402,9 +403,9 @@ gateway, type `http://<your-computer-LAN-IP>:8787/`, tap Save, then
   like "Shared 1 note with the AI" — that means it used a context tool to
   read a post. This is the proof it can read your library.
 
-**Test 5.5 — Modify mode proposes changes (does NOT apply them)**
+**Test 5.5 — Assist mode proposes changes (does NOT apply them)**
 
-- Mode: **Modify**
+- Mode: **Assist**
 - Prompt: `Create a branch called "Kotlin Basics" with three posts: "Variables and Types", "Null Safety", and "Coroutines 101". Give each one a short markdown article and tag them "kotlin".`
 - Expect:
   1. It streams, then the bubble ends with a **Review changes** button.
@@ -461,32 +462,41 @@ gateway, type `http://<your-computer-LAN-IP>:8787/`, tap Save, then
 
 **Test 5.12 — destructive confirm**
 
-- Mode: **Modify**
+- Mode: **Assist**
 - Prompt: `Delete the post "Coroutines 101" from my library.`
 - Expect: the review screen shows a warning that the batch deletes something.
   Tapping **Apply selected** shows an extra confirmation dialog that names
   the post by title. Cancel → nothing happens. You can confirm it if you
   want; the post should then be gone.
 
-**Test 5.13 — Suggest mode**
+**Test 5.13 — Assist recommends**
 
-- Mode: **Suggest**
+- Mode: **Assist**
 - Prompt: `Suggest 3 dictionary terms and 2 YouTube resources for my Kotlin posts.`
 - Expect: a reviewable batch of add_dictionary_entry / add_resource rows.
   Apply them, then open the post's reader screen: the terms appear as chips
   and the resources as cards.
 
-**Test 5.14 — Organize mode**
+**Test 5.14 — Assist reorganizes**
 
-- Mode: **Organize**
+- Mode: **Assist**
 - Prompt: `Look at my library and reorganize it: group related posts into folders and add wiki-links between posts that belong together.`
 - Expect: a batch of create_folder / move_post / create_link rows. Apply,
   then check Browse reflects the new structure and the reader shows new links
   and backlinks.
 
+**Test 5.14b — one Assist batch covers a two-part ask**
+
+- Mode: **Assist**
+- Prompt: `Write me two short posts on B-trees and B+ trees, and file them under
+  a new folder called "Indexes".`
+- Expect: a **single** review batch holding both create_post rows and the
+  create_folder row — not two replies, and not half the request. This is the
+  case the old Modify/Organize split could only do by sending twice.
+
 **Test 5.15 — validation catches bad plans**
 
-- Mode: **Modify**
+- Mode: **Assist**
 - Prompt: `Create a post titled "Welcome to Learning Mocha".` (a title that
   already exists)
 - Expect: the review screen shows a red error line like
@@ -702,6 +712,134 @@ gateway, type `http://<your-computer-LAN-IP>:8787/`, tap Save, then
 - Do: scroll to the bottom of Settings.
 - Expect: a privacy paragraph explaining that data stays on the device and
   what is sent to the AI. Read it — it should match what you observed in §5.
+
+---
+
+## 9b. Navigation, prerequisites and branch reading (HIGH)
+
+**Test 9b.1 — home button escapes a deep trail**
+
+- Do: open any post, then follow six or seven `[[wiki-links]]` in a row.
+- Do: tap the **⌂** button beside Back in the header.
+- Expect: you land on Home in one tap. Pressing Back from Home does not walk
+  back into the trail — the whole chain was cleared, not hidden.
+
+**Test 9b.2 — the tab bar hides while reading**
+
+- Do: open a long post. Scroll down.
+- Expect: the five tabs slide away and the text keeps its place — the words you
+  were reading do not jump.
+- Do: scroll up a little.
+- Expect: the tabs slide back. They are also back whenever you are near the top.
+- Do: leave the post while the bar is hidden.
+- Expect: Browse (or wherever you land) has its tabs.
+
+**Test 9b.3 — the editor and review screen keep their tabs hidden**
+
+- Do: open a post → **Edit**. Then from a chat, open a **Review changes** screen.
+- Expect: no tab bar on either. These are save-or-discard screens, and a stray
+  tab tap mid-edit would lose the draft.
+
+**Test 9b.4 — declare a prerequisite**
+
+- Do: create or open a post, tap **Edit**, tap **Prerequisites**.
+- Expect: a multi-select list of every other post. The post you are editing is
+  not in it.
+- Do: tick two, **Save**, then **Save** the post.
+- Do: open that post in the reader.
+- Expect: a **Prerequisites** card above the tags, with a status bar in the same
+  colours Browse uses over a folder, "N of 2 started", and both posts listed.
+- Do: tap one of the listed rows.
+- Expect: it opens that post.
+
+**Test 9b.5 — the bar tracks status**
+
+- Do: from the prerequisite card, open one prerequisite and set it to
+  **Reading**. Go back.
+- Expect: the bar moved and the caption counts one more started. When every
+  prerequisite has been started, the caption says you are ready.
+- Note: being unready never blocks the post. The card says what is missing and
+  you can read on regardless.
+
+**Test 9b.6 — no card without prerequisites**
+
+- Do: open a post that has none.
+- Expect: no Prerequisites card at all — not an empty "0 of 0".
+
+**Test 9b.7 — a loop is refused, the rest is kept**
+
+- Do: make A require B. Then edit B and tick both A and some third post C.
+- Expect: Save succeeds, a message says one prerequisite was dropped as a loop,
+  and B ends up requiring C only.
+
+**Test 9b.8 — sort and filter by readiness**
+
+- Do: Browse → **Sort** → **Ready to read**.
+- Expect: posts you can pick up now come first; blocked ones follow, the closest
+  to ready first.
+- Do: Browse → **Filter** → turn on **Ready to read** → Apply.
+- Expect: blocked posts vanish, the Filter button shows a count, and folders and
+  branches stay visible so you can still walk the tree.
+
+**Test 9b.9 — read a branch end to end**
+
+- Do: Browse → the **⋮** menu on a branch or folder → **Read this branch**.
+- Expect: the first post of that branch opens with a strip under the header
+  reading "Branch · 1 of N", and prev/next arrows.
+- Do: tap next repeatedly to the end.
+- Expect: the position counts up; the next arrow greys out at the last post and
+  the prev arrow at the first.
+- Do: press **Back** from the middle of the branch.
+- Expect: you leave the branch entirely and return to Browse — *not* one post
+  back. Twelve posts read must not mean twelve Backs.
+
+**Test 9b.10 — the branch respects prerequisites and chains**
+
+- Do: inside a branch, make a later post a prerequisite of an earlier one, then
+  start the branch again.
+- Expect: the prerequisite is read first.
+- Do: on a branch whose posts are chained with **Next post**, start the branch.
+- Expect: the reading order follows the chain, not the alphabet.
+
+**Test 9b.11 — branch structure sheet**
+
+- Do: during a branch read, tap the folder icon in the strip.
+- Expect: a sheet showing the branch's folders and posts, indented, with the
+  post you are on highlighted.
+- Do: tap another post in the sheet.
+- Expect: it opens, still inside the branch, and the strip's position updates.
+
+**Test 9b.12 — following a link leaves the branch**
+
+- Do: during a branch read, tap a `[[wiki-link]]` in the body.
+- Expect: that post opens with **no** branch strip — you left the session. Back
+  returns you to where you were in the branch.
+
+**Test 9b.13 — an empty branch says so**
+
+- Do: create an empty folder, then **Read this branch** on it.
+- Expect: a message saying there is nothing to read. Nothing opens.
+
+**Test 9b.14 — swipe a chat away**
+
+- Do: AI tab → swipe a chat row to the left, slowly.
+- Expect: a red panel grows behind the row and a bin fades in once you are past
+  about a quarter of the width.
+- Do: let go before roughly half way.
+- Expect: the row springs back, nothing is deleted.
+- Do: swipe past half and let go.
+- Expect: a confirmation dialog. **Cancel** — the row comes back and the chat is
+  still there. Swipe again and confirm — it is gone.
+- Do: tap outside the dialog instead of cancelling.
+- Expect: same as cancel; the row must not be left swiped off screen.
+- Do: long-press a chat row.
+- Expect: the same delete dialog. Both routes still work.
+
+**Test 9b.15 — Browse swipes the same way**
+
+- Do: swipe a Browse row left.
+- Expect: the identical red panel and bin, the same confirmation. The gesture
+  means one thing in both places.
 
 ---
 

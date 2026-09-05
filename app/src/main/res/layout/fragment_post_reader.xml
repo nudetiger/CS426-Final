@@ -23,6 +23,16 @@
             android:contentDescription="@string/cd_back"
             android:src="@drawable/ic_back" />
 
+        <!-- Back walks the trail one post at a time; this leaves it. Eleven wiki-links deep,
+             going home was eleven taps, which is what made following a link feel expensive. -->
+        <ImageButton
+            android:id="@+id/reader_home"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/reader_home"
+            android:src="@drawable/ic_nav_home" />
+
         <TextView
             android:id="@+id/reader_title"
             android:layout_width="0dp"
@@ -56,6 +66,54 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/cd_edit"
             android:src="@drawable/ic_edit" />
+    </LinearLayout>
+
+    <!-- Branch reading session. Present only while walking a branch, and the one control
+         that moves between posts without touching the back stack. -->
+    <LinearLayout
+        android:id="@+id/reader_branch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/mochaCreamDark"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/space_m"
+        android:paddingEnd="@dimen/space_xs"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/reader_branch_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Mocha.Caption"
+            android:textColor="?attr/mochaBrown" />
+
+        <ImageButton
+            android:id="@+id/reader_branch_outline"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/branch_outline"
+            android:src="@drawable/ic_folder" />
+
+        <ImageButton
+            android:id="@+id/reader_branch_prev"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/branch_prev"
+            android:src="@drawable/ic_back" />
+
+        <ImageButton
+            android:id="@+id/reader_branch_next"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/branch_next"
+            android:src="@drawable/ic_chevron_right" />
     </LinearLayout>
 
     <FrameLayout
@@ -102,6 +160,48 @@
                     android:maxLines="1"
                     android:textAppearance="@style/TextAppearance.Mocha.Caption"
                     android:visibility="gone" />
+
+                <!-- What this post expects you to have read, before the post itself. Hidden
+                     outright when nothing is required, which is most posts. -->
+                <LinearLayout
+                    android:id="@+id/reader_prereq"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_s"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/reader_prereq_header"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/reader_prereq"
+                        android:textAppearance="@style/TextAppearance.Mocha.Section"
+                        android:textColor="?attr/mochaBrown" />
+
+                    <TextView
+                        android:id="@+id/reader_prereq_summary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+
+                    <!-- The same meter Browse draws over a folder, so the colours only ever
+                         have to be learned once. -->
+                    <include
+                        android:id="@+id/reader_prereq_meter"
+                        layout="@layout/view_status_meter"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_xs" />
+
+                    <LinearLayout
+                        android:id="@+id/reader_prereq_list"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </LinearLayout>
 
                 <HorizontalScrollView
                     android:layout_width="match_parent"

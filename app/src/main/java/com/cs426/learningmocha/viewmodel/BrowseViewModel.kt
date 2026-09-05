@@ -9,10 +9,12 @@ import com.cs426.learningmocha.R
 import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeType
+import com.cs426.learningmocha.ui.browse.BranchReading
 import com.cs426.learningmocha.ui.browse.BrowseFilter
 import com.cs426.learningmocha.ui.browse.BrowseQuery
 import com.cs426.learningmocha.ui.browse.BrowseSort
 import com.cs426.learningmocha.ui.common.ListState
+import com.cs426.learningmocha.ui.common.Readiness
 import com.cs426.learningmocha.ui.common.SubtreeStats
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -37,6 +39,8 @@ data class BrowseUiState(
     val stats: Map<Long, SubtreeStats> = emptyMap(),
     /** Direct child counts, so a row can say a post has sub-posts without walking the tree. */
     val childCounts: Map<Long, Int> = emptyMap(),
+    /** Prerequisite progress per post, for the "ready to read" sort and filter. */
+    val readiness: Map<Long, Readiness> = emptyMap(),
     val sort: BrowseSort = BrowseSort.TITLE_ASC,
     val filter: BrowseFilter = BrowseFilter(),
     /** How many children the folder holds before filtering, for the "N hidden" hint. */
@@ -76,7 +80,10 @@ class BrowseViewModel(
             val all = app.treeRepository.allNodes()
             val stats = SubtreeStats.index(all)
             val childCounts = all.groupingBy { it.parentId ?: SubtreeStats.ROOT }.eachCount()
-            val visible = BrowseQuery.apply(children, criteria, order)
+            // One more query alongside the walk above, rather than per row: the edge table is
+            // small and the sort needs every post's readiness before it can order any of them.
+            val readiness = Readiness.index(all, app.postRepository.prerequisiteEdges())
+            val visible = BrowseQuery.apply(children, criteria, order, readiness)
             BrowseUiState(
                 listState = if (visible.isEmpty()) ListState.EMPTY else ListState.CONTENT,
                 parentId = pid,
@@ -85,6 +92,7 @@ class BrowseViewModel(
                 children = visible,
                 stats = stats,
                 childCounts = childCounts,
+                readiness = readiness,
                 sort = order,
                 filter = criteria,
                 unfilteredCount = children.size,
@@ -167,6 +175,13 @@ class BrowseViewModel(
 
     suspend fun possibleParents(movingId: Long): List<Node> =
         app.treeRepository.possibleParents(movingId)
+
+    /** Where "Read this branch" starts, or null when the subtree holds no posts at all. */
+    suspend fun firstPostOf(nodeId: Long): Long? = BranchReading.order(
+        nodeId,
+        app.treeRepository.allNodes(),
+        app.postRepository.prerequisiteEdges(),
+    ).firstOrNull()?.id
 
     private suspend fun loadHeader(pid: Long?): Pair<String, List<Node>> {
         if (pid == null) {

@@ -4,6 +4,7 @@ import com.cs426.learningmocha.R
 import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeType
+import com.cs426.learningmocha.ui.common.Readiness
 
 /**
  * How the current folder is ordered. This replaced hand reordering: dragging rows only ever
@@ -17,6 +18,7 @@ enum class BrowseSort(val labelRes: Int) {
     UPDATED_ASC(R.string.browse_sort_updated_asc),
     CREATED_DESC(R.string.browse_sort_created_desc),
     STATUS(R.string.browse_sort_status),
+    READY_FIRST(R.string.browse_sort_ready),
     ;
 
     companion object {
@@ -38,21 +40,26 @@ data class BrowseFilter(
     val types: Set<NodeType> = emptySet(),
     val statuses: Set<LearningStatus> = emptySet(),
     val favoritesOnly: Boolean = false,
+    /** Only posts whose every prerequisite has been started. See [Readiness]. */
+    val readyOnly: Boolean = false,
 ) {
     val isActive: Boolean
-        get() = types.isNotEmpty() || statuses.isNotEmpty() || favoritesOnly
+        get() = types.isNotEmpty() || statuses.isNotEmpty() || favoritesOnly || readyOnly
 
     /** How many facets are narrowing the list, for the badge on the Filter button. */
     val activeCount: Int
         get() = (if (types.isNotEmpty()) 1 else 0) +
             (if (statuses.isNotEmpty()) 1 else 0) +
-            (if (favoritesOnly) 1 else 0)
+            (if (favoritesOnly) 1 else 0) +
+            (if (readyOnly) 1 else 0)
 
-    fun matches(node: Node): Boolean {
+    fun matches(node: Node, readiness: Map<Long, Readiness>): Boolean {
         if (types.isNotEmpty() && node.type !in types) return false
         if (node.type != NodeType.POST) return true
         if (statuses.isNotEmpty() && node.status !in statuses) return false
         if (favoritesOnly && !node.favorite) return false
+        // A post with no entry has no prerequisites, which is ready — never blocked.
+        if (readyOnly && readiness[node.id]?.isReady == false) return false
         return true
     }
 }
@@ -64,10 +71,16 @@ object BrowseQuery {
      * Containers come before posts whatever the sort is, the way every file browser groups
      * them: the list is a place to navigate first and a list of articles second.
      */
-    fun apply(children: List<Node>, filter: BrowseFilter, sort: BrowseSort): List<Node> =
-        children.filter(filter::matches).sortedWith(comparator(sort))
+    fun apply(
+        children: List<Node>,
+        filter: BrowseFilter,
+        sort: BrowseSort,
+        readiness: Map<Long, Readiness> = emptyMap(),
+    ): List<Node> = children
+        .filter { filter.matches(it, readiness) }
+        .sortedWith(comparator(sort, readiness))
 
-    private fun comparator(sort: BrowseSort): Comparator<Node> {
+    private fun comparator(sort: BrowseSort, readiness: Map<Long, Readiness>): Comparator<Node> {
         val containersFirst = compareBy<Node> { if (it.type == NodeType.POST) 1 else 0 }
         val within: Comparator<Node> = when (sort) {
             BrowseSort.TITLE_ASC -> compareBy { it.title.lowercase() }
@@ -78,6 +91,13 @@ object BrowseQuery {
             // Reading order, not enum order: what is untouched sorts first because that is
             // what the user still has to pick up.
             BrowseSort.STATUS -> compareBy { statusRank(it.status) }
+            // What you could pick up right now, first — then whatever is closest to that.
+            // The percentage is the tie-break rather than the whole sort so a post one
+            // prerequisite short still ranks above one that needs four.
+            BrowseSort.READY_FIRST -> compareBy(
+                { if (readiness[it.id]?.isReady != false) 0 else 1 },
+                { -(readiness[it.id]?.percent ?: 100) },
+            )
         }
         // Title breaks every tie, so two posts updated in the same millisecond keep a stable
         // order between refreshes instead of swapping places under the user.

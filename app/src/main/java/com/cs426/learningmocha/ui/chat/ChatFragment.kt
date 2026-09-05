@@ -18,6 +18,7 @@ import com.cs426.learningmocha.databinding.FragmentChatBinding
 import com.cs426.learningmocha.ui.common.ListStateBinder
 import com.cs426.learningmocha.ui.common.RowAdapter
 import com.cs426.learningmocha.ui.common.RowItem
+import com.cs426.learningmocha.ui.common.SwipeToDelete
 import com.cs426.learningmocha.viewmodel.ChatListViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.launch
@@ -28,7 +29,7 @@ class ChatFragment : Fragment() {
 
     private var binding: FragmentChatBinding? = null
     private val viewModel: ChatListViewModel by viewModels()
-    private val adapter = RowAdapter(::openSession, ::confirmDelete)
+    private val adapter = RowAdapter(::openSession) { item -> confirmDelete(item) }
     private val dateFormat: DateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
 
     override fun onCreateView(
@@ -45,6 +46,12 @@ class ChatFragment : Fragment() {
         val b = binding ?: return
         b.chatList.layoutManager = LinearLayoutManager(requireContext())
         b.chatList.adapter = adapter
+        // Long-press still deletes too. The swipe is faster once it is known about, but nothing
+        // on a row advertises it, so the menu stays as the discoverable path.
+        SwipeToDelete.attach(b.chatList) { position, restore ->
+            val item = adapter.currentList.getOrNull(position)
+            if (item == null) restore() else confirmDelete(item, restore)
+        }
         b.chatFab.setOnClickListener {
             viewModel.createSession { id -> openSessionId(id) }
         }
@@ -91,12 +98,17 @@ class ChatFragment : Fragment() {
         )
     }
 
-    private fun confirmDelete(item: RowItem): Boolean {
+    /**
+     * @param onCancel puts a swiped row back. Wired to dismiss as well as cancel, because a
+     *   tap outside the dialog would otherwise leave the chat swiped off screen but undeleted.
+     */
+    private fun confirmDelete(item: RowItem, onCancel: (() -> Unit)? = null): Boolean {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.chat_delete_title)
             .setMessage(R.string.chat_delete_message)
             .setPositiveButton(R.string.action_delete) { _, _ -> viewModel.deleteSession(item.key) }
-            .setNegativeButton(R.string.action_cancel, null)
+            .setNegativeButton(R.string.action_cancel) { _, _ -> onCancel?.invoke() }
+            .setOnCancelListener { onCancel?.invoke() }
             .show()
         return true
     }
