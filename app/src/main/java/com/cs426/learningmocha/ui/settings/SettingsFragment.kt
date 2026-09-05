@@ -158,7 +158,13 @@ class SettingsFragment : Fragment() {
     private fun askMergeOrReplace(pending: PendingImport) {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.settings_import_title)
-            .setMessage(getString(R.string.settings_import_message, pending.snapshot.postCount))
+            .setMessage(
+                resources.getQuantityString(
+                    R.plurals.settings_import_message,
+                    pending.snapshot.postCount,
+                    pending.snapshot.postCount,
+                ),
+            )
             .setPositiveButton(R.string.settings_import_merge) { _, _ ->
                 viewModel.applyImport(pending, replace = false)
             }

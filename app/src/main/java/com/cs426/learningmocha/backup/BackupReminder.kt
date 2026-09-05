@@ -1,6 +1,7 @@
 package com.cs426.learningmocha.backup
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -42,6 +43,9 @@ object BackupReminder {
             ?.createNotificationChannel(channel)
     }
 
+    // The POST_NOTIFICATIONS check is in canPost() below, which lint cannot follow across
+    // the call; posting without it is a silent no-op on API 33+, never a SecurityException.
+    @SuppressLint("MissingPermission")
     fun notifyIfOverdue(context: Context, settings: SettingsStore) {
         if (!settings.backupRemindersEnabled) return
 

@@ -129,6 +129,25 @@ improvises costs the user that single change. The gateway prompt was also tighte
 | Graph | Node labels sat flush against the window edge and read as clipped, and two labels could overlap into an unreadable smear | Inset to the viewport padding; labels now draw best-connected first and one that would land on a label already placed is dropped |
 | Packaging | The script would ship a placeholder demo link with only a warning | It now fails |
 
+### Second pass — a lint run over the finished code
+
+The audit above was read against the source. Running Android Lint afterwards found what reading
+does not: two errors and a set of grammar defects that only appear at a particular count.
+
+| Area | Problem | Fix |
+| --- | --- | --- |
+| Wording | Eight count strings were written with a bare `%d`, so a library of one read "Exported 1 posts", "1 posts · 1 connections", "1 of 1 changes selected" | Graph, settings and review counts are `<plurals>`; the two-quantity graph captions are assembled from a posts plural and a connections plural instead of one fixed sentence |
+| Accessibility | `GraphView` recognises taps through a `GestureDetector`, so no click ever reached View's own machinery and TalkBack could not announce one | `performClick()` is overridden and called from the tap handler |
+| Lint noise | Both lint *errors* were guarded false positives — the notification permission is checked in `canPost()` one call away, and the WebView's height is measured to 16:9 at runtime — and the chat bubbles' one-sided gutter is deliberate | Suppressed at the exact site with the reason written next to it, so a real regression in either place is visible again |
+| Packaging | The requirements want the demo link in `README.md` too, which meant pasting the same URL in two places | `video/demo-link.txt` stays the single source of truth and the packaging script substitutes it into the staged README, failing loudly if the placeholder is gone |
+| Dead code | Four strings left behind by later renames (`review_undone`, `browse_create`, `action_move`, `dictionary_empty`) | Removed |
+
+Lint now reports **0 errors**. The 59 remaining warnings are deliberate and were left alone:
+available dependency upgrades (frozen for the submission), the documented cleartext base config
+the gateway needs, overdraw from the mocha background painted under a themed window, and unused
+entries in the dimension and text-appearance scales, which are a design token set rather than
+dead code.
+
 ### Confirmed sound
 
 The audit also checked, and found genuinely solid: the AI write path (one call site, one Room
@@ -148,6 +167,8 @@ and no secret anywhere in git history.
   index, SSE framing, the streaming answer extractor, backup round trip, force layout, tree rules, the
   Markdown link parser, the FTS query builder, gateway-URL normalisation, and import title
   de-duplication. Run with `.\gradlew.bat test`.
+- **Android Lint — 0 errors, 59 warnings**, all of the warnings reviewed and deliberate (see the
+  second-pass table in §5). Run with `.\gradlew.bat lintDebug`.
 - **Instrumented tests — 2, both passing on a Pixel emulator (API 36):** Room migration tests using
   `MigrationTestHelper` against the exported schemas in `app/schemas/`, covering the 1→3 and 2→3 paths
   with real rows. Run with `.\gradlew.bat connectedDebugAndroidTest`. Note: uninstall the app first if

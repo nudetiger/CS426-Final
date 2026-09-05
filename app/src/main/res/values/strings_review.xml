@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- AI change-review screen: the gate every AI-originated write passes through. -->
 <resources>
-    <string name="review_selected_count">%1$d of %2$d changes selected</string>
+    <plurals name="review_selected_count">
+        <item quantity="one">%1$d of %2$d change selected</item>
+        <item quantity="other">%1$d of %2$d changes selected</item>
+    </plurals>
     <string name="review_none_selected">Nothing selected — tick the changes you want to keep.</string>
     <string name="review_delete_warning">Deletions in this selection are permanent.</string>
     <string name="review_load_failed">This proposal could not be opened.</string>

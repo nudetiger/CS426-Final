@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The assistant bubble hugs the start edge, so only the end side carries a gutter.
+     Start/End keep that correct in RTL. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:gravity="start"
     android:orientation="vertical"
     android:paddingTop="@dimen/space_xs"
     android:paddingEnd="@dimen/chat_bubble_gutter"
-    android:paddingBottom="@dimen/space_xs">
+    android:paddingBottom="@dimen/space_xs"
+    tools:ignore="RtlSymmetry">
 
     <TextView
         android:id="@+id/bubble_text"

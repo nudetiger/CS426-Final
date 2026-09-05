@@ -23,7 +23,11 @@ turned off or unreachable.
 A per-feature breakdown of who did what is in the work-division table of
 [`report/report.pdf`](report/report.pdf) (§9) and in [`report-work.md`](report-work.md).
 
-Demo video: see `video/demo-link.txt` in the submission archive.
+Demo video: DEMO_VIDEO_LINK
+
+The link itself is kept in one place, [`video/demo-link.txt`](video/demo-link.txt), and
+`tools/package-submission.ps1` substitutes it into the line above when it builds the
+submission archive — so the README and the video file can never disagree.
 
 ## Test account
 

@@ -79,8 +79,6 @@ $pdf = Join-Path $root 'report\report.pdf'
 if (-not (Test-Path $pdf)) { throw "Missing $pdf -- build the report first." }
 Copy-Item $pdf (Join-Path $stage 'report\report.pdf')
 
-Copy-Item (Join-Path $root 'README.md') (Join-Path $stage 'README.md')
-
 $video = Join-Path $root 'video\demo-link.txt'
 if (-not (Test-Path $video)) {
     throw "Missing $video -- the demo link is a required deliverable."
@@ -92,6 +90,21 @@ if ($videoText -match 'TODO' -or $videoText -notmatch 'https?://') {
     throw "video\demo-link.txt has no video URL in it yet. Paste the unlisted YouTube / Google Drive link (shared so anyone with the link can view) and run this again."
 }
 Copy-Item $video (Join-Path $stage 'video\demo-link.txt')
+
+# The requirements want the demo link in README.md as well. Rather than ask for the
+# same URL twice -- two places to forget, two places to disagree -- the staged README
+# gets it substituted from demo-link.txt, which stays the single source of truth.
+$videoUrl = ([regex]::Match($videoText, 'https?://\S+')).Value.TrimEnd('.', ',', ')')
+$readme = Get-Content (Join-Path $root 'README.md') -Raw
+if ($readme -notmatch 'DEMO_VIDEO_LINK') {
+    throw 'README.md no longer contains the DEMO_VIDEO_LINK placeholder, so the demo link cannot be written into it. Restore the placeholder or paste the URL there by hand.'
+}
+# .Replace, not -replace: the URL is a literal, and PowerShell's operator would read a
+# stray $ in it as a capture-group reference.
+$readme = $readme.Replace('DEMO_VIDEO_LINK', $videoUrl)
+foreach ($target in @((Join-Path $stage 'README.md'), (Join-Path $src 'README.md'))) {
+    Set-Content -Path $target -Value $readme -Encoding utf8 -NoNewline
+}
 
 # --- zip -------------------------------------------------------------------
 $zip = Join-Path $dist "$ids.zip"

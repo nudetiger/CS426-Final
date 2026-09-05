@@ -5,13 +5,26 @@
     <string name="graph_mode_links">Links only</string>
     <string name="graph_mode_tags">Links + tags</string>
     <string name="graph_scope_all">Whole library</string>
-    <string name="graph_caption">%1$d posts · %2$d connections</string>
-    <string name="graph_caption_focused">Around “%1$s” · %2$d posts · %3$d connections</string>
-    <string name="graph_caption_capped">%1$d most-connected of %2$d posts · %3$d connections</string>
+    <!-- Captions are assembled from the plurals below rather than written out with %d, so a
+         one-post or one-connection graph does not read "1 posts · 1 connections". -->
+    <string name="graph_caption">%1$s · %2$s</string>
+    <string name="graph_caption_focused">Around “%1$s” · %2$s · %3$s</string>
+    <string name="graph_caption_capped">%1$d most-connected of %2$s · %3$s</string>
+    <plurals name="graph_posts">
+        <item quantity="one">%d post</item>
+        <item quantity="other">%d posts</item>
+    </plurals>
+    <plurals name="graph_connections">
+        <item quantity="one">%d connection</item>
+        <item quantity="other">%d connections</item>
+    </plurals>
     <string name="graph_empty">Nothing to draw yet. Write a few posts and connect them with [[wiki-links]].</string>
     <string name="graph_empty_focused">This post has no links yet. Tap “Whole library” to see everything.</string>
     <string name="graph_error">Could not build the graph.</string>
-    <string name="graph_selected_caption">%1$d connections · tap the dot again to open</string>
+    <plurals name="graph_selected_caption">
+        <item quantity="one">%1$d connection · tap the dot again to open</item>
+        <item quantity="other">%1$d connections · tap the dot again to open</item>
+    </plurals>
     <string name="graph_selected_caption_alone">No connections yet · tap the dot again to open</string>
     <string name="graph_open_post">Open</string>
     <string name="cd_graph_canvas">Knowledge graph. Drag to pan, pinch to zoom, double tap to fit, tap a post to select it.</string>

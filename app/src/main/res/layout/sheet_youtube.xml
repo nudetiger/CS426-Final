@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@color/mocha_cream"
@@ -18,12 +19,16 @@
         android:textAppearance="@style/TextAppearance.Mocha.Title"
         android:textColor="@color/mocha_brown" />
 
+    <!-- The height is not really wrap_content: YouTubePlayerSheet.keepSixteenByNine measures
+         it to 16:9 of the sheet width on every layout, which is why the embed cannot collapse
+         the way WebViewLayout warns about. -->
     <WebView
         android:id="@+id/youtube_sheet_player"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_m"
-        android:background="@color/mocha_cream_dark" />
+        android:background="@color/mocha_cream_dark"
+        tools:ignore="WebViewLayout" />
 
     <TextView
         android:id="@+id/youtube_sheet_message"

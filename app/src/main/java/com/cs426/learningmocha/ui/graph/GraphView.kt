@@ -164,6 +164,9 @@ class GraphView @JvmOverloads constructor(
 
             override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
                 handleTap(e.x, e.y)
+                // Routes the tap through View's click machinery so TalkBack and any
+                // registered OnClickListener see it, not just the gesture detector.
+                performClick()
                 return true
             }
 
@@ -277,6 +280,12 @@ class GraphView @JvmOverloads constructor(
         gestureDetector.onTouchEvent(event)
         return true
     }
+
+    /**
+     * Taps are recognised by [gestureDetector], not by [onTouchEvent] returning through
+     * super, so the click callback has to be raised explicitly for accessibility.
+     */
+    override fun performClick(): Boolean = super.performClick()
 
     override fun onSaveInstanceState(): Parcelable {
         val bundle = Bundle()

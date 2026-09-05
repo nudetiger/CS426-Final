@@ -31,7 +31,6 @@
     <string name="review_apply">Apply selected</string>
     <string name="review_discard">Discard all</string>
     <string name="review_empty">No actions in this proposal.</string>
-    <string name="review_undone">Undone</string>
 
     <!-- Settings -->
     <string name="settings_appearance">Appearance</string>
@@ -55,12 +54,21 @@
     <string name="settings_backup_never">Never exported.</string>
     <string name="settings_backup_last">Last export: %1$s</string>
     <string name="settings_backup_reminder">Remind me weekly</string>
-    <string name="settings_export_done">Exported %1$d posts.</string>
+    <plurals name="settings_export_done">
+        <item quantity="one">Exported %1$d post.</item>
+        <item quantity="other">Exported %1$d posts.</item>
+    </plurals>
     <string name="settings_export_failed">Export failed: %1$s</string>
     <string name="settings_import_failed">Import failed: %1$s</string>
-    <string name="settings_import_done">Imported %1$d posts.</string>
+    <plurals name="settings_import_done">
+        <item quantity="one">Imported %1$d post.</item>
+        <item quantity="other">Imported %1$d posts.</item>
+    </plurals>
     <string name="settings_import_title">Import backup</string>
-    <string name="settings_import_message">This file holds %1$d posts. Merge it into your library, or replace everything you have now?</string>
+    <plurals name="settings_import_message">
+        <item quantity="one">This file holds %1$d post. Merge it into your library, or replace everything you have now?</item>
+        <item quantity="other">This file holds %1$d posts. Merge it into your library, or replace everything you have now?</item>
+    </plurals>
     <string name="settings_import_merge">Merge</string>
     <string name="settings_import_replace">Replace</string>
     <string name="settings_import_empty">That backup contains no posts.</string>
@@ -91,7 +99,6 @@
     <!-- Browse -->
     <string name="browse_library">Library</string>
     <string name="browse_empty">This folder is empty. Tap + to add a branch, folder, or post.</string>
-    <string name="browse_create">Create</string>
     <string name="browse_create_title">New item</string>
     <string name="browse_rename">Rename</string>
     <string name="browse_move">Move</string>
@@ -113,7 +120,6 @@
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
     <string name="action_rename">Rename</string>
-    <string name="action_move">Move</string>
     <string name="action_edit">Edit</string>
     <string name="action_retry">Retry</string>
 
@@ -167,7 +173,6 @@
 
     <string name="dictionary_title">Dictionary</string>
     <string name="dictionary_search_hint">Find a term</string>
-    <string name="dictionary_empty">No terms yet. Add one from the editor.</string>
     <string name="dictionary_scope_all">All</string>
     <string name="dictionary_scope_global">Global</string>
     <string name="dictionary_scope_post">Per post</string>

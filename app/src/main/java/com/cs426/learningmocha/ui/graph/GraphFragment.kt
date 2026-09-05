@@ -90,7 +90,11 @@ class GraphFragment : Fragment() {
             b.graphSelectedCaption.text = if (selected.degree == 0) {
                 getString(R.string.graph_selected_caption_alone)
             } else {
-                getString(R.string.graph_selected_caption, selected.degree)
+                resources.getQuantityString(
+                    R.plurals.graph_selected_caption,
+                    selected.degree,
+                    selected.degree,
+                )
             }
         }
 
@@ -115,20 +119,27 @@ class GraphFragment : Fragment() {
         val nodeCount = snapshot.nodes.size
         val edgeCount = snapshot.edges.size
         val focus = snapshot.nodes.getOrNull(snapshot.focusIndex)
+        val posts = resources.getQuantityString(R.plurals.graph_posts, nodeCount, nodeCount)
+        val connections =
+            resources.getQuantityString(R.plurals.graph_connections, edgeCount, edgeCount)
         return when {
             snapshot.truncated -> getString(
                 R.string.graph_caption_capped,
                 nodeCount,
-                snapshot.candidateCount,
-                edgeCount,
+                resources.getQuantityString(
+                    R.plurals.graph_posts,
+                    snapshot.candidateCount,
+                    snapshot.candidateCount,
+                ),
+                connections,
             )
             focus != null -> getString(
                 R.string.graph_caption_focused,
                 focus.title,
-                nodeCount,
-                edgeCount,
+                posts,
+                connections,
             )
-            else -> getString(R.string.graph_caption, nodeCount, edgeCount)
+            else -> getString(R.string.graph_caption, posts, connections)
         }
     }
 

@@ -80,8 +80,10 @@ class ReviewChangesFragment : Fragment() {
                 viewModel.uiState.collect { state ->
                     b.reviewSummary.text = state.summary
                     b.reviewSummary.isVisible = state.summary.isNotBlank()
-                    b.reviewCounts.text = getString(
-                        R.string.review_selected_count,
+                    // Quantity follows the batch size, which is what the sentence pluralises.
+                    b.reviewCounts.text = resources.getQuantityString(
+                        R.plurals.review_selected_count,
+                        state.rows.size,
                         state.selectedCount,
                         state.rows.size,
                     )

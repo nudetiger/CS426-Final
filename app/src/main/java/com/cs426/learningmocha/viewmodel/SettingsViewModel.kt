@@ -109,7 +109,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 settings.reminderClockAt = settings.lastBackupAt
                 BackupReminder.clear(getApplication())
                 _uiState.update { it.copy(lastBackupAt = settings.lastBackupAt) }
-                messages.emit(string(R.string.settings_export_done, posts))
+                messages.emit(quantity(R.plurals.settings_export_done, posts))
             } catch (error: Exception) {
                 messages.emit(string(R.string.settings_export_failed, reason(error)))
             }
@@ -143,7 +143,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             _uiState.update { it.copy(busy = true) }
             try {
                 val posts = app.backupRepository.restore(pending.snapshot, replace)
-                messages.emit(string(R.string.settings_import_done, posts))
+                messages.emit(quantity(R.plurals.settings_import_done, posts))
             } catch (error: Exception) {
                 messages.emit(string(R.string.settings_import_failed, reason(error)))
             }
@@ -156,4 +156,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private fun string(res: Int, vararg args: Any): String =
         getApplication<Application>().getString(res, *args)
+
+    /** Count-aware counterpart of [string], so a single post never reads "1 posts". */
+    private fun quantity(res: Int, count: Int): String =
+        getApplication<Application>().resources.getQuantityString(res, count, count)
 }
