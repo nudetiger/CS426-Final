@@ -148,28 +148,38 @@ Go to the **Browse** tab.
 
 ## 3. Editor and reader (CRITICAL)
 
-Open any post → tap the **edit** (pencil) button.
+Open any post → tap the **edit** (pencil) button. The header says "Edit post"
+(or "New post" when you came from Browse → + → Post).
+
+The editor is laid out top to bottom as: header (back arrow, "Edit post",
+**Save**) → a scrolling form with **Title**, the four status chips, **Tags**,
+and a **References** section → a formatting toolbar reading
+**Bold · Italic · Heading · List · Link · Wiki link · Term** → the
+**Source | Preview** tabs → the body text area. The toolbar scrolls
+sideways, so on a narrow screen swipe it left to reach **Term**.
 
 **Test 3.1 — formatting toolbar**
 
-- Do: type `hello`, select it, tap **B**. Then select another word and tap
-  **I**. Then put the cursor on a new line and tap the heading button, then
-  the list button.
+- Do: in the body, type `hello`, select it, tap **Bold**. Then select another
+  word and tap **Italic**. Then put the cursor on a new line and tap
+  **Heading**, and on another line tap **List**.
 - Expect: text becomes `**hello**`, `*word*`, the line gets `## ` in front,
   another line gets `- ` in front.
 
 **Test 3.2 — preview tab**
 
-- Do: tap the **Preview** tab above the body area.
+- Do: tap the **Preview** tab (next to **Source**, just above the body).
 - Expect: the raw markdown is replaced by rendered text — bold is bold, `##`
-  is a big heading, `-` lines are bullets. Tap **Write** to go back and the
+  is a big heading, `-` lines are bullets. Tap **Source** to go back and the
   raw text is still there and editable.
 
 **Test 3.3 — wiki-link picker**
 
-- Do: put the cursor in the body, tap the **[[ ]]** wiki-link button.
+- Do: put the cursor in the body, tap **Wiki link** in the toolbar.
 - Expect: a dialog lists other post titles. Pick one → `[[That Title]]` is
   inserted at the cursor.
+- Note: if you had text selected instead, it just wraps the selection in
+  `[[ ]]` without showing the dialog. Same if the library has no other posts.
 
 **Test 3.4 — wiki-link works in the reader**
 
@@ -189,57 +199,87 @@ Open any post → tap the **edit** (pencil) button.
 - Expect: a "Backlinks" section listing the post that links to it. Tap it →
   it opens.
 
-**Test 3.7 — tags**
+**Test 3.7 — plain markdown link**
 
-- Do: in the editor, type `kotlin, testing` in the tags field and save.
+- Do: select a word in the body and tap **Link** in the toolbar.
+- Expect: it becomes `[word](https://)` — type the real URL between the
+  brackets, save, and the reader shows it as a tappable link that opens the
+  browser. (This is a normal web link; **Wiki link** is the one that points at
+  another post.)
+
+**Test 3.8 — tags**
+
+- Do: in the editor, type `kotlin, testing` in the **Tags** field and save.
 - Expect: the reader shows two tag chips. Tap `kotlin` → a screen listing all
   posts with that tag.
 
-**Test 3.8 — status**
+**Test 3.9 — status**
 
 - Do: in the reader, tap the status button (says "Reading" or "None"). Pick
   **Finished**.
 - Expect: the button label changes right away. Leave the post and come back —
-  still "Finished".
+  still "Finished". Reopen the editor → the **Finished** chip is the one
+  selected.
 
-**Test 3.9 — favorite**
+**Test 3.10 — favorite**
 
 - Do: tap the star icon in the reader.
 - Expect: it fills in. Go to Home → the post now appears under Favorites.
   Tap the star again → it empties and drops off the Favorites list.
 
-**Test 3.10 — dictionary term**
+**Test 3.11 — dictionary term**
 
-- Do: editor → tap the **term** button. Enter term `Coroutine`, definition
+- Do: in the editor toolbar tap **Term** (the last button — scroll the
+  toolbar sideways if you cannot see it). Enter term `Coroutine`, definition
   `A suspendable computation`, Vietnamese `Luồng treo được`. Save the dialog,
-  then Save the post.
-- Expect: the reader shows a "Terms" section with a `Coroutine` chip. Tap it
-  → a bottom sheet slides up with the definition and the Vietnamese line. It
-  covers only the bottom part of the screen, not the whole post.
+  then **Save** the post.
+- Expect: a snackbar "Term will be saved with the post". The reader then
+  shows a "Terms" section with a `Coroutine` chip. Tap it → a bottom sheet
+  slides up with the definition and the Vietnamese line. It covers only the bottom part
+  of the screen, not the whole post.
+- Do: leave the term field blank and try to save the dialog.
+- Expect: a snackbar says the term is required; nothing is added.
 
-**Test 3.11 — add a reference (article)**
+**Test 3.12 — add a reference (article)**
 
-- Do: editor → **Add resource** → pick **Article**, name `Kotlin docs`, URL
-  `https://kotlinlang.org/docs/home.html` → Save → Save the post.
-- Expect: a "References" card in the reader. Tap it → your browser opens that
-  page.
+- Do: in the editor, scroll the form up to the **References** section (below
+  the Tags field). It says "No references yet." Tap the small **Add** button
+  on the right of that header.
+- Expect: a dialog with a name field, a URL field, and four kind options
+  (Article / YouTube / Book / Other).
+- Do: pick **Article**, name `Kotlin docs`, URL
+  `https://kotlinlang.org/docs/home.html` → Save → **Save** the post.
+- Expect: a snackbar "Saved with the post" — the reference only really lands
+  when you save the post, not when you close the dialog. A chip appears in
+  the References section, and the reader shows a
+  "References" card. Tap the card → your browser opens that page.
+- Do: back in the editor, tap the chip itself.
+- Expect: a snackbar showing the full URL.
+- Do: tap the **×** on the chip.
+- Expect: the chip is removed and a snackbar confirms it.
 
-**Test 3.12 — YouTube plays inside the app**
+**Test 3.13 — URL is required**
 
-- Do: editor → Add resource → **YouTube**, name `Demo`, URL
-  `https://www.youtube.com/watch?v=dQw4w9WgXcQ` → Save → Save the post.
-- Expect: a card with a play icon. Tap it → a bottom sheet opens and the
-  video plays **inside the app**, roughly 16:9, not in the YouTube app. There
-  is an "Open in YouTube" button that does leave the app.
+- Do: References → **Add** → fill in only the name, leave URL blank → Save.
+- Expect: a snackbar saying the URL is required; no chip is added.
 
-**Test 3.13 — inline YouTube link is auto-detected**
+**Test 3.14 — YouTube plays inside the app**
 
-- Do: paste a bare YouTube URL into the post body and save.
-- Expect: it also shows up as a reference card, without you adding a
-  resource. These derived cards cannot be removed from the editor's chip list
-  — you remove them by deleting the URL from the text.
+- Do: References → **Add** → kind **YouTube**, name `Demo`, URL
+  `https://www.youtube.com/watch?v=dQw4w9WgXcQ` → Save → **Save** the post.
+- Expect: a reader card with a play icon. Tap it → a bottom sheet opens and
+  the video plays **inside the app**, roughly 16:9, not in the YouTube app.
+  There is an "Open in YouTube" button that does leave the app.
 
-**Test 3.14 — discard guard**
+**Test 3.15 — inline YouTube link is auto-detected**
+
+- Do: paste a bare YouTube URL into the post **body** and save.
+- Expect: it also shows up as a reference card in the reader, without you
+  adding anything in the References section. These derived cards have no
+  **×** on their chip — the way to remove one is to delete the URL from the
+  body text.
+
+**Test 3.16 — discard guard**
 
 - Do: edit a post, type something, then press system Back without saving.
 - Expect: a dialog "Discard changes?". **Keep editing** returns you to your
