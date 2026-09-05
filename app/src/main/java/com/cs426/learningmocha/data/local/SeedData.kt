@@ -52,6 +52,16 @@ object SeedData {
         }
     }
 
+    /**
+     * Puts the sample tree back after "delete everything". A reset is meant to land the user on
+     * a genuine first launch — onboarding, then the starter posts that teach the app — so the
+     * seed is re-inserted here rather than left to [ensureSeeded], whose one-shot flags have
+     * already fired by the time anyone can reach the reset button.
+     */
+    suspend fun reseedAfterWipe(db: AppDatabase) {
+        lock.withLock { insertGettingStarted(db, db.nodeDao()) }
+    }
+
     private suspend fun insertGettingStarted(db: AppDatabase, dao: NodeDao) {
         val now = System.currentTimeMillis()
         val branchId = dao.insert(

@@ -39,6 +39,7 @@ class ProfileSettingsFragment : Fragment() {
         val b = binding ?: return
         b.profileBack.setOnClickListener { findNavController().popBackStack() }
         b.profileName.doAfterTextChanged { viewModel.setDisplayName(it?.toString().orEmpty()) }
+        b.profilePhone.doAfterTextChanged { viewModel.setPhoneNumber(it?.toString().orEmpty()) }
         b.profileBirth.setOnClickListener { pickBirth() }
         b.profileGender.setOnCheckedChangeListener { _: RadioGroup, checkedId: Int ->
             viewModel.setGender(
@@ -68,6 +69,10 @@ class ProfileSettingsFragment : Fragment() {
                     if (b.profileName.text?.toString() != state.displayName) {
                         b.profileName.setText(state.displayName)
                         b.profileName.setSelection(b.profileName.text?.length ?: 0)
+                    }
+                    if (b.profilePhone.text?.toString() != state.phoneNumber) {
+                        b.profilePhone.setText(state.phoneNumber)
+                        b.profilePhone.setSelection(b.profilePhone.text?.length ?: 0)
                     }
                     b.profileBirth.text = state.birthDate.ifBlank {
                         getString(R.string.settings_profile_birth_unset)

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- First-launch welcome flow and the coach marks that follow it. -->
+<resources>
+    <string name="onboarding_title">Welcome to Learning Mocha</string>
+    <string name="onboarding_subtitle">A handful of details, then the library is yours. Everything here stays on this phone and you can change any of it later in Settings.</string>
+    <string name="onboarding_name">Name</string>
+    <string name="onboarding_name_hint">What should Mocha call you?</string>
+    <string name="onboarding_phone">Phone number</string>
+    <string name="onboarding_phone_hint">e.g. 0900 000 000</string>
+    <string name="onboarding_birth_year">Birth year</string>
+    <string name="onboarding_birth_year_hint">e.g. 2006</string>
+    <string name="onboarding_birth_year_help">Mocha pitches explanations at your age.</string>
+    <string name="onboarding_preferences">How should Mocha talk to you?</string>
+    <string name="onboarding_gender">Gender</string>
+    <string name="onboarding_start">Start Learning with Mocha</string>
+    <string name="onboarding_incomplete">Fill in your name, phone number and birth year first.</string>
+
+    <string name="tutorial_step">%1$d of %2$d</string>
+    <string name="tutorial_skip">Skip</string>
+    <string name="tutorial_next">Next</string>
+    <string name="tutorial_done">Got it</string>
+    <string name="tutorial_browse_title">Your library lives here</string>
+    <string name="tutorial_browse_body">Branches hold folders, folders hold posts, and any post can hold sub-posts. The + button adds whichever you need.</string>
+    <string name="tutorial_search_title">Find anything</string>
+    <string name="tutorial_search_body">Full-text search across every post, plus your tags and dictionary terms.</string>
+    <string name="tutorial_chat_title">Ask Mocha</string>
+    <string name="tutorial_chat_body">Answer just talks. Suggest, Modify and Organize let Mocha propose changes — and you review every one before it is applied.</string>
+    <string name="tutorial_settings_title">Make it yours</string>
+    <string name="tutorial_settings_body">Themes, reading size, your profile, backups — and the AI gateway address if you are running your own.</string>
+</resources>

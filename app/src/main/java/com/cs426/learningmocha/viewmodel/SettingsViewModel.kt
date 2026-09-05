@@ -8,6 +8,7 @@ import com.cs426.learningmocha.LearningMochaApp
 import com.cs426.learningmocha.R
 import com.cs426.learningmocha.backup.BackupReminder
 import com.cs426.learningmocha.backup.BackupSnapshot
+import com.cs426.learningmocha.data.local.SeedData
 import com.cs426.learningmocha.data.prefs.SettingsStore
 import com.cs426.learningmocha.net.ApiClient
 import com.cs426.learningmocha.ui.common.AppTheme
@@ -24,6 +25,7 @@ data class SettingsUiState(
     val colorfulLists: Boolean = true,
     val suggestChatMode: Boolean = true,
     val displayName: String = "",
+    val phoneNumber: String = "",
     val birthDate: String = "",
     val gender: String = "",
     val personality: String = SettingsStore.PERSONALITY_WARM,
@@ -52,6 +54,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             colorfulLists = settings.colorfulLists,
             suggestChatMode = settings.suggestChatMode,
             displayName = settings.displayName,
+            phoneNumber = settings.phoneNumber,
             birthDate = settings.birthDate,
             gender = settings.gender,
             personality = settings.personality,
@@ -66,6 +69,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val messages = MutableSharedFlow<String>(extraBufferCapacity = 4)
 
     val importPrompts = MutableSharedFlow<PendingImport>(extraBufferCapacity = 1)
+
+    /** Fires once the library and preferences are gone, so the screen can restart the app. */
+    val resetDone = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     /**
      * Stores the pick and updates the state. The caller then hands its Activity to
@@ -113,6 +119,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setDisplayName(value: String) {
         settings.displayName = value
         _uiState.update { it.copy(displayName = settings.displayName) }
+    }
+
+    fun setPhoneNumber(value: String) {
+        settings.phoneNumber = value
+        _uiState.update { it.copy(phoneNumber = settings.phoneNumber) }
     }
 
     fun setBirthDate(value: String) {
@@ -221,6 +232,29 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 messages.emit(string(R.string.settings_import_failed, reason(error)))
             }
             _uiState.update { it.copy(busy = false) }
+        }
+    }
+
+    /**
+     * Factory reset: every row and every preference, in that order so a wipe interrupted
+     * halfway still leaves a library the user can export. The sample tree is re-inserted
+     * because the app is now genuinely at first launch again, and the fragment restarts the
+     * task so onboarding and the default theme come back with it.
+     */
+    fun deleteEverything() {
+        if (_uiState.value.busy) return
+        viewModelScope.launch {
+            _uiState.update { it.copy(busy = true) }
+            try {
+                app.backupRepository.eraseEverything()
+                SeedData.reseedAfterWipe(app.database)
+                BackupReminder.clear(getApplication())
+                settings.clearAll()
+                resetDone.emit(Unit)
+            } catch (error: Exception) {
+                _uiState.update { it.copy(busy = false) }
+                messages.emit(string(R.string.settings_reset_failed, reason(error)))
+            }
         }
     }
 

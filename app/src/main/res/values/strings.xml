@@ -40,6 +40,8 @@
     <string name="settings_you_help">Stays on this phone. Mocha reads it when you chat so it can match your age and the tone you picked.</string>
     <string name="settings_profile_name">Name</string>
     <string name="settings_profile_name_hint">What should Mocha call you?</string>
+    <string name="settings_profile_phone">Phone</string>
+    <string name="settings_profile_phone_hint">Optional, stays on this phone</string>
     <string name="settings_profile_birth">Birthday</string>
     <string name="settings_profile_birth_unset">Tap to set</string>
     <string name="settings_profile_gender">Gender</string>
@@ -119,6 +121,16 @@
     <string name="settings_import_merge">Merge</string>
     <string name="settings_import_replace">Replace</string>
     <string name="settings_import_empty">That backup contains no posts.</string>
+    <string name="settings_reset_section">Danger zone</string>
+    <string name="settings_reset">Delete everything</string>
+    <string name="settings_reset_help">Erases every branch, folder, post, tag, dictionary term and chat on this device, along with your profile and settings. Export a backup first if you might want any of it back.</string>
+    <string name="settings_reset_confirm_title">Delete everything?</string>
+    <string name="settings_reset_confirm_message">This cannot be undone. Your whole library, your chats, your profile and every setting go away, and the app starts over as if it were freshly installed.</string>
+    <string name="settings_reset_type">To confirm, type %1$s below.</string>
+    <string name="settings_reset_hint">Type %1$s</string>
+    <!-- The confirmation word. Deliberately not translated: it is typed literally. -->
+    <string name="settings_reset_keyword" translatable="false">DELETE</string>
+    <string name="settings_reset_failed">Reset failed: %1$s</string>
     <string name="settings_export_no_access">Could not open that file.</string>
     <string name="settings_unknown_error">Unknown error.</string>
     <string name="settings_privacy">Privacy</string>

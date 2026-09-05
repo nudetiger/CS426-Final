@@ -20,7 +20,16 @@ import io.noties.markwon.Markwon
 sealed class ChatRow {
     abstract val key: Long
 
-    data class Message(val message: ChatMessage, val sharedNotes: Int = 0) : ChatRow() {
+    /**
+     * @param markdown the message text with `[[wiki-links]]` already rewritten into tappable
+     *   markdown links. It is carried on the row rather than resolved at bind time so that a
+     *   changed library re-runs DiffUtil and repaints the affected bubbles by itself.
+     */
+    data class Message(
+        val message: ChatMessage,
+        val markdown: String,
+        val sharedNotes: Int = 0,
+    ) : ChatRow() {
         override val key: Long get() = message.id
     }
 
@@ -83,7 +92,7 @@ class ChatMessageAdapter(
             onRetry: () -> Unit,
         ) {
             val item = row.message
-            markwon.setMarkdown(binding.bubbleText, item.text)
+            markwon.setMarkdown(binding.bubbleText, row.markdown)
             tintMode(binding.bubbleMode, item.mode)
             // The bubble itself carries the mode too, not just the pill: the pill says which
             // mode, the wash makes a run of replies in one mode read as one stretch.

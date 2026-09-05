@@ -1,10 +1,12 @@
 package com.cs426.learningmocha.ui.chat
 
 import android.content.res.ColorStateList
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -21,12 +23,16 @@ import com.cs426.learningmocha.databinding.DialogModeSwitchBinding
 import com.cs426.learningmocha.databinding.FragmentChatConversationBinding
 import com.cs426.learningmocha.ui.common.ListStateBinder
 import com.cs426.learningmocha.ui.common.NodePalette
+import com.cs426.learningmocha.ui.common.WikiMarkdown
 import com.cs426.learningmocha.ui.common.themeColor
 import com.cs426.learningmocha.viewmodel.ChatConversationUiState
 import com.cs426.learningmocha.viewmodel.ChatConversationViewModel
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import io.noties.markwon.AbstractMarkwonPlugin
+import io.noties.markwon.LinkResolverDef
 import io.noties.markwon.Markwon
+import io.noties.markwon.MarkwonConfiguration
 import io.noties.markwon.linkify.LinkifyPlugin
 import kotlinx.coroutines.launch
 
@@ -51,10 +57,7 @@ class ChatConversationFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val b = binding ?: return
-        val markwon = Markwon.builder(requireContext())
-            .usePlugin(LinkifyPlugin.create())
-            .build()
-        val messages = ChatMessageAdapter(markwon, ::openReview, viewModel::retry)
+        val messages = ChatMessageAdapter(buildMarkwon(), ::openReview, viewModel::retry)
         adapter = messages
         b.conversationList.layoutManager = LinearLayoutManager(requireContext()).apply {
             stackFromEnd = true
@@ -88,6 +91,7 @@ class ChatConversationFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.ping()
+                viewModel.refreshTitles()
                 launch {
                     viewModel.reviewNav.collect { offer ->
                         if (offer.suggestedMode != null) {
@@ -105,7 +109,11 @@ class ChatConversationFragment : Fragment() {
                 viewModel.uiState.collect { state ->
                     b.conversationBanner.isVisible = !state.online
                     b.conversationSending.isVisible = state.sending
-                    b.conversationSend.isEnabled = !state.sending && state.online
+                    // Deliberately not gated on `state.online`. The health check is a hint, not
+                    // a fact: one slow or dropped ping used to leave Send greyed out with no way
+                    // back except the banner's Retry. Sending while the gateway is really down
+                    // costs one error bubble, which already carries its own Retry.
+                    b.conversationSend.isEnabled = !state.sending
                     b.conversationInput.isEnabled = !state.sending
                     if (state.title.isNotBlank()) b.conversationTitle.text = state.title
                     ListStateBinder.bind(
@@ -181,10 +189,15 @@ class ChatConversationFragment : Fragment() {
             .show()
     }
 
+    /** Clears the box only once the message is really on its way; see [ChatConversationViewModel.send]. */
     private fun dispatch(text: String, overrideMode: String?) {
         val b = binding ?: return
+        if (!viewModel.send(text, overrideMode)) {
+            Toast.makeText(requireContext(), R.string.chat_still_replying, Toast.LENGTH_SHORT)
+                .show()
+            return
+        }
         b.conversationInput.text = null
-        viewModel.send(text, overrideMode)
         viewLifecycleOwner.lifecycleScope.launch {
             b.conversationTitle.text = viewModel.sessionTitle()
         }
@@ -248,11 +261,62 @@ class ChatConversationFragment : Fragment() {
 
     private fun buildRows(state: ChatConversationUiState): List<ChatRow> {
         val rows = state.messages.map { message ->
-            ChatRow.Message(message, state.sharedContext[message.id] ?: 0)
+            // Only the assistant writes [[wiki-links]]; a user bubble is drawn as plain text
+            // anyway, so rewriting it would be work nothing reads.
+            val markdown = if (message.role == ChatMessage.ROLE_USER) {
+                message.text
+            } else {
+                WikiMarkdown.rewrite(message.text, state.titleToId)
+            }
+            ChatRow.Message(message, markdown, state.sharedContext[message.id] ?: 0)
         }
         val bubble = state.streaming ?: return rows
         // The live bubble has no stored row yet, so it borrows the mode it was sent under.
-        return rows + ChatRow.Streaming(bubble.text, bubble.working, state.mode)
+        return rows + ChatRow.Streaming(
+            WikiMarkdown.rewrite(bubble.text, state.titleToId),
+            bubble.working,
+            state.mode,
+        )
+    }
+
+    /**
+     * The same link handling the reader uses, so a `[[Post Title]]` the assistant writes opens
+     * that post from the conversation instead of sitting there as bracketed text. A link to a
+     * post that does not exist yet says so rather than doing nothing.
+     */
+    private fun buildMarkwon(): Markwon {
+        val defaults = LinkResolverDef()
+        return Markwon.builder(requireContext())
+            .usePlugin(LinkifyPlugin.create())
+            .usePlugin(object : AbstractMarkwonPlugin() {
+                override fun configureConfiguration(builder: MarkwonConfiguration.Builder) {
+                    builder.linkResolver { view, link ->
+                        when {
+                            link.startsWith(WikiMarkdown.POST_PREFIX) -> {
+                                val id = link.removePrefix(WikiMarkdown.POST_PREFIX).toLongOrNull()
+                                if (id != null) {
+                                    findNavController().navigate(
+                                        R.id.action_global_open_post,
+                                        bundleOf("postId" to id),
+                                    )
+                                }
+                            }
+                            link.startsWith(WikiMarkdown.MISSING_PREFIX) -> {
+                                val title = Uri.decode(
+                                    link.removePrefix(WikiMarkdown.MISSING_PREFIX),
+                                )
+                                Toast.makeText(
+                                    requireContext(),
+                                    getString(R.string.reader_link_missing, title),
+                                    Toast.LENGTH_SHORT,
+                                ).show()
+                            }
+                            else -> defaults.resolve(view, link)
+                        }
+                    }
+                }
+            })
+            .build()
     }
 
     private fun openReview(message: ChatMessage) {

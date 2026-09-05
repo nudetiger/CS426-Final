@@ -90,6 +90,39 @@
                 android:minHeight="@dimen/touch_target"
                 android:text="@string/settings_backup_reminder"
                 android:textAppearance="@style/TextAppearance.Mocha.Body" />
+
+            <!-- Danger zone. It lives on this screen because Import -> Replace is already the
+                 other control that can empty the library, and it sits last so the export
+                 button is never the thing a thumb misses. -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/stroke_thin"
+                android:layout_marginTop="@dimen/space_xl"
+                android:background="?attr/mochaDivider" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_l"
+                android:text="@string/settings_reset_section"
+                android:textAppearance="@style/TextAppearance.Mocha.Section"
+                android:textColor="?attr/mochaError" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:text="@string/settings_reset_help"
+                android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/settings_reset"
+                style="@style/Widget.Mocha.ToolbarButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_s"
+                android:text="@string/settings_reset"
+                android:textColor="?attr/mochaError" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

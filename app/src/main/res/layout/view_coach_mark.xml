@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One coach mark: a card floated above the tab it is talking about. Deliberately small and
+     dismissable — the starter posts do the real teaching, this only names the buttons. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_card"
+    android:elevation="@dimen/space_s"
+    android:orientation="vertical"
+    android:padding="@dimen/space_m">
+
+    <TextView
+        android:id="@+id/coach_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.Mocha.Section"
+        android:textColor="?attr/mochaBrown" />
+
+    <TextView
+        android:id="@+id/coach_body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:textAppearance="@style/TextAppearance.Mocha.Body" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/coach_step"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/coach_skip"
+            style="@style/Widget.Mocha.ToolbarButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tutorial_skip" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/coach_next"
+            style="@style/Widget.Mocha.ToolbarButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tutorial_next" />
+    </LinearLayout>
+</LinearLayout>

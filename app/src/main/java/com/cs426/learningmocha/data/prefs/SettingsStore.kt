@@ -1,5 +1,6 @@
 package com.cs426.learningmocha.data.prefs
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
 import com.cs426.learningmocha.net.ApiClient
@@ -93,10 +94,29 @@ class SettingsStore(context: Context) {
         get() = prefs.getString(KEY_NAME, "").orEmpty()
         set(value) = prefs.edit().putString(KEY_NAME, value.trim()).apply()
 
-    /** ISO date `yyyy-MM-dd`, or empty when unset. */
+    /**
+     * ISO date `yyyy-MM-dd`, a bare `yyyy`, or empty when unset. Onboarding only asks for a
+     * birth year — one field is enough to pitch the reading level — while the profile screen
+     * offers a full date picker, so both shapes have to survive here and in [ageYears].
+     */
     var birthDate: String
         get() = prefs.getString(KEY_BIRTH, "").orEmpty()
-        set(value) = prefs.edit().putString(KEY_BIRTH, value).apply()
+        set(value) = prefs.edit().putString(KEY_BIRTH, value.trim()).apply()
+
+    /** Free-form phone number. Never leaves the device; it is not part of the AI prompt. */
+    var phoneNumber: String
+        get() = prefs.getString(KEY_PHONE, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_PHONE, value.trim()).apply()
+
+    /** False until the welcome flow has been completed once. */
+    var onboarded: Boolean
+        get() = prefs.getBoolean(KEY_ONBOARDED, false)
+        set(value) = prefs.edit().putBoolean(KEY_ONBOARDED, value).apply()
+
+    /** False until the coach marks over the bottom tabs have been walked through or skipped. */
+    var tutorialSeen: Boolean
+        get() = prefs.getBoolean(KEY_TUTORIAL, false)
+        set(value) = prefs.edit().putBoolean(KEY_TUTORIAL, value).apply()
 
     /** `male`, `female`, `other`, or empty. */
     var gender: String
@@ -133,10 +153,11 @@ class SettingsStore(context: Context) {
 
     fun ageYears(now: Long = System.currentTimeMillis()): Int? {
         val parts = birthDate.split("-")
-        if (parts.size != 3) return null
+        if (parts.size != 1 && parts.size != 3) return null
         val year = parts[0].toIntOrNull() ?: return null
-        val month = parts[1].toIntOrNull() ?: return null
-        val day = parts[2].toIntOrNull() ?: return null
+        // A year on its own (what onboarding collects) is counted from 1 January.
+        val month = if (parts.size == 3) parts[1].toIntOrNull() ?: return null else 1
+        val day = if (parts.size == 3) parts[2].toIntOrNull() ?: return null else 1
         val cal = java.util.Calendar.getInstance().apply { timeInMillis = now }
         var age = cal.get(java.util.Calendar.YEAR) - year
         val nowMonth = cal.get(java.util.Calendar.MONTH) + 1
@@ -163,6 +184,17 @@ class SettingsStore(context: Context) {
         get() = prefs.getLong(KEY_REMINDER_CLOCK, 0L)
         set(value) = prefs.edit().putLong(KEY_REMINDER_CLOCK, value).apply()
 
+    /**
+     * Wipes every stored preference — the destructive half of "delete everything", the other
+     * being [com.cs426.learningmocha.backup.BackupRepository.eraseEverything]. Written with
+     * `commit()` rather than `apply()`: the caller restarts the app immediately afterwards, and
+     * an asynchronous write could still be in flight when the new process reads these keys.
+     */
+    @SuppressLint("ApplySharedPref")
+    fun clearAll() {
+        prefs.edit().clear().commit()
+    }
+
     companion object {
         const val MIN_TEXT_SCALE = 0.85f
         const val MAX_TEXT_SCALE = 1.4f
@@ -184,6 +216,9 @@ class SettingsStore(context: Context) {
         private const val KEY_BIRTH = "profile_birth"
         private const val KEY_GENDER = "profile_gender"
         private const val KEY_PERSONALITY = "profile_personality"
+        private const val KEY_PHONE = "profile_phone"
+        private const val KEY_ONBOARDED = "onboarded"
+        private const val KEY_TUTORIAL = "tutorial_seen"
 
         const val PERSONALITY_WARM = "warm"
         const val GENDER_MALE = "male"

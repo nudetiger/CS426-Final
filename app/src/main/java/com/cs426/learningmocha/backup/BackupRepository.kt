@@ -117,6 +117,23 @@ class BackupRepository(private val db: AppDatabase) {
     }
 
     /**
+     * Wipes every row the app owns: the tree (links, tags, dictionary entries and resources
+     * cascade off it), global dictionary terms, and the whole chat history. One transaction, so
+     * an interrupted reset cannot leave half a library behind.
+     *
+     * This is the destructive half of Settings -> Backup -> Delete everything; the preference
+     * half is [com.cs426.learningmocha.data.prefs.SettingsStore.clearAll].
+     */
+    suspend fun eraseEverything() {
+        db.withTransaction {
+            db.chatDao().deleteAllSessions()
+            nodes.deleteAll()
+            knowledge.deleteAllTags()
+            knowledge.deleteAllDictionary()
+        }
+    }
+
+    /**
      * The titles one merge import will actually use: the posts that had to be renamed, plus the
      * `[[old]] -> [[new]]` rewrites that keep the imported set pointing at its own copies instead
      * of at the user's originals.

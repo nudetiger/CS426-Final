@@ -40,6 +40,13 @@ interface KnowledgeDao {
     @Query("DELETE FROM tags")
     suspend fun deleteAllTags()
 
+    /**
+     * Global terms (postId null) are the one knowledge row that does not hang off a node,
+     * so wiping the library has to name them; everything else cascades from `nodes`.
+     */
+    @Query("DELETE FROM dictionary")
+    suspend fun deleteAllDictionary()
+
     @Insert
     suspend fun insertLink(link: Link): Long
 

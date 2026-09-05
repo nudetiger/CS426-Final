@@ -27,6 +27,8 @@ data class ChatConversationUiState(
     val title: String = "",
     val messages: List<ChatMessage> = emptyList(),
     val sharedContext: Map<Long, Int> = emptyMap(),
+    /** Post title (lowercased) to id, so `[[wiki-links]]` in a reply can be made tappable. */
+    val titleToId: Map<String, Long> = emptyMap(),
     val streaming: StreamingBubble? = null,
     /** Wire mode for this conversation: "answer", or the action modes joined by "+". */
     val mode: String = ChatModes.ANSWER,
@@ -45,6 +47,12 @@ class ChatConversationViewModel(
 
     private val mode = MutableStateFlow(ChatModes.ANSWER)
     private val online = MutableStateFlow(true)
+
+    /**
+     * Refreshed rather than observed: the map only matters at render time, and the alternative
+     * — a Flow over every node — would re-render the whole conversation on any library edit.
+     */
+    private val titles = MutableStateFlow<Map<String, Long>>(emptyMap())
 
     /** Owned by the repository, so it stays true across a trip away from this screen. */
     private val sending = app.chatRepository.busySessions.map { sessionId in it }
@@ -82,6 +90,8 @@ class ChatConversationViewModel(
             sending = busy,
             online = reachable,
         )
+    }.combine(titles) { state, map ->
+        state.copy(titleToId = map)
     }.catch { error ->
         emit(ChatConversationUiState(listState = ListState.ERROR, errorMessage = error.message, online = false))
     }.stateIn(
@@ -92,6 +102,7 @@ class ChatConversationViewModel(
 
     init {
         ping()
+        refreshTitles()
         // A send started before this screen was left is still generating: re-attach so its
         // proposed batch still opens the review screen when it lands.
         app.chatRepository.inFlight(sessionId)?.let(::observe)
@@ -115,6 +126,15 @@ class ChatConversationViewModel(
         app.settings.suggestChatMode = false
     }
 
+    /**
+     * Reloads the post titles the reply text is resolved against. Called when the screen starts
+     * as well as at construction, so a post created by an applied batch is linkable as soon as
+     * the user comes back from the review screen.
+     */
+    fun refreshTitles() {
+        viewModelScope.launch { titles.value = app.postRepository.titleToId() }
+    }
+
     fun ping() {
         viewModelScope.launch { online.value = app.chatRepository.ping() }
     }
@@ -125,11 +145,15 @@ class ChatConversationViewModel(
     /**
      * @param overrideMode set when the user accepted a suggested switch, so the message goes
      *   under the mode they just agreed to rather than the one the chips still showed
+     * @return false when a reply is still generating and this message was not sent. The screen
+     *   uses that to keep the text in the box: silently swallowing it was one of the ways Send
+     *   looked broken — the message vanished and no bubble ever appeared.
      */
-    fun send(text: String, overrideMode: String? = null) {
-        if (app.chatRepository.inFlight(sessionId) != null) return
+    fun send(text: String, overrideMode: String? = null): Boolean {
+        if (app.chatRepository.inFlight(sessionId) != null) return false
         overrideMode?.let { mode.value = it }
         observe(app.chatRepository.sendAsync(sessionId, mode.value, text))
+        return true
     }
 
     fun retry() {

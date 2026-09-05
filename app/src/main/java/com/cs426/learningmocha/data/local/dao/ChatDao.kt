@@ -43,4 +43,8 @@ interface ChatDao {
 
     @Query("DELETE FROM chat_messages WHERE id = :id")
     suspend fun deleteMessage(id: Long)
+
+    /** Whole chat history, for the "delete everything" reset. Messages cascade off sessions. */
+    @Query("DELETE FROM chat_sessions")
+    suspend fun deleteAllSessions()
 }

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Body of the "delete everything" confirmation. The typed keyword is the whole point: a
+     destructive action this large should cost more than one mis-aimed tap. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/space_l"
+    android:paddingTop="@dimen/space_s"
+    android:paddingEnd="@dimen/space_l">
+
+    <TextView
+        android:id="@+id/reset_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/settings_reset_confirm_message"
+        android:textAppearance="@style/TextAppearance.Mocha.Body" />
+
+    <TextView
+        android:id="@+id/reset_instruction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_m"
+        android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+
+    <EditText
+        android:id="@+id/reset_keyword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:background="@drawable/bg_card"
+        android:importantForAutofill="no"
+        android:inputType="textCapCharacters"
+        android:minHeight="@dimen/touch_target"
+        android:padding="@dimen/space_s"
+        android:textAppearance="@style/TextAppearance.Mocha.Body"
+        android:textColorHint="?attr/mochaTextSecondary" />
+</LinearLayout>
