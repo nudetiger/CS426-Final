@@ -1,12 +1,12 @@
 # Assembles the graded submission archive: 24125006_24125009.zip
 #
-# Layout required by docs/final_requirements.md §3:
+# Layout required by docs/final_requirements.md section 3:
 #   24125006_24125009/
-#   ├── README.md
-#   ├── src/            full source, including .git, excluding build output
-#   ├── apk/app-release.apk
-#   ├── report/report.pdf
-#   └── video/demo-link.txt
+#   |-- README.md
+#   |-- src/            full source, including .git, excluding build output
+#   |-- apk/app-release.apk
+#   |-- report/report.pdf
+#   \-- video/demo-link.txt
 #
 # Run from the repository root:  powershell -ExecutionPolicy Bypass -File tools\package-submission.ps1
 
@@ -31,7 +31,9 @@ $exclude = @(
 )
 $excludeFiles = @(
     '.env', 'local.properties', 'keystore.properties',
-    '*.jks', '*.keystore', '*.apk', '*.aab', '*.iml', '*.log'
+    '*.jks', '*.keystore', '*.apk', '*.aab', '*.iml', '*.log',
+    # LaTeX intermediates are build output too; report.pdf itself is kept.
+    '*.aux', '*.toc', '*.out', '*.fls', '*.fdb_latexmk', '*.synctex.gz'
 )
 
 robocopy $root $src /MIR /NFL /NDL /NJH /NJS /NP `
@@ -70,23 +72,26 @@ if (-not (Test-Path (Join-Path $src '.git'))) {
 
 # --- artefacts -------------------------------------------------------------
 $apk = Join-Path $root 'app\build\outputs\apk\release\app-release.apk'
-if (-not (Test-Path $apk)) { throw "Missing $apk — run .\gradlew.bat assembleRelease first." }
+if (-not (Test-Path $apk)) { throw "Missing $apk -- run .\gradlew.bat assembleRelease first." }
 Copy-Item $apk (Join-Path $stage 'apk\app-release.apk')
 
 $pdf = Join-Path $root 'report\report.pdf'
-if (-not (Test-Path $pdf)) { throw "Missing $pdf — build the report first." }
+if (-not (Test-Path $pdf)) { throw "Missing $pdf -- build the report first." }
 Copy-Item $pdf (Join-Path $stage 'report\report.pdf')
 
 Copy-Item (Join-Path $root 'README.md') (Join-Path $stage 'README.md')
 
 $video = Join-Path $root 'video\demo-link.txt'
-if (Test-Path $video) {
-    Copy-Item $video (Join-Path $stage 'video\demo-link.txt')
-} else {
-    Set-Content -Path (Join-Path $stage 'video\demo-link.txt') -Encoding utf8 `
-        -Value 'TODO: paste the unlisted YouTube / Google Drive link to the 5-10 minute demo video here.'
-    Write-Host 'WARNING: video\demo-link.txt was missing — a placeholder was written. Replace it before submitting.'
+if (-not (Test-Path $video)) {
+    throw "Missing $video -- the demo link is a required deliverable."
 }
+# A link that cannot be opened counts as no video at all, so refuse to build an
+# archive that still carries the placeholder instead of warning about it.
+$videoText = Get-Content $video -Raw
+if ($videoText -match 'TODO' -or $videoText -notmatch 'https?://') {
+    throw "video\demo-link.txt has no video URL in it yet. Paste the unlisted YouTube / Google Drive link (shared so anyone with the link can view) and run this again."
+}
+Copy-Item $video (Join-Path $stage 'video\demo-link.txt')
 
 # --- zip -------------------------------------------------------------------
 $zip = Join-Path $dist "$ids.zip"

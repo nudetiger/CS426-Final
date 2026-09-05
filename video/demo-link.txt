@@ -1,14 +1,45 @@
-TODO before submitting: paste the link to the 5-10 minute demo video here
-(Google Drive or unlisted YouTube, shared so that anyone with the link can view).
+TODO before submitting: replace this file's contents with the link to the 5-10 minute
+demo video (unlisted YouTube or Google Drive), shared so that anyone with the link can
+view it. tools\package-submission.ps1 refuses to build the archive until a URL is here.
 
-Suggested running order for the recording, matching report/report.pdf §3:
-  1. Home hub -> Browse tree: create a branch, a folder and a post, drag to reorder.
-  2. Editor: markdown + [[wiki-link]] + tags + status + a dictionary term; Preview tab.
-  3. Reader: rendered article, tap a wiki-link, backlinks, related, dictionary popup,
-     an embedded YouTube resource playing in-app.
-  4. Knowledge graph: whole library, then "show in graph" from one post.
-  5. Search: FTS across content, tags, dictionary and resources; filters.
-  6. AI assistant: Answer (streamed) -> Modify ("I want to learn Distributed Systems")
-     -> review screen -> change the location -> Apply -> Undo.
-  7. Offline: stop the backend, show the calm banner and that the library still works.
-  8. Settings: theme switch, export -> import round trip, backup reminder.
+-------------------------------------------------------------------------------
+Running order for the recording (matches report/report.pdf and report-work.md).
+Both members must speak; say who is presenting which part.
+
+Setup before you hit record:
+  - Start the gateway:  cd backend && npm run dev     (needs DEEPSEEK_API_KEY in .env)
+  - Install the release APK on the emulator/device.
+  - Fresh install is nicer on camera: it seeds a small "Getting Started" branch.
+
+  1. Topic and users (30-60 s). What Learning Mocha is: a personal Wikipedia +
+     learning tracker + knowledge graph + AI assistant, all local to the device.
+
+  2. Knowledge base (60 s). Browse: create a branch, a folder and a post; drag a row
+     to reorder; show the breadcrumbs.
+
+  3. Writing (60 s). Editor: markdown, a [[wiki-link]], tags, status, a dictionary
+     term. Switch to the Preview tab, save.
+
+  4. Reading (60 s). Reader: rendered article, tap the wiki-link to jump, come back
+     and show backlinks and related posts, open a dictionary term, play a YouTube
+     resource in the sheet.
+
+  5. Knowledge graph (30 s). Whole library, then "show in graph" from one post.
+
+  6. Search (30 s). FTS across content, then a tag and a filter.
+
+  7. AI assistant (2-3 min) - the centrepiece, give it the most time:
+       a. Answer mode: ask a question, show the reply streaming in.
+       b. Modify mode: "I want to learn Distributed Systems. Create a learning path."
+       c. Review screen: this is the point of the architecture - the AI proposed
+          changes and nothing has been written yet. Show the tree preview, the tags
+          and status on a row, change one destination, edit one post, untick one.
+       d. Apply, show the new branch in Browse, then Undo.
+
+  8. Offline (30 s). Stop the gateway. Show the calm banner in chat and that the
+     whole library still works. Restart it if you want to finish live.
+
+  9. Backup and settings (30 s). Export to a file, import it back, theme switch.
+
+ 10. Close (30 s). What you would do next, honestly - the self-assessment in the
+     report (section 11) is the script for this.

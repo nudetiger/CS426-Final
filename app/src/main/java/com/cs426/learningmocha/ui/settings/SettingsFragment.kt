@@ -65,13 +65,20 @@ class SettingsFragment : Fragment() {
             )
         }
         b.settingsBackendSave.setOnClickListener {
-            viewModel.setBackendUrl(b.settingsBackendUrl.text.toString())
-            snack(getString(R.string.settings_backend_saved))
+            if (viewModel.setBackendUrl(b.settingsBackendUrl.text.toString())) {
+                showStoredBackendUrl()
+                snack(getString(R.string.settings_backend_saved))
+            }
         }
-        b.settingsBackendReset.setOnClickListener { viewModel.resetBackendUrl() }
+        b.settingsBackendReset.setOnClickListener {
+            viewModel.resetBackendUrl()
+            showStoredBackendUrl()
+        }
         b.settingsBackendTest.setOnClickListener {
-            viewModel.setBackendUrl(b.settingsBackendUrl.text.toString())
-            viewModel.testConnection()
+            if (viewModel.setBackendUrl(b.settingsBackendUrl.text.toString())) {
+                showStoredBackendUrl()
+                viewModel.testConnection()
+            }
         }
         b.settingsExport.setOnClickListener { createBackup.launch(defaultFileName()) }
         b.settingsImport.setOnClickListener { openBackup.launch(arrayOf("application/json", "*/*")) }
@@ -136,6 +143,16 @@ class SettingsFragment : Fragment() {
         b.settingsExport.isEnabled = !state.busy
         b.settingsImport.isEnabled = !state.busy
         b.settingsBackendTest.isEnabled = state.connectionStatus != ConnectionStatus.TESTING
+    }
+
+    /**
+     * The address is normalized on the way in (a missing scheme, a missing trailing slash),
+     * so show what was actually stored. [render] cannot: the field still holds focus right
+     * after the tap, and it leaves a focused field alone so typing is never overwritten.
+     */
+    private fun showStoredBackendUrl() {
+        val b = binding ?: return
+        b.settingsBackendUrl.setText(viewModel.uiState.value.backendUrl)
     }
 
     private fun askMergeOrReplace(pending: PendingImport) {

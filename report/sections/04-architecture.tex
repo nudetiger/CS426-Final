@@ -1,0 +1,158 @@
+\section{Application architecture}
+\label{sec:arch}
+
+\subsection{The system in one picture}
+
+Learning Mocha is an Android application plus a small Express process, and the boundary between them
+is not the usual client/server split. The device owns the data; the server owns a secret. Nothing in
+\code{backend/} has a database, a session table or a disk write, and no part of the library reaches
+it except text a user has deliberately typed into a chat message. Figure~\ref{fig:architecture} is
+the whole system.
+
+\input{figures/architecture}
+
+The network is touched in exactly three places, all behind the AI tab: \code{GET /v1/health}, so the
+chat screen can say ``AI unavailable'' before the user commits to a question; \code{POST /v1/chat};
+and \code{POST /v1/chat/stream}, the same body answered as Server-Sent Events. There is no fourth.
+Home, Browse, the reader, the editor, search, tags, the glossary, the graph and export/import never
+open a socket, which is why offline is not a mode here --- it is the normal case, and the AI tab is
+the exception that has to cope with a network. The app holds no API key
+(\code{DEEPSEEK\_API\_KEY} lives only in the gateway's \code{.env}), and Android's Auto Backup is
+switched off in the manifest so the OS does not upload the Room file either.
+
+\subsection{Layers on the device}
+
+Inside the app the structure is conventional MVVM with a repository layer, deliberately: the
+interesting parts of this project are the knowledge model and the action protocol, and neither is
+helped by an inventive architecture underneath. Rule~3 of \code{AGENTS.md} is the constraint the
+codebase is held to --- \emph{``Layers: Fragment $\rightarrow$ ViewModel $\rightarrow$ Repository
+$\rightarrow$ DAO. No DB/network calls in UI code.''}
+
+Data flows one way. A repository exposes Room \code{Flow}s; a ViewModel combines them into exactly
+one immutable UI-state data class published as a \code{StateFlow}; a Fragment collects that one flow
+and renders it. Events travel back as plain method calls on the ViewModel.
+
+\begin{lstlisting}[caption={Package layout under app/src/main/java/com/cs426/learningmocha/}]
+LearningMochaApp.kt  Application: 8 lazy singletons, theme, backup reminder
+MainActivity.kt      the only Activity: NavHost + bottom navigation
+ui/                  14 Fragments + 1 bottom sheet, adapters, list-state views
+viewmodel/           15 ViewModels, one UiState data class each
+data/local/          entity/ (9 entities), dao/ (Node, Knowledge, Chat),
+                     AppDatabase, KnowledgeSync, SeedData, InlineResources
+data/repo/           Tree, Post, Search, Graph      data/prefs/ SettingsStore
+ai/protocol/         Envelope, ActionParser, ActionValidator
+ai/engine/           ActionExecutor, ContextTools, KbIndex
+ai/chat/             ChatRepository
+net/                 ApiClient, MochaApi, SseChatClient, SseFrames, ChatDtos
+backup/              BackupRepository, BackupSnapshot, BackupReminder
+util/                8 pure-Java classes (below)
+\end{lstlisting}
+
+Browse, end to end: \code{BrowseFragment} collects \code{BrowseViewModel.uiState}, which flat-maps
+the current folder id over \code{TreeRepository.observeChildren(parentId)}, one indexed
+\code{SELECT} in \code{NodeDao}. A drag ends in \code{ItemTouchHelper.clearView}, which calls
+\code{viewModel.persistOrder(ids)} $\rightarrow$ \code{TreeRepository.reorder}, which writes the new
+\code{orderIndex} values inside \code{db.withTransaction}. Room re-emits the query and the list
+re-renders; the Fragment never mutates its own data.
+
+Rules live in the repository, not the ViewModel and not the DAO. Renaming a post is the clearest
+case: it refuses a title another post already holds, rewrites every \code{[[old title]]} in every
+post that links to it, and re-derives those posts' link rows --- in one transaction, so an
+interrupted rename cannot leave dangling links. There is one honest exception to the layering rule:
+\code{TagsViewModel} reads \code{KnowledgeDao} directly, because neither \code{tags} nor
+\code{post\_tags} exposes a \code{Flow} and the tag index needs a per-tag count no repository
+returns. It is a commented shortcut, not a pattern.
+
+\subsection{Why some of it is Java}
+
+Rule~4 of \code{AGENTS.md}: Kotlin for Android-facing code, Java only for framework-free utilities in
+\code{util/}. The split is chosen so the language boundary and the test boundary are the same line
+--- a class that cannot import \code{android.*} is a class that can be unit-tested on the JVM in
+milliseconds.
+
+\noindent
+\begin{tabularx}{\linewidth}{L{4.7cm} X}
+\toprule
+\textbf{Java class in \code{util/}} & \textbf{Framework-free job} \\
+\midrule
+\code{MarkdownLinkParser} & Extract \code{[[wiki-links]]} and YouTube URLs; rewrite a link title on
+rename \\
+\code{FtsQueryBuilder} & Sanitise typed input into a valid FTS4 \code{MATCH} expression, or \code{null} \\
+\code{TreeRules} & \code{wouldCreateCycle} --- stops a move turning the tree into a graph \\
+\code{ExportJsonWriter} \newline \code{ImportJsonReader} & Stream the \code{.mocha.json} envelope
+out and read it back, with format and version checks \\
+\code{TextDiff} & Line diff behind the review screen's ``what would change'' \\
+\code{StreamingAnswerExtractor} & Pull readable prose from a JSON envelope still arriving \\
+\code{ForceLayout} & Fruchterman--Reingold on primitive arrays, for the knowledge graph \\
+\bottomrule
+\end{tabularx}
+
+\medskip
+
+Each has a JVM unit test under \code{app/src/test/}, and the proportion works out at about 970 lines
+of Java against 9{,}500 of Kotlin.
+
+\subsection{Threading, lifecycle, and what survives what}
+
+All asynchronous work is coroutines --- no \code{AsyncTask}, no \code{Executor}, no callbacks in the
+data layer. Room's suspend and \code{Flow} DAOs already dispatch onto the database's own executor, so
+\code{Dispatchers.IO} appears in only three places in the whole app (file streams in
+\code{BackupRepository}, the SSE read loop in \code{SseChatClient}, the snapshot read in
+\code{GraphViewModel}) and \code{Dispatchers.Default} once, for the force-directed layout. Everything
+else needs no thread hop, which is itself an argument for Room.
+
+Collection is tied to the view rather than the Fragment: every screen collects inside a
+\code{repeatOnLifecycle(STARTED)} block on the view lifecycle owner, and every \code{uiState} is
+published through \code{stateIn} with \code{SharingStarted.WhileSubscribed(5\_000)}, so a rotation
+does not tear down and rebuild the underlying query. Views come from \code{viewBinding} held in a
+nullable field cleared in \code{onDestroyView}.
+
+That leaves two losses to handle explicitly. A \textbf{configuration change} is survived by the
+ViewModel, so the current folder, an in-flight AI stream and a half-written editor draft all outlive
+a rotation with nothing written to disk. \textbf{Process death} is not: seven ViewModels take a
+\code{SavedStateHandle}, through which navigation arguments (\code{postId}, \code{tagId},
+\code{sessionId}, \code{messageId}) arrive for free, and into which \code{BrowseViewModel}
+additionally writes the folder being viewed. Anything more valuable is already in Room by then --- an
+AI batch awaiting approval, for instance, lives as \code{actionsJson} on its \code{chat\_messages}
+row, so it is still reviewable after a cold start.
+
+\subsection{Navigation}
+
+One \code{MainActivity}, one \code{NavHostFragment}, and \code{nav\_graph.xml} for the rest. Five
+destinations are top-level and carry the \code{bottom\_nav\_menu} ids, which is all
+\code{setupWithNavController} needs: \textbf{Home, Browse, Search, AI, Settings}. Nine more sit on
+the back stack --- post reader (\code{postId}), post editor (\code{postId}, \code{parentId}),
+favourites, dictionary, tag detail (\code{tagId}), knowledge graph (\code{focusPostId}, 0 = whole
+library), tags, conversation (\code{sessionId}) and review changes (\code{messageId}) ---
+and \code{MainActivity} hides the bottom bar for them with one
+\code{addOnDestinationChangedListener} rather than a per-screen flag.
+
+\input{figures/navmap}
+
+All nine are reached through \emph{global} actions. That matters more than it sounds: the reader is
+opened from Home, Browse, Search, tag detail, the graph and the review screen, and per-screen actions
+would have meant six near-identical edges and six chances to forget a transition. Only reader
+$\rightarrow$ editor is local, because only the reader has an Edit button; every action shares one
+180\,ms animation set from \code{res/anim/nav\_*}.
+
+Two deliberate non-destinations: the YouTube player is a \code{BottomSheetDialogFragment}, so
+dismissing the sheet destroys the \code{WebView} and stops playback with no lifecycle code of our
+own, and the create/rename/move/delete dialogs are \code{MaterialAlertDialogBuilder} calls, because
+none deserves a back-stack entry. Window insets are handled once, in \code{MainActivity}, which pads
+the root view for system bars, cutout and IME under \code{enableEdgeToEdge()}.
+
+\subsection{The invariant}
+
+\begin{mochabox}[title={No AI-originated write reaches Room outside \code{ActionExecutor}}]
+The model has no DAO, no repository and no database handle. It reads the library only through seven
+named read-only queries in \code{ai/engine/ContextTools}, and changes it only by emitting a batch of
+structured actions, which is parsed, validated against live data, shown on a review screen where each
+item can be deselected, and then applied by \code{ai/engine/ActionExecutor} in a single
+\code{db.withTransaction}. The codebase has exactly one call site for that executor:
+\code{ReviewChangesViewModel}, on the approve button.
+\end{mochabox}
+
+The mechanism --- envelope format, validator, two-round context protocol, review screen, single-level
+undo --- is \S\ref{sec:ai}. The architectural consequence is the part that belongs here: the AI is a
+peer of the UI layer, not a layer beneath it, and it reaches the database through a narrower door
+than the user's own screens do.

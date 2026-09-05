@@ -1,0 +1,260 @@
+\section{Features}
+\label{sec:features}
+
+A tour of what the app does, grouped by what someone is trying to get done rather than by code
+package. The navigation graph declares fourteen destinations: five bottom-navigation tabs (Home,
+Browse, Search, AI, Settings) and nine pushed screens with typed arguments, each of which gets its
+turn below.
+
+\subsection{The knowledge base}
+
+Branches, folders and posts are three values of one \code{type} column in one self-referencing
+\code{nodes} table, so create, rename, move, reorder and delete are written once and behave the
+same at every level. \S\ref{sec:data} covers the schema.
+
+\textbf{Browse} is the tree walker. A breadcrumb row starts at \emph{Library} and adds a tappable
+crumb per level, so jumping back three folders is one tap; system back goes up one level. The
+\code{+} button offers \emph{Branch}, \emph{Folder} or \emph{Post}, defaulting to Branch at the root
+and Post elsewhere, and choosing Post opens the editor with the current folder as the parent.
+
+Each row has an overflow menu with \emph{Rename}, \emph{Move} and \emph{Delete}. Dragging reorders
+among siblings, written when the drag ends; swiping left confirms, then deletes. \emph{Move} is a
+computed list dialog rather than a drag --- the deliberate limit is that dragging reorders but never
+re-parents --- and \code{possibleParents} offers \emph{Library (top level)} plus every branch and
+folder that is not inside the item being moved.
+
+The rules the tree enforces are few, and most exist to keep something else honest:
+
+\noindent
+\begin{tabularx}{\linewidth}{L{4.6cm} X}
+\toprule
+\textbf{Rule} & \textbf{Why} \\
+\midrule
+Only branches and folders take children &
+A child of a post would be invisible in Browse \\
+\addlinespace
+A move that would cycle is refused &
+\code{TreeRules.wouldCreateCycle} walks the parent chain before the write, so a folder cannot land
+inside its own subtree \\
+\addlinespace
+Two posts cannot share a title &
+Titles address posts everywhere --- \code{[[wiki-links]]}, AI actions, lookup by name --- so a
+duplicate makes every lookup arbitrary. Checked only when a title changes, so an old import with
+duplicates stays editable \\
+\addlinespace
+Deleting a container deletes its contents &
+The foreign key cascades, the confirmation says so in words, and there is no undo \\
+\bottomrule
+\end{tabularx}
+
+\medskip
+A first launch is not an empty screen: Room's database-created callback seeds a \emph{Getting
+Started} branch --- a welcome post, a \emph{How this library works} folder with two more, three
+tags, one per-post glossary term and one global one, wiki-linked so backlinks, related posts and
+the graph have something to show on day one. Seeding is tied to the database file being created,
+not to the library being empty: the seed text invites deletion, and re-growing it behind the
+reader's back would be a bug.
+
+\subsection{Reading and writing}
+
+The \textbf{reader} renders Markdown through Markwon, entirely on-device. Above the article sit
+the title, the breadcrumb path, a star, a status chip and buttons for \emph{Edit} and \emph{Show in
+graph}; below it come glossary chips, references, \emph{Linked from} and \emph{Related}, each
+hidden when empty, so a short post is a short screen. Opening a post bumps its \code{updatedAt}, so
+\emph{Recent posts} reflects reading and not only editing.
+
+\code{[[Wiki-links]]} are resolved at render time rather than stored. Before Markwon sees the text,
+each \code{[[Title]]} becomes a Markdown link on an internal scheme: \code{mocha://post/<id>} when
+the title matches a post, \code{mocha://missing/<title>} when it does not. A custom resolver
+intercepts both --- the first navigates, the second reports ``\emph{Title} is not in your library
+yet''. An unresolved link is visible and inert rather than an error, because linking to a post you
+have not written is a normal way to plan.
+
+The \textbf{editor} is a title field, a \emph{Source}/\emph{Preview} tab pair and a toolbar: bold,
+italic, heading, list, external link, wiki link, glossary term, add reference. Formatting buttons
+wrap the selection or insert a prefix at the start of the line. The wiki-link button wraps a
+selection in brackets, or with nothing selected lists every other post title and inserts the one
+picked. \emph{Preview} runs the reader's own rewrite, so links look exactly as they will when saved.
+
+Every keystroke goes to the ViewModel and is rendered back from state, so rotation cannot lose a
+draft, and leaving with unsaved changes asks first. Tags are typed as a comma-separated list and
+deduplicated case-insensitively. References and glossary terms are staged in the draft: one
+transaction on save updates the node, rebuilds its outgoing link rows from the markdown, replaces
+its tag rows and upserts its terms.
+
+Renaming a post is the interesting write. \code{KnowledgeSync.retitle} writes the new title, then
+rewrites \code{[[old title]]} in every post that links to it, in the same transaction, matching
+case-insensitively and tolerating padding inside the brackets. One routine backs the rename in
+Browse and in the editor. Without it an inbound link would degrade to ``not created yet'' and lose
+its link row on the linking post's next save.
+
+Deliberate limits: Markdown only --- no images, no attachments, no rich-text toolbar --- and the
+source pane is a plain text field with no syntax highlighting.
+
+\subsection{Connecting knowledge}
+
+Three deliberately different answers to ``what else is this connected to'' sit under each article.
+\textbf{Linked from} is exact: the posts whose markdown contains a resolved wiki-link to this one,
+read from the \code{links} table that saving maintains.
+
+\textbf{Related} is inferred. It scores every other post and shows the top five: $+2$ per tag
+shared with this post; $+2$ for each post this one links out to; and $+1$ for each post that also
+links to one of those targets --- co-citation, so two posts that both cite \emph{Raft} surface for
+each other with no direct link between them. Posts already listed under \emph{Linked from}, and the
+post itself, are excluded before scoring.
+
+The \textbf{knowledge graph} draws the same data as a picture. Posts are dots sized by degree and
+filled by learning status, favourites accented; edges are wiki-links, and a chip switches between
+\emph{Links only} and \emph{Links + tags}, the second adding an edge between posts sharing a tag.
+From Home the graph is the whole library; from a post's \emph{Show in graph} it is that post plus
+its one-hop neighbourhood, which a \emph{Whole library} chip widens. Two limits are made visible
+rather than hidden: past 250 posts only the most-connected are drawn and the caption says so
+(``\emph{n} most-connected of \emph{m} posts''), and a tag on more than eight posts is drawn as a
+ring rather than a clique, because $O(k^2)$ grey edges would bury the wiki-links.
+
+The layout is the project's own code: \code{util/ForceLayout.java}, about 150 lines of
+Fruchterman--Reingold in framework-free Java --- repulsion between every pair, attraction along
+edges, a cooling temperature, sunflower-spiral seeding so isolated nodes start spread out instead
+of piled on one radius, and a fixed seed so the same library draws the same shape between launches.
+It returns a flat \code{float[]} in a fixed square world that \code{GraphView} fits to whatever
+screen it gets, so rotation never re-runs the layout. Layout runs on \code{Dispatchers.Default};
+the view handles drag-to-pan, pinch-to-zoom, double-tap-to-fit, tap-to-select and tap-again-to-open,
+and hides node labels when the dots are packed too tightly to read.
+
+\subsection{Learning metadata}
+
+A post carries four pieces of state beyond its text, each earning its place by feeding another
+screen. \textbf{Status} is \emph{None}, \emph{Reading}, \emph{In progress} or \emph{Finished}, set
+from a chip in the reader or the editor. It is a reading state, not a memory schedule --- there is no
+spaced repetition --- and it drives \emph{Continue reading} on Home (posts in \emph{Reading} or
+\emph{In progress}, most recently touched first) and two search filters. \textbf{Favourite} is the
+star in the reader header, filling the Home section, the Favorites screen, the favourites search
+filter and the accent ring in the graph. \textbf{Tags} are stored as shared rows; they appear as
+chips under the reader title, tapping one opens a screen of the posts carrying it, and a
+\textbf{Tags} screen lists every tag alphabetically with a post count and a filter box.
+
+\textbf{References} are external material: a kind (YouTube, Article, Book, Other), an optional
+title and a URL, attached from the editor and shown as cards under the article captioned with the
+link's host. A post's reference list is the union of the rows someone added on purpose and the
+YouTube URLs sitting in the markdown right now, detected at read time and deduplicated by video id.
+The derived half is not stored, which stops a re-save from deleting a reference the user or the
+assistant added by hand; the trade is that a derived card is removed by editing the markdown rather
+than by a close button, and the editor marks it accordingly.
+
+Tapping a YouTube card plays it in a bottom sheet without leaving the article: a locked-down
+\code{WebView} loading the IFrame embed against \code{youtube-nocookie.com}, file and content
+access off, navigation restricted to an allow-list of YouTube hosts and everything else handed to
+the browser. An \emph{Open in YouTube} button is always present, and a link with no
+eleven-character video id --- a channel or a playlist --- opens externally rather than pretending to
+play.
+
+\subsection{Dictionary}
+
+A glossary entry is a term, an English definition and a Vietnamese meaning, in a dedicated
+\code{meaningVi} field rather than one free-text blob, because a reader of English-language
+material wants both and wants them separable. An entry belongs to one post or is global.
+
+While reading, the reader shows a chip for every entry attached to this post \emph{or} whose term
+appears in the body, matched case-insensitively, so a global term surfaces only on the articles
+that use it. Tapping a chip opens a bottom sheet rather than a dialog, so the definition appears
+without covering the paragraph the word was read in. An \emph{Open dictionary} link sits beside the
+chips for when a definition is not enough.
+
+The \textbf{Dictionary} screen is the glossary as a whole, with full editing: a search box
+filtering on term, definition and Vietnamese meaning at once; scope chips for \emph{All},
+\emph{Global} and \emph{Per post}; rows showing the term, its definition and its origin (``Global
+term'', or ``From \emph{Post title}''). The \code{+} button adds a global term, since anything
+created here belongs to no single post. A row tap edits; the row menu edits, jumps to the owning
+post, or deletes with an undo snackbar. Adding a term that already exists in the same scope
+updates that row instead of stacking a duplicate chip in the reader.
+
+\subsection{Finding things}
+
+\textbf{Search} is one text box, debounced at 300\,ms, plus five filter chips. The box drives an
+FTS4 index over post titles and content; because \code{posts\_fts} is content-backed by
+\code{nodes}, Room's triggers keep it in step and no application code writes to the index. The
+typed text becomes a MATCH query with punctuation stripped and each token given a prefix star, so
+``dist sys'' matches \emph{Distributed Systems} while a stray quote cannot break the query.
+
+The result list merges five passes and de-duplicates: FTS hits on title and body, a title
+substring pass (so branches and folders match too), posts carrying a matching tag, glossary
+entries, and references. Posts sort first, then title-prefix matches, then alphabetically, capped
+at fifty; a post matching only in its body carries an excerpt around the first match, snapped to
+word boundaries, so the row says why it is there. The chips are \emph{Posts} and \emph{Branches}
+(mutually exclusive), \emph{Favorites}, and \emph{Reading}/\emph{Finished} (also mutually
+exclusive); set with nothing typed, they list the library on their own. Glossary and reference hits
+appear only when no filter is active, having no type, status or star to filter on. Tapping a result
+goes where it lives: a post opens the reader, a branch or folder Browse at that node, a glossary hit
+its owning post or the dictionary, and a reference the post that cites it.
+
+\textbf{Home} covers the parts you should not have to search for: a greeting chosen by the hour, the
+post count, four shortcut tiles (graph, favourites, dictionary, tags), a horizontal \emph{Continue
+reading} strip, \emph{Recent posts}, \emph{Favorites}, and a branch list opening Browse at the
+branch tapped.
+
+\subsection{The AI assistant}
+
+The \textbf{AI} tab lists chat sessions; a conversation carries four mode chips --- \emph{Answer},
+\emph{Suggest}, \emph{Modify} and \emph{Organize} --- deciding the system prompt and what the model
+may return. The assistant reads the library only through read-only context queries, so it is never
+uploaded wholesale, and it cannot write: proposals arrive as structured actions, and the
+\textbf{Review changes} screen shows one row per action to preview, edit, relocate or deselect
+before the approved subset is applied. \S\ref{sec:ai} covers the modes, the protocol, the
+validation rules and the transaction behaviour in full.
+
+\subsection{Backup, settings and theming}
+
+\textbf{Export} writes the whole library through the system file picker, into a file named for the
+current date with a \code{.mocha.json} suffix: one versioned JSON document holding nodes, links,
+tags, post--tag pairs, glossary entries and references. Chat history is deliberately not in it ---
+a transcript of questions is not part of the knowledge base, and exporting it would put messages
+into a file people share.
+
+\textbf{Import} takes a file from the same picker, reads it without writing anything, then asks:
+this file holds \emph{n} posts --- \emph{Merge} into the library, or \emph{Replace} everything?
+Restore always reassigns primary keys and rewrites every foreign key against the new ids, so a
+merge cannot collide with rows already present and a replace cannot inherit stale ones. Nodes go
+in parents-first; a node whose parent is missing lands at the top level rather than disappearing,
+and a per-post glossary entry whose post is missing is dropped. The search index needs no
+attention, because it is content-backed.
+
+Because the device is the only copy, the app nags. A \emph{Remind me weekly} toggle posts a
+notification on the next cold start once a week has passed since the last export --- or since first
+launch, tracked separately so someone who has never exported is not told they have. The
+notification permission is requested when the toggle is switched on, and the check runs at startup
+rather than on a schedule, avoiding a background scheduler for a message that only has to be seen
+when the app is next opened.
+
+\textbf{Settings} also holds the theme (\emph{Follow system}, \emph{Light}, \emph{Dark}), applied
+through \code{AppCompatDelegate} and kept in \code{SharedPreferences} so it can be read
+synchronously in \code{Application.onCreate}, before any view inflates and therefore without a
+flash of the wrong palette. Below it sits the \textbf{AI gateway address}, with \emph{Save},
+\emph{Reset} and \emph{Test connection}; the address is normalised to end in a slash, defaults to
+the emulator loopback, and the test reports plainly --- ``Connected to the gateway'', or ``Could not
+reach the gateway. Your library still works.'' A privacy paragraph beneath states what leaves the
+device and what never does.
+
+\subsection{Offline and degraded states}
+
+Every screen except the assistant works with the network switched off, and works identically ---
+none of them makes a network call at all. That follows from the local-first commitment in
+\S\ref{sec:intro}; it is not a fallback path that has to be maintained separately.
+
+When the \textbf{gateway is unreachable}, both chat screens ping its health endpoint on entry and
+show a banner with a retry button, the send button disabled, worded reassuringly: ``AI unavailable
+--- your library still works.'' Nothing is written and nothing is queued, and a reply mid-stream
+when the connection dies leaves no trace either (\S\ref{sec:ai}). A YouTube sheet with no network
+swaps the player for ``Video unavailable offline. Open it in YouTube to try again.''
+
+\textbf{Empty and error states} are one mechanism rather than thirteen.
+\code{ui/common/ListState} is a five-value enum --- \code{LOADING}, \code{CONTENT}, \code{EMPTY},
+\code{ERROR}, \code{OFFLINE} --- and \code{ListStateBinder} renders it into a shared overlay of
+spinner, message and retry button. All thirteen list-bearing screens bind it, each supplying its
+own wording, so an empty state says something useful instead of ``no data'': the graph says
+``Nothing to draw yet. Write a few posts and connect them with \code{[[wiki-links]]}''.
+
+One honest gap: the \code{OFFLINE} value is defined in the enum and handled in the binder, but no
+ViewModel emits it. The chat screens express unreachability through their own banner and a disabled
+send button instead, which is the better fit --- an offline chat should still show its history
+rather than be replaced by a full-screen message --- so that branch of the binder is unused code
+today rather than a state the user can reach.

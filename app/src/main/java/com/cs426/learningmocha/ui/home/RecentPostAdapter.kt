@@ -13,6 +13,10 @@ class RecentPostAdapter(
     private val onClick: (Node) -> Unit,
 ) : ListAdapter<Node, RecentPostAdapter.Holder>(NodeDiffCallback) {
 
+    init {
+        stateRestorationPolicy = StateRestorationPolicy.PREVENT_WHEN_EMPTY
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val inflater = LayoutInflater.from(parent.context)
         return Holder(ItemHomeRowBinding.inflate(inflater, parent, false))

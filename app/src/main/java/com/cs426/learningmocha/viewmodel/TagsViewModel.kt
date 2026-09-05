@@ -29,13 +29,12 @@ data class TagsUiState(
 /**
  * Alphabetical tag index with a post count per tag.
  *
- * The counts come straight from [com.cs426.learningmocha.data.local.dao.KnowledgeDao]: neither
- * `tags` nor `post_tags` exposes a Flow, so the list is read as a snapshot and re-read through
- * [refresh] instead of observed.
+ * Neither `tags` nor `post_tags` exposes a Flow, so the list is read as a snapshot and re-read
+ * through [refresh] instead of observed.
  */
 class TagsViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val knowledge = (application as LearningMochaApp).database.knowledgeDao()
+    private val app = application as LearningMochaApp
 
     val query = MutableStateFlow("")
 
@@ -66,7 +65,7 @@ class TagsViewModel(application: Application) : AndroidViewModel(application) {
         reload.value = reload.value + 1
     }
 
-    private suspend fun loadTags(): List<TagCount> = knowledge.allTags().map { tag ->
-        TagCount(tag.id, tag.name, knowledge.postsWithTag(tag.id).size)
+    private suspend fun loadTags(): List<TagCount> = app.postRepository.tagCounts().map { row ->
+        TagCount(row.id, row.name, row.postCount)
     }
 }

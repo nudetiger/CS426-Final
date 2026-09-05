@@ -3,9 +3,12 @@ package com.cs426.learningmocha.backup
 import androidx.room.withTransaction
 import com.cs426.learningmocha.data.local.AppDatabase
 import com.cs426.learningmocha.data.local.entity.Node
+import com.cs426.learningmocha.data.local.entity.NodeType
 import com.cs426.learningmocha.data.local.entity.PostTag
 import com.cs426.learningmocha.util.ExportJsonWriter
 import com.cs426.learningmocha.util.ImportJsonReader
+import com.cs426.learningmocha.util.ImportTitles
+import com.cs426.learningmocha.util.MarkdownLinkParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStream
@@ -16,8 +19,10 @@ import java.io.OutputStream
  *
  * Restore always reassigns primary keys and rewrites every foreign key against the
  * new ids, so a merge cannot collide with rows the user already has, and a replace
- * cannot inherit stale ids. The FTS index needs no attention: `posts_fts` is
- * content-backed by `nodes`, so Room's triggers follow the writes below.
+ * cannot inherit stale ids. Titles are the other address space — `[[wiki-links]]` and AI
+ * actions resolve by title — so a merge also renames incoming posts whose title is taken.
+ * The FTS index needs no attention: `posts_fts` is content-backed by `nodes`, so Room's
+ * triggers follow the writes below.
  */
 class BackupRepository(private val db: AppDatabase) {
 
@@ -53,11 +58,21 @@ class BackupRepository(private val db: AppDatabase) {
                 knowledge.deleteAllTags()
             }
 
+            // A merge lands beside posts the user already has, so every colliding title is
+            // renamed before the first insert: the body rewrite has to know the final titles,
+            // or a link would point at a title that changes later in the same loop.
+            val retitled = if (replace) Retitles.NONE else planTitles(data.nodes)
+
             val nodeIds = HashMap<Long, Long>()
             for (node in parentsFirst(data.nodes)) {
                 val parent = node.parentId?.let { nodeIds[it] }
                 nodeIds[node.id] = nodes.insert(
-                    node.copy(id = 0, parentId = parent),
+                    node.copy(
+                        id = 0,
+                        parentId = parent,
+                        title = retitled.titleOf(node),
+                        content = retitled.contentOf(node),
+                    ),
                 )
             }
 
@@ -92,6 +107,48 @@ class BackupRepository(private val db: AppDatabase) {
             }
         }
         return data.postCount
+    }
+
+    /**
+     * The titles one merge import will actually use: the posts that had to be renamed, plus the
+     * `[[old]] -> [[new]]` rewrites that keep the imported set pointing at its own copies instead
+     * of at the user's originals.
+     */
+    private class Retitles(
+        private val byNodeId: Map<Long, String>,
+        private val rewrites: List<Pair<String, String>>,
+    ) {
+        fun titleOf(node: Node): String = byNodeId[node.id] ?: node.title
+
+        /** Reuses the rename path's helper, so an import rewrites links just as a rename does. */
+        fun contentOf(node: Node): String? {
+            var text = node.content ?: return null
+            for ((old, new) in rewrites) {
+                text = MarkdownLinkParser.renameWikiLinks(text, old, new)
+            }
+            return text
+        }
+
+        companion object {
+            /** Replace wipes the library first, so nothing it imports can collide. */
+            val NONE = Retitles(emptyMap(), emptyList())
+        }
+    }
+
+    private suspend fun planTitles(incoming: List<Node>): Retitles {
+        val taken = nodes.postTitleIds().mapTo(HashSet<String>()) { ImportTitles.key(it.title) }
+        val byNodeId = HashMap<Long, String>()
+        val rewrites = ArrayList<Pair<String, String>>()
+        for (node in incoming) {
+            if (node.type != NodeType.POST) continue
+            val title = ImportTitles.uniqueTitle(taken, node.title)
+            // Claimed even when unchanged, so two incoming posts named alike still split.
+            taken.add(ImportTitles.key(title))
+            if (title == node.title) continue
+            byNodeId[node.id] = title
+            rewrites.add(node.title to title)
+        }
+        return Retitles(byNodeId, rewrites)
     }
 
     /**

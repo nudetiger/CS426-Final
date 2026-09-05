@@ -9,6 +9,7 @@ import com.cs426.learningmocha.LearningMochaApp
 import com.cs426.learningmocha.R
 import com.cs426.learningmocha.backup.BackupReminder
 import com.cs426.learningmocha.backup.BackupSnapshot
+import com.cs426.learningmocha.net.ApiClient
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,14 +57,25 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _uiState.update { it.copy(themeMode = mode) }
     }
 
-    fun setBackendUrl(raw: String) {
-        settings.backendUrl = raw
+    /**
+     * Stores [raw] if it can be used as a gateway address, and reports whether it was.
+     * A rejected value is said out loud instead of being quietly dropped — an address the
+     * app cannot parse otherwise looks accepted while every request keeps failing.
+     */
+    fun setBackendUrl(raw: String): Boolean {
+        val normalized = ApiClient.normalizeBaseUrl(raw)
+        if (normalized == null) {
+            viewModelScope.launch { messages.emit(string(R.string.settings_backend_invalid)) }
+            return false
+        }
+        settings.backendUrl = normalized
         _uiState.update {
             it.copy(backendUrl = settings.backendUrl, connectionStatus = ConnectionStatus.UNKNOWN)
         }
+        return true
     }
 
-    fun resetBackendUrl() = setBackendUrl("")
+    fun resetBackendUrl(): Boolean = setBackendUrl("")
 
     fun setRemindersEnabled(enabled: Boolean) {
         settings.backupRemindersEnabled = enabled

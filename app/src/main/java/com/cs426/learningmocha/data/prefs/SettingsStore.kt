@@ -18,17 +18,18 @@ class SettingsStore(context: Context) {
         get() = prefs.getInt(KEY_THEME, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
         set(value) = prefs.edit().putInt(KEY_THEME, value).apply()
 
-    /** Always ends with "/" so Retrofit treats it as a directory base. */
+    /**
+     * Always a URL OkHttp can parse, ending in "/" so Retrofit treats it as a directory
+     * base. An address that cannot be parsed is refused rather than stored: keeping the
+     * last working gateway beats saving one the app could never reach. The read side
+     * normalizes too, so a value written by an older build is repaired instead of
+     * failing silently at request time.
+     */
     var backendUrl: String
-        get() = prefs.getString(KEY_BACKEND, null)?.takeIf { it.isNotBlank() }
+        get() = prefs.getString(KEY_BACKEND, null)?.let { ApiClient.normalizeBaseUrl(it) }
             ?: ApiClient.DEFAULT_BASE_URL
         set(value) {
-            val trimmed = value.trim()
-            val normalized = when {
-                trimmed.isEmpty() -> ApiClient.DEFAULT_BASE_URL
-                trimmed.endsWith("/") -> trimmed
-                else -> "$trimmed/"
-            }
+            val normalized = ApiClient.normalizeBaseUrl(value) ?: return
             prefs.edit().putString(KEY_BACKEND, normalized).apply()
         }
 

@@ -14,6 +14,10 @@ class ContinueAdapter(
     private val onClick: (Node) -> Unit,
 ) : ListAdapter<Node, ContinueAdapter.Holder>(NodeDiffCallback) {
 
+    init {
+        stateRestorationPolicy = StateRestorationPolicy.PREVENT_WHEN_EMPTY
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val inflater = LayoutInflater.from(parent.context)
         return Holder(ItemHomeContinueBinding.inflate(inflater, parent, false))

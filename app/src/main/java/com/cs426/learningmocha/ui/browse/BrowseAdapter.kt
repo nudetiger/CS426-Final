@@ -16,6 +16,10 @@ class BrowseAdapter(
     private val onMenu: (Node, View) -> Unit,
 ) : ListAdapter<Node, BrowseAdapter.Holder>(NodeDiffCallback) {
 
+    init {
+        stateRestorationPolicy = StateRestorationPolicy.PREVENT_WHEN_EMPTY
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val inflater = LayoutInflater.from(parent.context)
         return Holder(ItemTreeNodeBinding.inflate(inflater, parent, false))

@@ -11,8 +11,10 @@ import com.cs426.learningmocha.ai.protocol.ActionParser
 import com.cs426.learningmocha.ai.protocol.ActionValidator
 import com.cs426.learningmocha.ai.protocol.Envelope
 import com.cs426.learningmocha.ai.protocol.KbAction
+import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.ui.common.ListState
+import com.cs426.learningmocha.ui.common.labelRes
 import com.cs426.learningmocha.util.TextDiff
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -195,7 +197,11 @@ class ReviewChangesViewModel(
         }
         actions = envelope.actions.orEmpty()
         // Destructive rows are opt-in: deletion cascades and undo cannot bring posts back.
-        selected = BooleanArray(actions.size) { actions[it].op != OP_DELETE }
+        // An op this app does not implement starts unticked too, so one invented operation
+        // costs the user that single change instead of blocking the whole batch.
+        selected = BooleanArray(actions.size) {
+            actions[it].op != OP_DELETE && ActionValidator.isKnownOp(actions[it].op)
+        }
         nodes = app.treeRepository.allNodes()
         val containers = app.treeRepository.possibleParents(0L)
         _uiState.update {
@@ -251,18 +257,16 @@ class ReviewChangesViewModel(
                 index = index,
                 op = op,
                 title = ActionLabels.describe(action),
-                caption = when {
-                    op !in LOCATED_OPS -> ""
-                    parentLabel.isNullOrBlank() -> app.getString(R.string.review_row_root)
-                    else -> app.getString(R.string.review_row_under, parentLabel)
-                },
+                caption = caption(op, action, parentLabel),
                 target = (action.postTitle ?: action.title ?: action.term).orEmpty(),
                 parentTitle = parentTitle,
                 indent = ActionLabels.indent(action, actions),
                 checked = selected.getOrElse(index) { false },
                 preview = preview,
                 content = proposed,
-                error = errors[index],
+                // Unticked rows are not validated, so an unsupported op would otherwise sit
+                // there unexplained; say why it was left out regardless of selection.
+                error = errors[index] ?: unsupported(op),
                 destructive = op == OP_DELETE,
                 editable = op == "create_post" || (op == "update_post" && proposed.isNotBlank()),
                 relocatable = op in RELOCATABLE_OPS,
@@ -270,6 +274,49 @@ class ReviewChangesViewModel(
             )
         }
     }
+
+    /**
+     * The one line under a row's title. Status and tags are written on apply, so they belong
+     * here too — a change the user cannot see is not a change they reviewed.
+     */
+    private fun caption(op: String, action: KbAction, parentLabel: String?): String {
+        val parts = ArrayList<String>(3)
+        if (op in LOCATED_OPS) {
+            parts.add(
+                if (parentLabel.isNullOrBlank()) {
+                    app.getString(R.string.review_row_root)
+                } else {
+                    app.getString(R.string.review_row_under, parentLabel)
+                },
+            )
+        }
+        if (op in POST_BODY_OPS) {
+            statusLabel(action.status)?.let { parts.add(it) }
+            val tags = action.tags.orEmpty().map { it.trim() }.filter { it.isNotEmpty() }
+            if (tags.isNotEmpty()) {
+                // An update merges tags onto the post's own, so it adds rather than sets them.
+                val list = tags.joinToString()
+                parts.add(
+                    if (op == OP_UPDATE) app.getString(R.string.review_row_tags_added, list) else list,
+                )
+            }
+        }
+        return parts.joinToString(app.getString(R.string.review_caption_separator))
+    }
+
+    private fun statusLabel(raw: String?): String? {
+        val trimmed = raw?.trim().orEmpty()
+        if (trimmed.isEmpty()) return null
+        val status = LearningStatus.entries.find { it.name.equals(trimmed, ignoreCase = true) }
+        return status?.let { app.getString(it.labelRes()) } ?: trimmed
+    }
+
+    private fun unsupported(op: String): String? =
+        if (op.isNotBlank() && !ActionValidator.isKnownOp(op)) {
+            app.getString(R.string.review_unsupported_op)
+        } else {
+            null
+        }
 
     /**
      * Re-labels the validator's "Action N" numbering with the change it belongs to, and
@@ -340,7 +387,9 @@ class ReviewChangesViewModel(
 
         private const val OP_DELETE = "delete_post"
         private const val OP_MOVE = "move_post"
+        private const val OP_UPDATE = "update_post"
         private val LOCATED_OPS = setOf("create_branch", "create_folder", "create_post", OP_MOVE)
+        private val POST_BODY_OPS = setOf("create_post", OP_UPDATE)
         private val RELOCATABLE_OPS = setOf("create_folder", "create_post", OP_MOVE)
         private val ACTION_PREFIX = Regex("Action (\\d+): (.*)")
     }

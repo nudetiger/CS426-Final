@@ -1,0 +1,182 @@
+\section{Data model and storage}
+\label{sec:data}
+
+\subsection{Why a database and not files}
+
+The obvious alternative was a folder of Markdown files plus a small index --- what most note apps do,
+and it would have made backup trivial. It was rejected for four properties the app actually uses.
+\textbf{Transactions}: renaming a post rewrites the title, rewrites \code{[[old title]]} inside every
+post that links to it, and rebuilds those posts' link rows, which on a filesystem is $n$ independent
+writes with no way to undo the first six when the seventh fails. \textbf{Observable queries}: every
+screen is a \code{Flow} from a DAO, so when an AI batch commits, Home, Browse and the reader update
+themselves and nothing has to know who wrote what. \textbf{Migrations}: the schema changed twice
+during development with an installed build on a real phone each time, and \code{MigrationTestHelper}
+makes that testable. \textbf{Full-text search}: SQLite ships FTS, a file tree ships \code{grep}. The
+cost is one opaque \code{learning\_mocha.db} the user cannot open in a text editor, which is why
+export is a first-class screen rather than an afterthought (\S\ref{sec:features}).
+
+\subsection{One table for the tree}
+
+Branches, folders and posts are all rows in \code{nodes}, distinguished by a \code{type} column and
+parented by a nullable self-referencing \code{parentId}. Figure~\ref{fig:datamodel} is the whole
+schema.
+
+\input{figures/datamodel}
+
+The payoff is that every tree operation is written once and is type-independent. \code{create},
+\code{rename}, \code{move}, \code{reorder} and \code{delete} in \code{TreeRepository} never branch on
+node type; \code{observeChildren} is one indexed \code{SELECT} returning a mixed list already in
+\code{orderIndex} order; \code{breadcrumbs} is a \code{parentId} walk that does not care what it
+walks through; drag-to-reorder works on a heterogeneous list without a single
+\code{when (type)}. Deleting a branch is \code{DELETE FROM nodes WHERE id = ?}, and
+\code{ON DELETE CASCADE} takes the subtree, its links, tag rows, glossary entries and resources with
+it --- one statement, no orphans.
+
+The cost is real. \code{content}, \code{status} and \code{favorite} are meaningless for containers
+and sit there as \code{NULL}, \code{'NONE'} and \code{0}, and nothing at the database level stops a
+folder from having body text --- that rule lives in the repositories, not in a constraint. For a
+schema this size the trade is clearly worth it: the alternative is three tables, three sets of CRUD
+and a union query every time Browse needs a folder's children.
+
+\code{nodes} carries four indices --- \code{parentId} (children), \code{title} (link resolution and
+duplicate checks), \code{updatedAt} (Home's ``recent'' and ``continue reading'') and \code{type} ---
+and the three enums are stored as names through \code{NodeConverters}, not ordinals, so reordering an
+enum in Kotlin cannot silently reinterpret existing rows.
+
+\subsection{The satellite tables}
+
+\begin{xltabular}{\linewidth}{L{2.5cm} X}
+\toprule
+\textbf{Table} & \textbf{Why it exists} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Table} & \textbf{Why it exists} \\
+\midrule
+\endhead
+\code{links} & One row per resolved \code{[[wiki-link]]}. Owned entirely by
+\code{KnowledgeSync.reindex}, which deletes a post's outgoing rows and re-derives them from its
+Markdown on every save, so the table cannot disagree with the text. Both columns are indexed because
+both directions are queried. \\
+\addlinespace
+\code{tags} / \code{post\_tags} & A unique-by-name tag list and a join table keyed on the
+\code{(postId, tagId)} pair. Insertion uses \code{OnConflictStrategy.IGNORE} with a case-insensitive
+lookup, so ``Raft'' and ``raft'' are one tag. \\
+\addlinespace
+\code{dictionary} & \code{term}, English \code{definition}, Vietnamese \code{meaningVi}. The
+nullable \code{postId} is the feature: \code{NULL} means global, a value scopes the term to one post.
+Uniqueness per scope is an upsert in \code{KnowledgeSync.addTerm}, not a constraint. \\
+\addlinespace
+\code{resources} & Explicitly added references (\code{YOUTUBE}, \code{ARTICLE}, \code{BOOK},
+\code{OTHER}). YouTube URLs that merely appear in the Markdown are \emph{not} stored --- they are
+derived at read time by \code{InlineResources.merge} with \code{id = 0} so the UI can tell them
+apart. Rebuilding this table from the body on save used to delete references added by hand. \\
+\addlinespace
+\code{chat\_sessions} / \code{chat\_messages} & Local chat history. A message carries \code{role},
+\code{text}, a \code{status} (\code{ok}, \code{error}, \code{pending\_review}, \code{applied},
+\code{discarded}) and a nullable \code{actionsJson} holding a proposed batch --- which is what lets a
+pending review survive a cold start. \\
+\bottomrule
+\end{xltabular}
+
+\medskip
+
+There is no \code{backlinks} table, and that is the point: a backlink is
+\code{SELECT \dots FROM links WHERE toPostId = :postId} joined back to \code{nodes} --- a reverse
+read of data that already exists. Storing the reverse edge would double the write path and create a
+second thing that can be wrong; deriving it makes backlinks correct by construction, and
+\code{index\_links\_toPostId} makes it cheap. Related posts are derived the same way, by scoring
+shared tags and shared link targets in \code{PostRepository.related}.
+
+\subsection{Full-text search: \code{posts\_fts}}
+
+Search is a real FTS virtual table, not a \code{LIKE} scan. It is \textbf{FTS4}, declared as
+\code{@Fts4(contentEntity = Node::class)} --- Room 2.6 has no \code{@Fts5} annotation, and adopting
+FTS5 would have meant hand-written \code{CREATE VIRTUAL TABLE} and hand-written triggers for no
+benefit this app can measure.
+
+\code{contentEntity} matters more than the version: it makes the index \emph{content-backed}, storing
+no copy of the text, and Room generates four triggers on \code{nodes} (before update, before delete,
+after update, after insert) that keep \code{docid} in step with \code{nodes.rowid}. Nothing in the app
+ever writes to \code{posts\_fts} --- one query reads it, none writes it --- and searching joins back
+for real rows: \code{SELECT nodes.* FROM posts\_fts JOIN nodes ON nodes.rowid = posts\_fts.rowid
+WHERE posts\_fts MATCH :query}. Restoring a backup, applying an AI batch and seeding all get a
+correct index for free, because they all write to \code{nodes}; the index is likewise absent from the
+backup file, and \code{MIGRATION\_1\_2} ends with
+\code{INSERT INTO posts\_fts(posts\_fts) VALUES('rebuild')} for the same reason.
+
+Two honest limitations. The index covers every row in \code{nodes}, so branch and folder titles are
+searchable too --- treated as a feature here, since \code{SearchRepository} labels container hits and
+routes them to Browse rather than the reader. And FTS4 has no \code{bm25} ranking (that is FTS5), so
+ordering happens in Kotlin: posts first, then title prefix matches, then alphabetical.
+
+\subsection{Migrations and schema history}
+
+The database is at \textbf{version 3} with \code{exportSchema = true}, and both migrations are
+hand-written in \code{AppDatabase.kt}. \code{MIGRATION\_1\_2} adds Phase 2's entire knowledge layer
+--- \code{links}, \code{tags}, \code{post\_tags}, \code{dictionary}, \code{resources} with their
+indices and foreign keys, the \code{posts\_fts} virtual table, the four content-sync triggers, and a
+\code{'rebuild'} so existing posts become searchable immediately rather than after their next edit.
+\code{MIGRATION\_2\_3} adds Phase 3's \code{chat\_sessions}, \code{chat\_messages} and
+\code{index\_chat\_messages\_sessionId}.
+
+\code{fallbackToDestructiveMigration()} is not called anywhere. It is one line, it makes the
+migration warning disappear, and it deletes the user's library; for an app whose central promise is
+that the device holds the only copy, its absence is a decision rather than an oversight.
+
+The exported schemas live in \code{app/schemas/com.cs426.learningmocha.data.local.AppDatabase/} and
+are committed; \code{build.gradle} adds that directory to \code{androidTest.assets.srcDirs}, which is
+what lets \code{MigrationTestHelper} build an old database from a fixture. Two instrumented tests in
+\code{app/src/androidTest/java/com/cs426/learningmocha/data/local/MigrationTest.kt} exercise the real
+upgrade paths against real rows. \code{migrates1To3KeepingPosts} writes a v1 file by hand with a
+branch and a post in it --- v1 predates \code{exportSchema}, so there is no \code{1.json} --- runs
+both migrations through a real \code{Room.databaseBuilder}, and asserts that the post survived with
+its status and favourite flag, that \code{posts\_fts MATCH 'spring'} finds it (the rebuild worked),
+and that the chat tables exist and are empty. \code{migrates2To3AddingChatTables} builds v2 from
+\code{2.json}, inserts a post, a tag and a tag link, then calls
+\code{runMigrationsAndValidate(\dots, 3, true, MIGRATION\_2\_3)}, which additionally validates the
+resulting schema against \code{3.json} column by column. The two tests are shaped differently only
+because \code{exportSchema} was turned on in Phase 2 rather than Phase 0 --- the one thing about this
+area worth doing differently next time.
+
+\subsection{Settings}
+
+Preferences do not live in Room. \code{data/prefs/SettingsStore} wraps one
+\code{SharedPreferences} file with five keys: theme mode, gateway URL, whether backup reminders are
+on, the timestamp of the last real export, and a separate reminder clock (kept apart so a user who
+has never exported is never told they have).
+
+It is \code{SharedPreferences} rather than DataStore or a table because of startup ordering. Applying
+the theme means calling \code{AppCompatDelegate.setDefaultNightMode} from
+\code{Application.onCreate}, which must happen before the first view inflates or the app flashes the
+wrong theme --- so that read has to be synchronous. DataStore's API is suspending by design, and
+reading a Room table there would open the database on the main thread during cold start, the opposite
+of what \code{LearningMochaApp} is arranged to avoid: every repository is a \code{by lazy} and the
+database file is not touched until a screen asks for data.
+
+\subsection{The backup file}
+
+\code{ExportJsonWriter} streams a single \code{.mocha.json} out through the Storage Access
+Framework. The envelope is \code{\{format: "mocha.backup",} \code{version: 1,} \code{exportedAt,}
+\code{nodes[],} \code{links[],} \code{tags[],} \code{postTags[],} \code{dictionary[],}
+\code{resources[]\}} --- the six tables that are the user's knowledge, and nothing else.
+\code{posts\_fts} is excluded because it is derived and Room's
+triggers rebuild it during the import writes. \textbf{Chat history is never exported}: a backup is a
+file people put on Drive or mail to themselves, and transcripts are the most sensitive text in the
+app, so \code{chat\_sessions} and \code{chat\_messages} are left out as a privacy decision recorded
+in \code{BackupSnapshot}'s KDoc.
+
+Import skips unknown fields, so a file from a newer minor build still loads, but rejects one whose
+\code{format} is not \code{mocha.backup} or whose \code{version} is newer than the app understands.
+The user picks \emph{merge} or \emph{replace}, and the restore runs in one transaction.
+
+What makes merge safe is that \textbf{ids from the file are never trusted}. Nodes are inserted
+parents-first (a topological pass with a cycle guard), each insert's new primary key is recorded in an
+old-id $\rightarrow$ new-id map, and every foreign key --- \code{parentId}, \code{fromPostId},
+\code{toPostId}, \code{postId}, \code{tagId} --- is rewritten through that map before its row is
+written. Tags are matched by name instead, so importing into a library that already has a
+\code{consensus} tag reuses it rather than duplicating it. The edge cases are decided explicitly: a
+node whose parent is missing is restored at the root rather than dropped, because losing a subtree
+silently is worse than misplacing one; a glossary entry whose owning post is missing is dropped; a
+global term stays global. Without the remapping, merging into a non-empty library would collide on
+primary keys and replacing would inherit ids that no longer mean anything.

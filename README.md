@@ -21,7 +21,7 @@ turned off or unreachable.
 | 24125009   | Le Huu Hoa      | AI subsystem: Node/Express DeepSeek gateway, prompt & action protocol, context tools, action validator/executor, review-changes UX, SSE streaming, embedded media, tests & report  |
 
 A per-feature breakdown of who did what is in the work-division table of
-[`report/report.pdf`](report/report.pdf) (§8) and in [`report-work.md`](report-work.md).
+[`report/report.pdf`](report/report.pdf) (§9) and in [`report-work.md`](report-work.md).
 
 Demo video: see `video/demo-link.txt` in the submission archive.
 
@@ -39,6 +39,8 @@ app/       Android application (Kotlin + Java, XML Views, Room, minSdk 24)
 backend/   Tiny Node/Express gateway to the DeepSeek API (holds the key, stores nothing)
 docs/      Concept, course requirements, implementation plan
 report/    LaTeX sources and the built PDF report
+tools/     package-submission.ps1, which builds the graded submission archive
+video/     Link to the demo video
 ```
 
 ## Build & run (Android)
@@ -53,16 +55,20 @@ platform 35 and build-tools 34+.
 .\gradlew.bat connectedDebugAndroidTest   # instrumented Room migration tests
 ```
 
-Gradle 8.9 cannot run on JDK 21+. If your default `java` is newer, point Gradle at a
-JDK 17 by adding one line to `local.properties` (git-ignored) or your own
-`~/.gradle/gradle.properties`:
+The instrumented tests install a debug-signed APK, so uninstall the app first if the
+signed release build is already on the device — otherwise the signature clash surfaces
+as a confusing `Process crashed` instead of an install error.
+
+Gradle 8.9 cannot run on JDK 23+. If your default `java` is newer, point Gradle at a
+JDK 17 by adding one line to your own `~/.gradle/gradle.properties` — Gradle never reads
+`local.properties`, only the Android plugin does:
 
 ```properties
 org.gradle.java.home=C:/Program Files/Android/Android Studio/jbr
 ```
 
-`local.properties` also needs `sdk.dir=<path to your Android SDK>`; Android Studio
-writes it for you on first open.
+`local.properties` (git-ignored) needs `sdk.dir=<path to your Android SDK>`; Android
+Studio writes it for you on first open.
 
 ### Release APK
 

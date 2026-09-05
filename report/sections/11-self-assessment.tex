@@ -1,0 +1,152 @@
+\section{Self-assessment}
+\label{sec:self}
+
+This section is written to be useful rather than flattering. It records what was actually finished,
+what was deliberately left out, where the shipped code disagrees with the plan it was built from, and
+what a final review pass found wrong late enough to be worth reporting.
+
+\subsection{What was completed}
+
+Every capability described in the original concept (\code{docs/idea.md}) is implemented and reachable
+from the UI. The knowledge base --- branches, folders, subfolders and Markdown posts, with create,
+rename, move, reorder and cascading delete --- works, as do wiki-links, backlinks, related posts,
+tags, per-post status, favourites, external references, the two-scope dictionary, and FTS4 search
+across titles, content, tags, dictionary terms and resources. The AI assistant runs all four modes,
+reads the library only through read-only context tools, and can propose but never perform a change.
+Backup, import, settings and theming are done. Fourteen destinations --- five tabs and nine pushed
+screens --- are wired into a single navigation graph, and every list screen binds the same loading /
+empty / error state helper.
+
+Three features were listed in the plan as explicitly \emph{out} of scope for version~1 and were built
+anyway, once the graded core was safe:
+
+\begin{itemize}
+  \item the force-directed \textbf{knowledge graph}, with a whole-library view and a one-hop
+        neighbourhood view, laid out by the project's own solver rather than a library;
+  \item \textbf{streamed AI replies} over Server-Sent Events, including the awkward part --- pulling a
+        readable answer out of a JSON envelope that has only partly arrived;
+  \item \textbf{in-app YouTube playback} in a locked-down bottom sheet, instead of throwing the user
+        out to another app.
+\end{itemize}
+
+\subsection{What was deliberately not built}
+
+None of these are accidents; each was a scope decision, and each costs something.
+
+\begin{itemize}
+  \item \textbf{Posts are Markdown text only.} No images, no file attachments, no rich-text editing.
+        This keeps the backup file a single self-contained JSON document with no binary side-car, and
+        it keeps the editor honest, but it does rule out the kind of note that is mostly a diagram.
+  \item \textbf{Videos are not embedded in the article flow.} A YouTube URL becomes a resource card
+        below the article; tapping it opens an in-app player. The concept asked for embedding
+        \emph{inside} the post, which would have meant a custom Markwon plugin.
+  \item \textbf{Drag and drop only reorders siblings.} Moving an item into a different container is a
+        picker dialog, not a drag. Cross-container drag in a tree that is rendered one level at a time
+        needs auto-scroll, hover-to-open and a drop-target model; the dialog does the same job.
+  \item \textbf{The review screen edits titles and content, not metadata.} Proposed tags, status,
+        references and dictionary entries are now \emph{shown} on the row and can be deselected
+        wholesale, but they cannot be edited in place before applying.
+  \item \textbf{The assistant can delete posts, never containers.} There is no
+        \code{delete\_branch} or \code{delete\_folder} operation, by design --- deletion cascades, and
+        no undo can bring a subtree back.
+  \item \textbf{Duplicate detection in Organize mode rests on the model.} There is no on-device
+        similarity check and no action type for merging two posts.
+  \item \textbf{Tablet support is three dimension overrides,} not a layout. Gutters, chat-bubble width
+        and card width change above 600\,dp; there is no two-pane list-detail arrangement, and this
+        was never verified on real tablet hardware --- only on a resized emulator.
+  \item \textbf{R8 is off in the release build.} Gson reflects over the AI protocol classes and the
+        network DTOs, and a wrong keep rule there fails \emph{silently}: every reply would deserialize
+        to nulls and render as ordinary prose. The keep rules are written and correct, but the flag
+        stays off, because a larger APK is not graded and a silently broken assistant is.
+\end{itemize}
+
+\subsection{Known limits of features that do ship}
+
+\begin{itemize}
+  \item \textbf{Undo after an AI batch is narrow.} It is in-memory, single-level, and scoped to one
+        batch: it restores title, content, status, tags, favourite and parent for the posts the batch
+        touched, and it removes what the batch created. Deleted posts stay deleted. Leaving the review
+        screen ends the offer.
+  \item \textbf{The graph hides some labels rather than crowding them.} Whether labels appear at all
+        is decided from average node spacing; on top of that, a label that would land on one already
+        drawn is dropped, best-connected nodes winning. A dense cluster therefore reads cleanly but
+        does not name every dot --- tapping one always shows its title.
+  \item \textbf{Search ranking is hand-rolled.} FTS4 has no \code{bm25}, so results are ordered in
+        Kotlin --- posts first, then title-prefix matches, then alphabetically --- and snippets are
+        built by hand rather than by SQLite.
+  \item \textbf{The assistant needs the local gateway.} Without \code{backend/} running and a DeepSeek
+        key, the chat tab shows an offline banner. Everything else in the app is unaffected, which is
+        the point of the architecture, but it does mean the signature feature cannot be demonstrated
+        from the APK alone.
+\end{itemize}
+
+\subsection{Where the code diverged from the plan}
+
+The plan in \code{docs/plan.md} was written before the code and was not retro-fitted; the code is the
+truth. The differences worth naming:
+
+\begin{itemize}
+  \item Context results are returned to the model as a labelled ordinary turn, not an OpenAI
+        \code{tool} role --- DeepSeek rejects a tool message with no matching \code{tool\_call\_id}.
+        This also keeps the protocol portable, which was the original goal anyway.
+  \item The context loop allows four model calls per message, not three, and a request that still
+        needs context after the cap returns a retryable error rather than forcing an answer.
+  \item The validator resolves titles created earlier in the same batch, not only rows already in the
+        database --- otherwise "create a post, tag it, add a term to it" could never validate, and that
+        is the normal shape of a generated learning path.
+  \item The backup envelope carries the six knowledge tables and not the settings, and chat history is
+        never exported.
+  \item \code{posts\_fts} is content-backed, so the apply transaction does not rebuild it; Room's own
+        triggers keep it in step with \code{nodes}.
+\end{itemize}
+
+\subsection{What a final review pass found}
+
+Before submission the whole codebase was audited against the concept document and the grading
+criteria, and each finding re-checked against the code before anything was changed. The audit is the
+part of this project we would repeat: it found problems that testing the happy path never would.
+
+The most instructive one was found by running the app rather than reading it. Asked to build a
+Distributed Systems learning path, the model returned seven operations, one of which used an
+operation name that does not exist in the protocol. The validator correctly rejected it --- and
+because every row arrived ticked, one invented name disabled \textbf{Apply} for the entire batch. Six
+good changes were unreachable because of one bad line. Unsupported operations now arrive unticked
+with a plain explanation on the row, so a model that improvises costs the user that one change.
+Figure~\ref{fig:aiflow} describes the intended path; this was the case where the intended path had a
+sharp edge in it.
+
+The rest, briefly:
+
+\begin{itemize}
+  \item An AI \code{update\_post} carrying tags \emph{replaced} the post's whole tag set, silently
+        dropping tags the user had added --- and the review screen never displayed tags at all, so it
+        happened unseen. Tags are now merged, and proposed tags and status are shown on the row.
+  \item Importing the same backup twice on the merge path created duplicate post titles. Titles are
+        how wiki-links and AI actions address posts, so duplicates make resolution arbitrary. Imported
+        copies that collide are now given a distinct title.
+  \item Removing a post's last tag left the tag row behind forever, listed as "0 posts" and reported
+        to the assistant as if it existed. Empty tags are now purged.
+  \item The tags screen read a DAO directly from its ViewModel --- the one place in the app that broke
+        the layering rule --- and counted posts per tag with one query each. It now goes through the
+        repository with a single grouped query.
+  \item The in-app privacy text understated what is sent: a titles-only outline of the library
+        accompanies every AI request, which the wording did not mention. It does now.
+  \item A gateway address typed without a scheme was stored, silently ignored, and reported as
+        unreachable forever --- exactly what someone testing on a physical device would type.
+  \item Two error-state Retry buttons did nothing, and several lists dropped their scroll position on
+        rotation.
+\end{itemize}
+
+Two smaller protocol holes were closed at the same time: a reference to a branch or folder could be
+used where a post was required, and a reference carrying stray whitespace passed validation and then
+failed inside the transaction.
+
+\subsection{If there were more time}
+
+In order of what we would actually do first: a two-pane tablet layout, since it is the one rubric
+criterion the app answers weakly; Espresso coverage of the review-and-apply path, which is the
+riskiest flow in the app and currently has no automated test; editable metadata in the review screen;
+and cross-container drag in Browse. Further out, the interesting question is whether the action
+protocol could describe a merge of two posts safely enough to let Organize mode deduplicate on its
+own, which is the one thing the concept asked for that the model, not the app, is currently trusted to
+do.

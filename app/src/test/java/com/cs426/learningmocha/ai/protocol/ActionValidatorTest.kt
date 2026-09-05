@@ -168,6 +168,56 @@ class ActionValidatorTest {
         )
     }
 
+    // Refs of every kind share one namespace, so a post-only field could otherwise be applied
+    // to a branch or folder created in the same batch.
+    @Test
+    fun rejectsPostRefThatNamesAContainer() {
+        val branchRef = listOf(
+            KbAction(op = "create_branch", title = "Distributed Systems", ref = "b1"),
+            KbAction(op = "set_status", postRef = "b1", status = "READING"),
+        )
+        assertTrue(
+            ActionValidator.validate(branchRef, emptyList())
+                .any { it.contains("\"b1\" is not a post") },
+        )
+
+        val folderRef = listOf(
+            KbAction(op = "create_folder", title = "Consensus", ref = "f1"),
+            KbAction(op = "add_tag", postRef = "f1", tag = "consensus"),
+        )
+        assertTrue(
+            ActionValidator.validate(folderRef, emptyList())
+                .any { it.contains("\"f1\" is not a post") },
+        )
+    }
+
+    @Test
+    fun acceptsPostRefThatNamesAPostCreatedInBatch() {
+        val actions = listOf(
+            KbAction(op = "create_post", title = "Raft", content = "# Raft", ref = "p1"),
+            KbAction(op = "add_tag", postRef = "p1", tag = "consensus"),
+        )
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, emptyList()))
+    }
+
+    // The executor stores and reads refs trimmed, so padding must not fail here either.
+    @Test
+    fun acceptsPaddedPostRef() {
+        val actions = listOf(
+            KbAction(op = "create_post", title = "Raft", content = "# Raft", ref = "p1"),
+            KbAction(op = "set_status", postRef = " p1 ", status = "FINISHED"),
+        )
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, emptyList()))
+    }
+
+    @Test
+    fun knowsOnlyProtocolOps() {
+        assertTrue(ActionValidator.isKnownOp("create_post"))
+        assertTrue(ActionValidator.isKnownOp("  set_status  "))
+        assertFalse(ActionValidator.isKnownOp("summon_daemon"))
+        assertFalse(ActionValidator.isKnownOp(null))
+    }
+
     @Test
     fun rejectsOversizedBatchAndLongTitle() {
         val many = List(ActionValidator.MAX_ACTIONS + 1) {

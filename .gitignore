@@ -25,3 +25,12 @@ Thumbs.db
 *.jks
 keystore/
 keystore.properties
+
+# LaTeX build output (report.pdf itself is committed)
+report/*.aux
+report/*.toc
+report/*.out
+report/*.log
+report/*.fls
+report/*.fdb_latexmk
+report/*.synctex.gz

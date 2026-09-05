@@ -119,7 +119,13 @@ class TreeRepository(private val db: AppDatabase) {
     }
 
     suspend fun delete(id: Long) {
-        dao.deleteById(id)
+        // The foreign key cascade drops the deleted subtree's post_tags rows, but a tag whose
+        // last post just vanished would otherwise linger in the tag list — and in what the
+        // assistant is told the library contains.
+        db.withTransaction {
+            dao.deleteById(id)
+            db.knowledgeDao().deleteOrphanTags()
+        }
     }
 
     suspend fun possibleParents(movingId: Long): List<Node> {

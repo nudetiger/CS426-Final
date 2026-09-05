@@ -13,6 +13,13 @@ import com.cs426.learningmocha.data.local.entity.ResourceItem
 import com.cs426.learningmocha.data.local.entity.Tag
 import kotlinx.coroutines.flow.Flow
 
+/** Tag index row: the count comes from SQL, so the list never loads posts just to size them. */
+data class TagWithCount(
+    val id: Long,
+    val name: String,
+    val postCount: Int,
+)
+
 @Dao
 interface KnowledgeDao {
 
@@ -109,6 +116,22 @@ interface KnowledgeDao {
 
     @Query("SELECT * FROM tags ORDER BY name COLLATE NOCASE")
     suspend fun allTags(): List<Tag>
+
+    /** Same membership rule as [postsWithTag] — only POST rows count — in one pass. */
+    @Query(
+        """
+        SELECT t.id AS id, t.name AS name, COUNT(n.id) AS postCount FROM tags t
+        LEFT JOIN post_tags pt ON pt.tagId = t.id
+        LEFT JOIN nodes n ON n.id = pt.postId AND n.type = 'POST'
+        GROUP BY t.id, t.name
+        ORDER BY t.name COLLATE NOCASE
+        """,
+    )
+    suspend fun tagCounts(): List<TagWithCount>
+
+    /** A tag no post carries is dead weight: it opens an empty screen and reaches the AI. */
+    @Query("DELETE FROM tags WHERE id NOT IN (SELECT tagId FROM post_tags)")
+    suspend fun deleteOrphanTags()
 
     @Query("SELECT * FROM tags WHERE name LIKE :like ORDER BY name COLLATE NOCASE")
     suspend fun tagsNamedLike(like: String): List<Tag>

@@ -18,6 +18,10 @@ class RowAdapter(
     private val onLongClick: ((RowItem) -> Boolean)? = null,
 ) : ListAdapter<RowItem, RowAdapter.Holder>(Diff) {
 
+    init {
+        stateRestorationPolicy = StateRestorationPolicy.PREVENT_WHEN_EMPTY
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val inflater = LayoutInflater.from(parent.context)
         return Holder(ItemHomeRowBinding.inflate(inflater, parent, false))

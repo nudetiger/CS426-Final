@@ -12,6 +12,26 @@ object ApiClient {
     const val DEFAULT_BASE_URL = "http://10.0.2.2:8787/"
 
     /**
+     * The gateway address the user typed, in the one form that gets stored, or null when
+     * it cannot be used at all. Pure and side-effect free so it can be unit-tested.
+     *
+     * Blank means "back to the built-in default". A value with no scheme is read as
+     * `http://` — that is what someone typing `192.168.1.5:8787` means — and callers show
+     * the returned value back to the user, so the guess is never a secret. Everything else
+     * OkHttp cannot parse is rejected rather than stored, because a saved-but-unreachable
+     * address is indistinguishable from a dead backend.
+     */
+    fun normalizeBaseUrl(raw: String): String? {
+        val trimmed = raw.trim()
+        if (trimmed.isEmpty()) return DEFAULT_BASE_URL
+        val candidate = if (trimmed.contains("://")) trimmed else "http://$trimmed"
+        val parsed = candidate.toHttpUrlOrNull() ?: return null
+        // Retrofit and endpoint() both treat the base as a directory, so it must end in "/".
+        val base = parsed.newBuilder().query(null).fragment(null).build().toString()
+        return if (base.endsWith("/")) base else "$base/"
+    }
+
+    /**
      * [baseUrl] is read per request rather than captured, so changing the gateway
      * address in Settings takes effect immediately without rebuilding the client
      * (which would strand in-flight calls and any collected Flow).
@@ -24,12 +44,13 @@ object ApiClient {
                 val routed = if (configured == null) {
                     request
                 } else {
+                    // Retrofit built this URL on DEFAULT_BASE_URL, whose path is only "/", so
+                    // the whole path is the endpoint and can be re-hung under the configured
+                    // base — which keeps any prefix the gateway lives behind.
                     request.newBuilder()
                         .url(
-                            request.url.newBuilder()
-                                .scheme(configured.scheme)
-                                .host(configured.host)
-                                .port(configured.port)
+                            under(configured, request.url.encodedPath)
+                                .encodedQuery(request.url.encodedQuery)
                                 .build(),
                         )
                         .build()
@@ -49,14 +70,22 @@ object ApiClient {
     }
 
     /**
-     * Absolute URL of [path] on the configured gateway. Only scheme/host/port are
-     * taken from [baseUrl], which is exactly what the Retrofit interceptor above
-     * does, so both transports hit the same endpoints for a given setting.
+     * Absolute URL of [path] on the configured gateway. Resolved the same way as the
+     * Retrofit interceptor above, so both transports hit the same endpoints for a
+     * given setting.
      */
     fun endpoint(baseUrl: String, path: String): HttpUrl {
         val configured = baseUrl.toHttpUrlOrNull() ?: DEFAULT_BASE_URL.toHttpUrl()
-        return configured.newBuilder().encodedPath("/$path").build()
+        return under(configured, path).build()
     }
+
+    /**
+     * [encodedPath] hung *under* [base] instead of replacing its path, so a gateway
+     * behind a prefix (`https://host/api/`) is reachable at all. A base with no prefix
+     * yields exactly the URL that replacing the path used to.
+     */
+    private fun under(base: HttpUrl, encodedPath: String): HttpUrl.Builder =
+        base.newBuilder().addEncodedPathSegments(encodedPath.trimStart('/'))
 
     /**
      * Client for Server-Sent Events. The read timeout is an inter-chunk gap and

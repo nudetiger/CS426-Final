@@ -1,6 +1,9 @@
 % The AI write path: nothing reaches Room until the user approves it.
 \begin{figure}[H]
 \centering
+% Node widths are fixed in cm, so scale the finished diagram to the measure rather
+% than re-laying it out whenever the body font changes.
+\resizebox{\linewidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
   x=1cm, y=1cm,
@@ -55,7 +58,8 @@
 \node[align=left, text width=3.5cm, anchor=west, font=\scriptsize\color{mochaError}]
       at (5.0,-5.0) {The only path from the model to the database. Destructive actions arrive unchecked
       and need a confirmation.};
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{The AI write path. The model never sees the database and never writes to it: it emits a JSON
 envelope, the device validates it against live data, the user approves individual actions, and one Room
 transaction applies them all-or-nothing.}

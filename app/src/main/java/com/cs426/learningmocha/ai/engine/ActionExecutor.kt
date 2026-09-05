@@ -44,12 +44,12 @@ class ActionExecutor(
                 when (action.op) {
                     "create_branch" -> {
                         val id = tree.create(null, NodeType.BRANCH, action.title.orEmpty())
-                        action.ref?.let { refs[it] = id }
+                        remember(action.ref, id, refs)
                         created.add(id)
                     }
                     "create_folder" -> {
                         val id = tree.create(parentId(action, refs), NodeType.FOLDER, action.title.orEmpty())
-                        action.ref?.let { refs[it] = id }
+                        remember(action.ref, id, refs)
                         created.add(id)
                     }
                     "create_post" -> {
@@ -60,7 +60,7 @@ class ActionExecutor(
                             status = parseStatus(action.status) ?: LearningStatus.READING,
                             tagNames = action.tags.orEmpty(),
                         )
-                        action.ref?.let { refs[it] = id }
+                        remember(action.ref, id, refs)
                         created.add(id)
                     }
                     "update_post" -> {
@@ -71,7 +71,11 @@ class ActionExecutor(
                             title = action.title,
                             content = action.content,
                             status = parseStatus(action.status),
-                            tagNames = action.tags,
+                            // updatePost replaces the whole tag set, so a rewrite that names one
+                            // tag would drop every other tag the user had. null still means "keep".
+                            tagNames = action.tags?.let {
+                                merged(posts.tagsForPost(node.id).map { tag -> tag.name }, it)
+                            },
                         )
                     }
                     "move_post" -> {
@@ -199,6 +203,18 @@ class ActionExecutor(
         if (restored.any { it.id == node.id }) return
         restored.add(node)
         restoredTags[node.id] = posts.tagsForPost(node.id).map { it.name }
+    }
+
+    /** Every lookup trims the ref (so does the validator), so `"p1 "` has to be stored trimmed. */
+    private fun remember(ref: String?, id: Long, refs: MutableMap<String, Long>) {
+        ref?.trim()?.takeIf { it.isNotEmpty() }?.let { refs[it] = id }
+    }
+
+    /** Existing tags first, then the proposed ones the post does not already carry. */
+    private fun merged(existing: List<String>, proposed: List<String>): List<String> {
+        val seen = existing.mapTo(HashSet()) { it.lowercase() }
+        return existing + proposed.map { it.trim() }
+            .filter { it.isNotEmpty() && seen.add(it.lowercase()) }
     }
 
     private suspend fun parentId(action: KbAction, refs: Map<String, Long>): Long? {

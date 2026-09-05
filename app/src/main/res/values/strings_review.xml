@@ -7,9 +7,13 @@
     <string name="review_load_failed">This proposal could not be opened.</string>
     <string name="review_apply_failed">Could not apply these changes. Nothing was written.</string>
     <string name="review_error_row">%1$s — %2$s</string>
+    <string name="review_unsupported_op">Not supported by this app — left out of the batch.</string>
 
     <string name="review_row_under">under %1$s</string>
     <string name="review_row_root">at the top level</string>
+    <!-- Joins location, status and tags into one caption line. -->
+    <string name="review_caption_separator">" · "</string>
+    <string name="review_row_tags_added">adds tags: %1$s</string>
     <string name="review_row_preview">Preview</string>
     <string name="review_row_edit">Edit</string>
     <string name="review_row_location">Change location</string>

@@ -1,0 +1,176 @@
+\section{Testing and verification}
+\label{sec:testing}
+
+Testing here is deliberately lopsided. Logic that reduces to a function --- parsers, the action
+protocol, the layout solver, the backup format --- carries \textbf{125 JUnit tests} that run on the JVM
+in seconds with no device. The one thing that can irreversibly destroy a user's library, a database
+migration, carries \textbf{2 instrumented tests} against real SQLite. The rest was verified by hand,
+and the last subsection says where that leaves holes.
+
+\subsection{The decision that makes the unit suite worth having}
+
+\begin{sloppypar}
+These are not smoke tests, because the interesting logic was written so it could be called without an
+Android runtime. \code{util/} is plain Java with no \code{android.*} import anywhere:
+\code{MarkdownLinkParser} (wiki-links and rename), \code{TreeRules} (move legality),
+\code{FtsQueryBuilder}, \code{TextDiff}, \code{ForceLayout} (Fruchterman--Reingold),
+\code{StreamingAnswerExtractor}, and \code{ExportJsonWriter}~/ \code{ImportJsonReader}~/
+\code{ImportTitles}. \code{ai/protocol/} and \code{ai/engine/KbIndex} depend only on the Room
+\emph{entity} data classes and Gson --- never on a DAO, a \code{Context} or a \code{ViewModel} --- so
+\code{ActionParser}, \code{ActionValidator}, \code{ActionLabels} and \code{KbIndex} are ordinary
+objects a test constructs with a list of \code{Node}s. The language boundary and the test boundary
+were drawn in the same place, which is why the validator --- the component standing between a language
+model and the database --- is the most heavily tested class in the app rather than the least.
+\end{sloppypar}
+
+\subsection{JVM unit tests}
+
+Class names below omit the \code{Test} suffix.
+
+\begin{xltabular}{\linewidth}{L{4.2cm} c X}
+\toprule
+\textbf{Test class} & \textbf{\#} & \textbf{What it pins down} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Test class} & \textbf{\#} & \textbf{What it pins down} \\
+\midrule
+\endhead
+\code{ActionValidator} & 28 &
+Every rejection rule: forward \code{ref} use, duplicate titles within the batch and against the
+database, unknown ops, moving a node onto itself or into its own descendant, moving under a post, a
+post \code{ref} naming a container, retitling onto an existing post, unknown status and resource
+types, batch-size and title-length caps, and deselecting a row not renumbering the rest. \\
+\code{BackupRoundTrip} & 14 &
+\code{.mocha.json} write--read round trip over all six knowledge tables, Unicode and Markdown bodies,
+node identity for foreign-key remapping, the versioned envelope, and rejection of a non-backup file, a
+newer version and a node with no title. \\
+\code{ForceLayout} & 12 &
+Same seed gives the same layout; every node stays in the box; ring neighbours end up closer than
+opposite nodes; two cliques separate; isolated nodes do not stack; empty graphs, self-edges and
+mismatched edge arrays do not crash. \\
+\code{ActionParser} & 10 &
+The three envelope kinds, fenced and bare-fenced JSON, prose stripped from around the envelope, braces
+inside generated Markdown surviving, and garbage falling back to a plain answer instead of throwing. \\
+\code{ApiClient} & 9 &
+\code{normalizeBaseUrl}, kept pure precisely so it could be tested: a missing scheme assumed to be
+\code{http://}, the trailing slash Retrofit needs, path prefixes preserved, blank meaning the built-in
+emulator default, and unparseable input rejected rather than stored. \\
+\code{SseFrames} & 8 &
+Delta ordering, the terminal frame, retryable versus non-retryable errors, escaped newlines and
+quotes, and malformed JSON or comment lines ignored rather than killing the stream. \\
+\code{MarkdownLinkParser} & 7 &
+\code{[[wiki-link]]} titles and spans, case- and padding-insensitive rename, titles treated as
+literals not regexes, dollars and backslashes preserved, YouTube id extraction. \\
+\code{ActionLabels} & 6 &
+The human label per op and review-screen indentation, including a cyclic \code{ref} chain terminating
+instead of looping. \\
+\code{StreamingAnswerExtractor} & 6 &
+Growing an answer token by token out of a partial envelope, JSON escapes split across chunks, action
+batches staying hidden while prose passes through. \\
+\code{KbIndex} & 5 &
+The titles-only outline sent with every request: nesting, sibling order, omitted status, orphaned
+children, and the character cap that bounds token cost. \\
+\code{InlineResources} & 5 &
+Merging YouTube links found in the body with stored resource rows, without listing a video twice or
+giving a derived item a row id. \\
+\code{ImportTitles} & 5 &
+Merge-import de-duplication: collisions detected case-insensitively, renamed \emph{title (imported)},
+then numbered. \\
+\code{TreeRules} & 4 &
+Move legality: never under self, never under a descendant, siblings and root always safe. \\
+\code{FtsQueryBuilder} & 3 &
+Prefix tokens joined with \code{AND}, \code{MATCH} operators stripped, punctuation-only input
+returning null instead of a syntax error. \\
+\code{TextDiff} & 3 &
+The before/after preview on review rows, including the explicit ``no text change'' case. \\
+\midrule
+\textbf{Total} & \textbf{125} & \\
+\bottomrule
+\end{xltabular}
+
+\subsection{Instrumented tests: Room migrations}
+
+\begin{sloppypar}
+\code{MigrationTest} is the only test needing a device, because it needs real SQLite. Room's
+\code{MigrationTestHelper} builds an old database from the schemas exported to \code{app/schemas/},
+which reach the instrumentation assets through the \code{androidTest.assets.srcDirs} line in
+\code{app/build.gradle}. Both tests insert real rows before migrating and assert on them after; an
+empty-database migration would prove nothing.
+\end{sloppypar}
+
+\begin{itemize}
+  \item \code{migrates1To3KeepingPosts} --- v1 predates \code{exportSchema}, so there is no
+        \code{1.json} to build from: the test writes the original v1 \code{nodes} table and indices by
+        hand, inserts a branch and a post, then opens the result through \code{Room.databaseBuilder}
+        with \code{MIGRATION\_1\_2} and \code{MIGRATION\_2\_3}. Opening through Room \emph{is} the
+        schema assertion --- Room compares the live schema against v3 and throws on any mismatch. It
+        then asserts the post's title, status and favourite flag survived, that \code{posts\_fts} was
+        rebuilt \emph{from the existing rows} rather than starting empty (a \code{MATCH 'spring'}
+        query finds the pre-existing post), and that the new chat tables exist and are empty.
+  \item \code{migrates2To3AddingChatTables} --- builds v2 from \code{2.json} via the helper, inserts a
+        post plus a tag and its join row, then runs \code{runMigrationsAndValidate(\dots, 3, true,
+        MIGRATION\_2\_3)} so the helper validates the end schema against \code{3.json}, and asserts
+        the tag survived and \code{chat\_messages} exists and is empty.
+\end{itemize}
+
+The FTS assertion earns its keep: a content-backed FTS4 table added by a migration is empty until it
+is explicitly rebuilt, and nothing would have failed loudly --- search would simply have returned
+nothing for every post written before the upgrade.
+
+\subsection{Running the suites}
+
+\begin{lstlisting}[language=bash]
+gradlew test                       # JVM unit tests - no device, seconds
+gradlew connectedDebugAndroidTest  # migrations - needs an emulator or device
+\end{lstlisting}
+
+\noindent On Windows both are invoked as \code{.\textbackslash gradlew.bat}.
+
+\subsection{Manual verification on the emulator}
+
+The \emph{release} build --- not the debug build --- was installed on a Pixel emulator at API~36 and
+walked end to end, with the gateway from \S\ref{sec:setup} running on the host and reached at
+\code{10.0.2.2:8787}. The release variant matters because it is the one whose ProGuard configuration
+could break Gson reflection over the AI protocol.
+
+\noindent
+\begin{tabularx}{\linewidth}{L{3.5cm} X c}
+\toprule
+\textbf{Scenario} & \textbf{Expected} & \textbf{Result} \\
+\midrule
+Install release APK & Opens on Home with the seeded library; every tab reachable with no gateway
+running & Pass \\
+Live AI round trip & Real DeepSeek call through the gateway; reply streams in token by token; no
+action rows offered in Answer mode & Pass \\
+AI Modify request & Batch appears on the review screen, rows inspectable and deselectable, Apply
+writes the approved subset in one transaction, undo offered & Pass \\
+Unsupported op in a batch & Invalid row arrives unticked with an explanation; the valid rows still
+apply & Pass \\
+Context request round & Model asks, device runs the read-only queries locally and returns results
+only --- the library is never uploaded & Pass \\
+Export then import & \code{.mocha.json} exported, app data cleared, file imported: tree, links, tags,
+dictionary and resources identical; chat history absent by design & Pass \\
+Theme switching & \emph{Follow system} / \emph{Light} / \emph{Dark} apply at once and survive process
+death, with no flash of the wrong theme & Pass \\
+Gateway stopped & Chat shows the offline banner with a working Retry; browse, read, edit, search,
+graph and dictionary behave identically to the online case & Pass \\
+Rotation on every list & Scroll position and screen state preserved & Pass \\
+\bottomrule
+\end{tabularx}
+
+\medskip
+This pass is also where the most instructive defect of the project surfaced --- one validator
+rejection disabling \textbf{Apply} for a whole batch --- described with the rest of the audit findings
+in \S\ref{sec:self}.
+
+\subsection{What is not covered}
+
+Three gaps, plainly. There are \textbf{no UI tests}: Espresso sits on the \code{androidTest} classpath
+but no fragment, adapter or navigation path has an automated test, so the review-and-apply flow --- the
+riskiest screen in the app --- is verified only by hand. There is \textbf{no automated test of the AI
+round trip}: it needs a live DeepSeek key and a running gateway, so it is neither hermetic nor free;
+the protocol is tested from the parser and validator inwards, and the network edge only through the
+frame decoder. And there is \textbf{no tablet-hardware pass}: the above-600\,dp dimension overrides
+were checked on a resized emulator, never on real hardware. \S\ref{sec:self} lists these among the
+things a next iteration would fix first.

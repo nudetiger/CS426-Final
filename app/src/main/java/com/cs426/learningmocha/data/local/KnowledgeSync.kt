@@ -56,6 +56,11 @@ internal object KnowledgeSync {
         }
     }
 
+    /**
+     * Owns `post_tags` for [postId]. Dropping a post's last use of a tag also drops the tag: the
+     * caller's transaction covers both writes, and the purge only removes rows no post_tags row
+     * points at, so a tag another post still carries survives.
+     */
     suspend fun replaceTags(db: AppDatabase, postId: Long, names: List<String>) {
         val knowledge = db.knowledgeDao()
         knowledge.deletePostTags(postId)
@@ -72,6 +77,7 @@ internal object KnowledgeSync {
             } ?: continue
             knowledge.insertPostTag(PostTag(postId = postId, tagId = tagId))
         }
+        knowledge.deleteOrphanTags()
     }
 
     /**

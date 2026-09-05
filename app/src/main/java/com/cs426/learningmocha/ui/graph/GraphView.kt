@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RectF
 import android.os.Bundle
 import android.os.Parcelable
 import android.text.TextPaint
@@ -119,6 +120,9 @@ class GraphView @JvmOverloads constructor(
     }
 
     private val starPath = Path()
+
+    /** Label boxes already drawn this frame, for the collision check in [drawLabels]. */
+    private val placed = ArrayList<RectF>()
     private var linkPoints = FloatArray(0)
     private var tagPoints = FloatArray(0)
     private var linkPointCount = 0
@@ -216,7 +220,6 @@ class GraphView @JvmOverloads constructor(
         if (tagPointCount > 0) canvas.drawLines(tagPoints, 0, tagPointCount, tagPaint)
         if (linkPointCount > 0) canvas.drawLines(linkPoints, 0, linkPointCount, linkPaint)
 
-        val showLabels = labelsVisible()
         for (index in nodes.indices) {
             val node = nodes[index]
             val cx = screenX(index)
@@ -229,18 +232,43 @@ class GraphView @JvmOverloads constructor(
             if (node.id == selectedId) {
                 canvas.drawCircle(cx, cy, radius + dp(4f), selectionPaint)
             }
-            if (showLabels || node.id == selectedId) {
-                val label = labels.getOrNull(index) ?: node.title
-                val paint = if (node.id == selectedId) selectedLabelPaint else labelPaint
-                canvas.drawText(
-                    label,
-                    0,
-                    label.length,
-                    labelCentre(cx, paint.measureText(label, 0, label.length)),
-                    cy + radius + labelGap - paint.ascent(),
-                    paint,
-                )
-            }
+        }
+        drawLabels(canvas)
+    }
+
+    /**
+     * Labels are drawn after every dot, best-connected first, and one that would land on a label
+     * already placed is dropped. Average spacing decides whether labels appear at all, so without
+     * this two nodes that happen to sit close together overlap even in a sparse graph. The
+     * selected node always keeps its label — it is the one the user asked about.
+     */
+    private fun drawLabels(canvas: Canvas) {
+        val showLabels = labelsVisible()
+        if (!showLabels && selectedId == null) return
+        placed.clear()
+        val order = nodes.indices.sortedWith(
+            compareByDescending<Int> { nodes[it].id == selectedId }
+                .thenByDescending { nodes[it].degree },
+        )
+        for (index in order) {
+            val node = nodes[index]
+            val selected = node.id == selectedId
+            if (!showLabels && !selected) continue
+            val label = labels.getOrNull(index) ?: node.title
+            if (label.isEmpty()) continue
+            val paint = if (selected) selectedLabelPaint else labelPaint
+            val textWidth = paint.measureText(label, 0, label.length)
+            val centre = labelCentre(cx = screenX(index), textWidth = textWidth)
+            val top = screenY(index) + radiusFor(node.degree) + labelGap
+            val box = RectF(
+                centre - textWidth / 2f,
+                top,
+                centre + textWidth / 2f,
+                top + paint.descent() - paint.ascent(),
+            )
+            if (!selected && placed.any { RectF.intersects(it, box) }) continue
+            placed.add(box)
+            canvas.drawText(label, 0, label.length, centre, top - paint.ascent(), paint)
         }
     }
 
@@ -376,8 +404,10 @@ class GraphView @JvmOverloads constructor(
      */
     private fun labelCentre(cx: Float, textWidth: Float): Float {
         val half = textWidth / 2f
-        val min = labelGap + half
-        val max = width - labelGap - half
+        // Inset by the same padding the fit uses, not by the label's own gap: a title pushed
+        // flush against the window edge reads as clipped even though every glyph is drawn.
+        val min = viewportPadding + half
+        val max = width - viewportPadding - half
         return if (min > max) cx else cx.coerceIn(min, max)
     }
 

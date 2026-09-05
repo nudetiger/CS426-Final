@@ -1,0 +1,329 @@
+\section{The AI learning assistant}
+\label{sec:ai}
+
+\subsection{What makes it more than a chatbot}
+
+The assistant can \emph{act} on the user's library --- create a branch of posts, rewrite an article, move a
+folder, attach a glossary term --- and is structurally incapable of doing any of it by itself.
+
+Its entire output is one JSON object: no database handle, no file access, no tool-calling API, no way to
+name a row id --- it addresses everything by title. Proposed operations are parsed on the device, validated
+against the live database, rendered as a checklist, and applied only on an explicit tap inside one Room
+transaction. Figure~\ref{fig:aiflow} is that write path on one page.
+
+\input{figures/aiflow}
+
+\subsection{Four modes}
+
+The mode travels with every request as a plain string; anything outside the set is rejected with HTTP 400.
+It selects a short brief appended to the system prompt.
+
+\noindent
+\begin{tabularx}{\linewidth}{L{2.2cm} X}
+\toprule
+\textbf{Mode} & \textbf{The brief appended to the system prompt} \\
+\midrule
+\textbf{Answer} &
+Answer conversationally, propose nothing, use \code{context\_request} to look things up. \\
+\addlinespace
+\textbf{Suggest} &
+Recommend posts, paths, links, resources or terms as a batch; ``prefer small, high-value suggestions''. \\
+\addlinespace
+\textbf{Modify} &
+Propose concrete changes --- create, move, edit, link, tag --- with ``genuinely educational markdown''.
+The mode that generates whole articles and learning paths. \\
+\addlinespace
+\textbf{Organize} &
+Analyse a branch and propose restructuring: moves, new folders, links, duplicate detection. \\
+\bottomrule
+\end{tabularx}
+
+\medskip
+The action-protocol block goes out in \emph{all four} modes; only the brief differs, so the Answer-mode
+guard lives in \code{ChatRepository} rather than the prompt --- a prompt instruction is a request, not a
+constraint. Actions proposed in Answer mode never become a reviewable row; the summary is shown as prose
+plus \emph{``switch to Suggest or Modify to review them''}.
+
+\subsection{The gateway}
+
+The app never talks to DeepSeek. It talks to a stateless Express process of about 260 lines that holds the
+key, builds the request, normalises errors and relays the stream. It has no database: every request carries
+its own history. Three routes:
+
+\begin{itemize}
+  \item \code{GET /v1/health} $\rightarrow$ \code{\{ok, model, streaming\}}: \code{ok} is whether the key is
+        configured, so a keyless gateway reports itself unusable up front, and \code{streaming} saves a
+        probe for a 404.
+  \item \code{POST /v1/chat} --- buffered. Body \code{\{mode, messages[], kbIndex, toolResults?\}},
+        response \code{\{reply, usage\}}.
+  \item \code{POST /v1/chat/stream} --- same body, answered as Server-Sent Events.
+\end{itemize}
+
+Upstream it always asks for \code{response\_format: json\_object} and \code{max\_tokens} of 8192, because
+DeepSeek otherwise stops at its default length and returns a truncated envelope.
+
+\begin{lstlisting}[language=bash, caption={A request, its reply, and a normalised error. The whole answer is
+the \texttt{reply} string, itself a JSON envelope parsed on the device.}]
+POST /v1/chat
+{ "mode": "modify",
+  "messages": [{"role":"user","content":"Give me a path into consensus algorithms"}],
+  "kbIndex": "- Distributed Systems (branch)\n  - Paxos (post) [reading]\n",
+  "toolResults": null }
+
+200 OK
+{ "reply": "{\"type\":\"actions\",\"summary\":\"Create a Consensus path\",...}",
+  "usage": {"prompt_tokens": 1841, "completion_tokens": 962} }
+
+502
+{ "error": "The reply was cut off before it finished. Try asking for less at once.",
+  "retryable": true }
+\end{lstlisting}
+
+The key is read from \code{DEEPSEEK\_API\_KEY} in the gateway's \code{.env}, in neither git nor the build;
+the APK holds only the gateway address, an editable Settings field.
+
+Every failure reaches the app as \code{\{error, retryable\}}: missing key $\rightarrow$ 503 non-retryable;
+unknown mode or empty \code{messages} $\rightarrow$ 400 non-retryable; upstream 429 $\rightarrow$ 429; other
+upstream failures $\rightarrow$ 502 carrying DeepSeek's message; timeout $\rightarrow$ 504 (60\,s buffered,
+120\,s streaming); \code{finish\_reason == "length"} or a blank reply $\rightarrow$ 502 retryable. Streaming
+errors arrive as a frame, headers being already flushed, and a stream ending without \code{done} fails.
+
+\subsection{Choosing what the model may see}
+
+Sending the whole knowledge base would be expensive, would break as the library grew, and would ship every
+private note off the device on every message. The model gets a map and must ask for the territory.
+
+\code{KbIndex.build} walks the tree depth-first in sibling order, one indented line per node: title, type,
+and reading status where it is not \code{NONE}. No bodies, tags, ids or timestamps, and a hard cap of
+\code{MAX\_CHARS = 4000} characters, truncated mid-line.
+
+\begin{lstlisting}[language=bash, caption={The compact KB index --- the only context sent unprompted.}]
+- Distributed Systems (branch)
+  - Consensus (folder)
+    - Paxos (post) [reading]
+    - Raft (post) [in_progress]
+\end{lstlisting}
+
+If it needs more it replies with a \code{context\_request}; the device runs the queries locally and returns
+the results. Seven read-only operations exist in \code{ContextTools}:
+
+\noindent
+\begin{tabularx}{\linewidth}{L{3.2cm} L{2.1cm} X}
+\toprule
+\textbf{Operation} & \textbf{Argument} & \textbf{What comes back} \\
+\midrule
+\code{search\_posts} & \code{query} &
+Up to 10 hits as \code{KIND: Title}, from the same full-text search the Search tab uses. \\
+\code{get\_post} & \code{title} &
+Title, tag names and the full Markdown body. The only operation that returns article text. \\
+\code{list\_children} & \code{parentTitle} &
+That container's children as \code{type: title}; blank returns the root branches. \\
+\code{get\_backlinks} & \code{title} & Titles of posts whose bodies link to this one. \\
+\code{search\_dictionary} & \code{query} &
+Up to 15 glossary rows as \code{term: definition}; wildcards are stripped from the fragment. \\
+\code{get\_tags} & --- & Every tag name, one per line. \\
+\code{get\_related} & \code{title} &
+Up to five from \code{PostRepository.related} (shared tags and link targets, no backlinks). \\
+\bottomrule
+\end{tabularx}
+
+\medskip
+Three caps apply: \textbf{8 queries} per request, each result truncated to \textbf{2\,000 characters}, and
+\code{repeat(4)} in \code{ChatRepository} --- \textbf{four model calls per user message}, at most three of
+them context requests. A \code{context\_request} on the fourth is refused with a retryable \emph{``Could not
+gather enough context''} rather than looping.
+
+Results come back as an ordinary \code{user} turn labelled \emph{``CONTEXT TOOL RESULTS \dots (read-only,
+produced on-device)''} --- not the OpenAI \code{role: "tool"} turn, which DeepSeek rejects with HTTP 400
+unless it carries a \code{tool\_call\_id}. Each reply carries \emph{``Shared with AI: $n$ notes''}, $n$
+counting queries run.
+
+\subsection{The action protocol}
+
+The reply is one JSON object and nothing else, of three envelope types: \code{answer} carries \code{text}
+and renders as a bubble; \code{context\_request} carries \code{queries} and triggers the round trip above;
+\code{actions} carries a \code{summary} and the action list for the review screen.
+
+\code{ActionParser} is forgiving about packaging and strict about content: it strips a code fence, takes the
+substring from the first \code{\{} to the last \code{\}}, and Gson-parses it. A blank or missing
+\code{type} is an error; prose that is no envelope is wrapped as an \code{answer} by \code{parseOrAnswer},
+so forgetting the format is never fatal.
+
+\begin{lstlisting}[language=bash, caption={An \texttt{actions} envelope; \texttt{ref} names an item created
+earlier in the same batch.}]
+{ "type": "actions",
+  "summary": "Create a Consensus path with 4 posts",
+  "actions": [
+    {"op":"create_branch","title":"Distributed Systems","ref":"b1"},
+    {"op":"create_folder","parentRef":"b1","title":"Consensus","ref":"f1"},
+    {"op":"create_post","parentRef":"f1","title":"Raft","ref":"p1",
+     "content":"Raft is a consensus algorithm ... see [[Paxos]].",
+     "tags":["consensus"],"status":"READING"},
+    {"op":"create_link","fromRef":"p1","toTitle":"Paxos"},
+    {"op":"add_dictionary_entry","postRef":"p1","term":"quorum",
+     "definition":"A majority of nodes.","meaningVi":"..."} ] }
+\end{lstlisting}
+
+Fourteen operations are implemented, listed below as \code{ActionValidator.knownOps}; \code{backend/prompts.js}
+documents the same set, each side commented that changing one means changing the other.
+
+\begin{xltabular}{\linewidth}{L{3.75cm} L{3.0cm} X}
+\toprule
+\textbf{Operation} & \textbf{Key fields} & \textbf{Effect when applied} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Operation} & \textbf{Key fields} & \textbf{Effect when applied} \\
+\midrule
+\endhead
+\code{create\_branch} & \code{title}, \code{ref} & New root container. \\
+\code{create\_folder} & \code{parentRef} or \code{parentTitle}, \code{title}, \code{ref} &
+New container under an existing or in-batch parent. \\
+\code{create\_post} & + \code{content}, \code{tags}, \code{status} &
+New article; tags created on demand, status defaults to \code{READING}. \\
+\code{update\_post} & \code{postTitle}, \code{title}, \code{content}, \code{tags}, \code{status} &
+Rewrites body, title, tag set and/or status. \\
+\code{move\_post} & \code{postTitle}, \code{newParentTitle} & Re-parents a post. \\
+\code{delete\_post} & \code{postTitle} & Deletes the post and everything hanging off it. \\
+\code{create\_link} & \code{fromRef} or \code{fromTitle}, \code{toTitle} &
+Appends \code{[[Target]]} to the source body, which creates the edge. \\
+\code{remove\_link} & \code{fromTitle}, \code{toTitle} & Removes that wiki-link from the body. \\
+\code{add\_tag}, \code{remove\_tag} & \code{postTitle}, \code{tag} & One tag on one post. \\
+\code{set\_status} & \code{postTitle}, \code{status} &
+\code{READING}, \code{IN\_PROGRESS} or \code{FINISHED}. \\
+\code{set\_favorite} & \code{postTitle}, \code{favorite} & Stars or unstars a post. \\
+\code{add\_resource} & \code{postTitle}, \code{type}, \code{title}, \code{url} &
+Attaches a \code{YOUTUBE}, \code{ARTICLE}, \code{BOOK} or \code{OTHER} reference. \\
+\code{add\_dictionary\_entry} & \code{postTitle} (optional), \code{term}, \code{definition},
+\code{meaningVi} & Adds or updates a glossary term, post-scoped or global. \\
+\bottomrule
+\end{xltabular}
+
+\medskip
+Nothing here is vendor-specific: no function-calling schema, no tool role, no provider SDK --- a documented
+JSON contract over ordinary chat completions. Swapping providers is an edit to \code{DEEPSEEK\_URL},
+\code{MODEL} and the key in \code{.env}; no Android changes.
+
+\subsection{Validation, review and undo}
+
+\code{ActionValidator} takes the parsed actions and a live snapshot of every node, returning errors prefixed
+\code{Action N:}. Its \emph{scope} --- existing nodes by lower-cased title, plus growing sets of what
+earlier actions will create --- is how in-batch references work. An action may declare a \code{ref} that
+later ones point at with \code{parentRef}, \code{postRef} or \code{fromRef}; it must \emph{already} be
+registered, and registration happens \emph{after} the parent check, so a forward reference fails rather than
+half-working. Titles resolve the same way, so a \code{set\_status} on a post \code{create\_post} proposes
+three rows earlier validates.
+
+It rejects: a duplicate \code{ref} or an \code{op} outside the fourteen; more than 40 actions, a title over
+200 characters, content over 50\,000, a term over 80, more than 20 tags; a \code{create} whose title exists
+(live or in-batch) and an \code{update\_post} retitling onto a taken name, which must fail here rather than
+inside the executor's transaction; a parent that does not exist or is a post; a \code{move\_post} that would
+cycle, checked with the \code{TreeRules} helper drag-and-drop uses; a status outside the enum, an unknown
+resource type, and missing \code{url}, \code{tag}, \code{term} or \code{definition}. A \code{create\_link}
+whose \code{toTitle} is absent is deliberately allowed: a link to a post not yet written is legitimate, and
+the reader renders it unresolved.
+
+An invalid action is not silently dropped: the validator runs over the ticked subset, re-runs on every tick,
+edit and relocation, and Apply stays disabled while any error stands --- unticking the offending row lets
+the rest through. \code{ReviewChangesViewModel} rewrites each \code{Action N:} prefix into that action's
+description and hangs it under the row. \code{apply()} re-validates before writing, so a stale batch cannot
+slip past. The screen holds the batch in memory while the user reshapes it:
+
+\begin{itemize}
+  \item \textbf{Per-action selection.} Every row has a checkbox and an ``$n$ of $m$ selected'' counter,
+        ticked except \code{delete\_post}, which cascades and cannot be undone.
+  \item \textbf{Structure.} Rows are indented by depth \emph{inside the batch}: \code{ActionLabels.indent}
+        walks \code{parentRef} and \code{parentTitle} chains with a cycle guard, anchoring at depth 0 on an
+        existing parent, so a path renders as the tree it will become.
+  \item \textbf{Previews and diffs.} A \code{create\_post} row previews its Markdown through the reader's
+        Markwon instance; an \code{update\_post} row a before/after from \code{TextDiff} --- honestly
+        primitive, a whole-document comparison, not a line diff: right for a rewrite, poor for one word.
+  \item \textbf{Changing the destination.} Creatable and movable rows offer a picker of every branch and
+        folder by full path (\emph{Distributed Systems / Consensus}) plus ``top level'', rewriting
+        \code{parentTitle} and clearing \code{parentRef}.
+  \item \textbf{Editing before saving.} Title and body can be rewritten in place; a retitle rewrites every
+        other action addressing the old title, so tags, links and glossary entries follow the rename.
+  \item \textbf{Confirmation for destruction.} A ticked destructive row raises a banner, and Apply a dialog
+        naming each doomed post and its tags, links, resources and glossary entries, all beyond Undo.
+\end{itemize}
+
+Apply hands the ticked subset to \code{ActionExecutor}, which resolves refs to ids and runs every operation
+in one \code{db.withTransaction}. It is all-or-nothing: if operation seven throws, Room rolls back one to
+six and reports \emph{``Could not apply these changes. Nothing was written.''} Content-backed
+\code{posts\_fts} needs no work here (\S\ref{sec:data}).
+
+Undo is real but narrow: \textbf{in memory} (one \code{@Volatile} \code{UndoSnapshot} on
+\code{ChatRepository}), \textbf{per batch and single level} (a second Apply overwrites it, process death
+loses it), and offered from \textbf{one place}, the snackbar shown after Apply. Created nodes are deleted in
+reverse order, so children go before parents; nodes the batch merely touched are restored from a
+before-image captured inside the transaction --- title, content, status, tag set, favourite flag, and
+parent, moved back only if it changed --- taken once per node on first touch, so several edits to one post
+still restore its pre-batch state. Resources are removed by id; glossary terms need two cases because
+\code{addTerm} upserts, so one the batch created is deleted and one it overwrote restored.
+
+\code{delete\_post} is deliberately \textbf{not} undoable, and the snapshot's header comment says so:
+deletion cascades to children, links, tags, resources and glossary rows, and resurrecting that sub-graph is
+a feature in its own right. The app says so at every step, ending with \emph{``Undone --- but deleted posts
+stay deleted.''}
+
+\subsection{Streaming}
+
+When health advertises \code{streaming}, replies arrive over SSE, and an older gateway still works on the
+buffered endpoint. The transport is raw OkHttp: Retrofit's Gson converter buffers the whole body and leaves
+nothing to stream. \code{SseChatClient} exposes a cold \code{Flow<StreamFrame>} and, since a blocked socket
+read ignores cancellation, registers \code{invokeOnCompletion \{ call.cancel() \}} so leaving the screen
+closes the socket; its 130\,s read timeout outlasts the gateway's 120\,s budget, which measures the gap
+between chunks.
+
+\code{SseFrames} is a framework-free line decoder, unit-tested on the JVM. It ignores blank lines, SSE
+comments (the gateway writes \code{: open} to flush headers early) and the \code{[DONE]} sentinel, and
+decodes \code{\{delta\}}, \code{\{done, reply\}} and \code{\{error, retryable\}}, the last two terminal. The
+whole reply is repeated in the \code{done} frame, so the envelope is parsed from one authoritative string,
+not re-joined deltas. A stream dying \emph{before} the first token falls back to the buffered endpoint once;
+one dying later surfaces the error, since a retry would duplicate a half-rendered bubble.
+
+Partial rendering is awkward because the wire carries JSON, not prose: the visible text is the value of
+\code{"text"} inside \code{\{"type":"answer","text":\dots\}}, and the buffer is not valid JSON until the
+final brace. Waiting would defeat streaming, so \code{StreamingAnswerExtractor} (plain Java) scans the
+buffer and classifies it as \code{answer}, \code{actions}, \code{context\_request}, \code{unknown} (JSON so
+far, \code{type} not yet seen) or \code{prose} (no opening brace). For an answer it decodes as much of
+\code{text} as arrived, unescaping \code{\textbackslash n}, quotes and \code{\textbackslash uXXXX} and
+stopping cleanly on an escape split across chunks; for the other two it returns nothing, so raw protocol
+JSON is never shown and the bubble reads \emph{``Mocha is working\dots''} The streaming bubble is never
+written to \code{chat\_messages}, so a dead stream leaves no half-finished row.
+
+\subsection{Privacy}
+
+The assistant contradicts the local-first commitment of \S\ref{sec:intro}, so the boundary is drawn
+explicitly. \textbf{What leaves the device}, only on sending a message in the AI tab: the mode string; the
+session's
+history (user turns and completed assistant turns --- pending batches, error bubbles and other sessions are
+filtered out); the KB index; and the context-query results. Article text leaves only through
+\code{get\_post}, for a post the model named.
+
+\textbf{What never leaves}: the Room database file, any post the model did not ask for, tags, backlinks,
+resources, settings, backups, and the other four tabs. No analytics SDK, crash reporter or image loader is
+in the build (\S\ref{sec:tech}); \textbf{the key} lives in the gateway's \code{.env} alone, the APK holds no
+credential, and Auto Backup is disabled.
+
+One honest weakness: the device-to-gateway hop is cleartext HTTP, the gateway being a local process with no
+certificate. It is declared in \code{network\_security\_config.xml}, user-installed CAs are not trusted, and
+the DeepSeek hop is HTTPS; on a shared LAN the first hop is readable, and production would need TLS.
+
+\textbf{When the gateway is unreachable} --- for most graders, most of the time --- every send begins with a
+health ping, and failure degrades to the banner and retry of \S\ref{sec:features}. Nothing is queued or
+lost, and no other feature touches the network.
+
+\subsection{Where the code differs from the plan}
+
+\code{docs/plan.md} predates the subsystem; several decisions changed on contact with DeepSeek.
+\textbf{\S11} appends tool results as a \code{role: "tool"} message, calls the index ``titles/ids''
+(\code{KbIndex} emits no ids) and forces an answer after three rounds where the code returns a retryable
+error. \textbf{\S12} calls streaming optional; it shipped. \textbf{\S13} rejects the whole batch on any
+validation failure, where the validator checks the ticked subset, and \textbf{\S14} rebuilds FTS rows in the
+transaction, which content-backed \code{posts\_fts} makes unnecessary. \textbf{\S15} specifies a
+\code{ReviewChangesActivity}; review is a Fragment destination in the single-activity app. \textbf{\S22}'s
+``Shared with AI: 3 posts'' chip counts context queries, not distinct posts, and is in-memory only.
+
+One layering shortcut: \code{ContextTools} reaches \code{nodeDao} and \code{knowledgeDao} directly ---
+read-only, but the one place in the AI package that skips a repository (\S\ref{sec:self}).

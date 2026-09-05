@@ -22,10 +22,16 @@ import com.cs426.learningmocha.net.StreamFrame
 import com.cs426.learningmocha.util.StreamingAnswerExtractor
 import com.google.gson.Gson
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 
 sealed class SendResult {
     data object Answered : SendResult()
@@ -59,6 +65,22 @@ class ChatRepository(
     private val chat = db.chatDao()
     private val tools = ContextTools(db, search, posts)
     private val gson = Gson()
+
+    /**
+     * Sends run here, not on the caller's scope. A reply takes 10–20 s and the conversation
+     * screen is often gone long before it lands; on a ViewModel scope that cancelled the
+     * call and left the user's message sitting there with no answer and no way to ask
+     * again. This repository lives as long as the process, so nothing cancels this scope.
+     */
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** The send in flight per session. Guarded by its own monitor; touched from any thread. */
+    private val running = HashMap<Long, Deferred<SendResult>>()
+
+    private val _busySessions = MutableStateFlow<Set<Long>>(emptySet())
+
+    /** Sessions still generating a reply, so a screen re-opened mid-reply still looks busy. */
+    val busySessions: StateFlow<Set<Long>> = _busySessions.asStateFlow()
 
     private val _streaming = MutableStateFlow<StreamingBubble?>(null)
     val streaming: StateFlow<StreamingBubble?> = _streaming.asStateFlow()
@@ -95,6 +117,41 @@ class ChatRepository(
     }
 
     suspend fun ping(): Boolean = health()?.ok == true
+
+    /**
+     * Starts a send on this repository's scope and hands back the running job. The caller
+     * awaits it only to learn where to navigate — dropping that wait never cancels the
+     * generation, so leaving the screen mid-reply still ends with a persisted answer.
+     * A session already generating keeps the job it has instead of starting a second one.
+     */
+    fun sendAsync(sessionId: Long, mode: String, userText: String): Deferred<SendResult> =
+        startExclusive(sessionId) { send(sessionId, mode, userText) }
+
+    fun retryAsync(sessionId: Long, mode: String): Deferred<SendResult> =
+        startExclusive(sessionId) { retry(sessionId, mode) }
+
+    /** The send still running for [sessionId], for a screen that wants to await it again. */
+    fun inFlight(sessionId: Long): Deferred<SendResult>? =
+        synchronized(running) { running[sessionId]?.takeIf { it.isActive } }
+
+    private fun startExclusive(
+        sessionId: Long,
+        block: suspend () -> SendResult,
+    ): Deferred<SendResult> = synchronized(running) {
+        val current = running[sessionId]
+        if (current != null && current.isActive) {
+            current
+        } else {
+            val job = scope.async { block() }
+            running[sessionId] = job
+            _busySessions.update { it + sessionId }
+            job.invokeOnCompletion { _ ->
+                synchronized(running) { if (running[sessionId] === job) running.remove(sessionId) }
+                _busySessions.update { it - sessionId }
+            }
+            job
+        }
+    }
 
     suspend fun send(sessionId: Long, mode: String, userText: String): SendResult {
         val trimmed = userText.trim()
@@ -228,7 +285,8 @@ class ChatRepository(
             }
             persistError(sessionId, "Could not gather enough context", true)
         } catch (cancelled: CancellationException) {
-            // The user left the screen or sent again: drop the stream silently.
+            // Not a failure and no longer something a departing screen causes, so it stays
+            // distinct from the branches below: no error row, nothing to retry.
             throw cancelled
         } catch (error: ApiError) {
             persistError(sessionId, error.message ?: "Request failed", error.retryable)

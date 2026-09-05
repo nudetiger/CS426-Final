@@ -1,6 +1,9 @@
 % Navigation map: one activity, five tabs, nine pushed destinations.
+% The node widths are fixed in cm, so the diagram is scaled to the measure rather
+% than re-laid-out whenever the body font changes.
 \begin{figure}[H]
 \centering
+\resizebox{\linewidth}{!}{%
 \begin{tikzpicture}[
   font=\scriptsize,
   tab/.style={draw=mochaBrown, fill=mochaCreamDark, rounded corners=2pt, align=center,
@@ -45,7 +48,8 @@
 \draw[edge] (reader) to[out=20, in=200] (graph);
 \draw[edge] (tags) -- (tagdet);
 \draw[edge] (tagdet) to[out=100, in=280] (reader.south east);
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{Navigation graph. One \code{MainActivity} hosts five bottom-navigation tabs; nine further
 destinations sit on the back stack (the tab bar hides itself for them), and the YouTube player is a bottom
 sheet rather than a destination so playback stops with the sheet. The reader, editor, favourites,

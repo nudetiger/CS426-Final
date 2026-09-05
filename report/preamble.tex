@@ -7,6 +7,9 @@
 \usepackage{booktabs}
 \usepackage{longtable}
 \usepackage{tabularx}
+% xltabular = longtable page breaking + tabularx X columns. Plain longtable does
+% not understand X, so every multi-page table with a flexible column uses this.
+\usepackage{xltabular}
 \usepackage{array}
 \usepackage{xcolor}
 \usepackage{graphicx}
@@ -70,6 +73,10 @@
   boxrule=0.5pt, arc=2pt, left=6pt, right=6pt, top=5pt, bottom=5pt,
   fonttitle=\bfseries, #1
 }
+
+% Long \code{} spans and identifiers are unbreakable, so give TeX room to stretch a
+% line rather than let it run into the margin.
+\setlength{\emergencystretch}{3em}
 
 \newcommand{\code}[1]{\texttt{\small #1}}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}

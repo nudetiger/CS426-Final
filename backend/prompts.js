@@ -51,6 +51,10 @@ Action objects:
      "term":"...","definition":"...","meaningVi":"..."}
 
 Rules:
+- "op" MUST be exactly one of the fourteen names listed above. Never invent an
+  operation name and never abbreviate one. If something you want cannot be
+  expressed with these ops, leave it out and say so in "summary" instead — the
+  app drops unknown ops, so an invented name simply loses that change.
 - Use "ref" to reference items created earlier in the same batch.
 - Reference existing items by exact title.
 - The user reviews every change before it is applied; never claim a change

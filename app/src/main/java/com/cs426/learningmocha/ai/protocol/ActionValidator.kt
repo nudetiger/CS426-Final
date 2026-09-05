@@ -27,6 +27,13 @@ object ActionValidator {
     )
 
     /**
+     * Whether the protocol has an operation by this name. The review screen asks before it
+     * ticks a row: a model that invents an op should cost the user that one change, not the
+     * whole batch.
+     */
+    fun isKnownOp(op: String?): Boolean = op.orEmpty().trim() in knownOps
+
+    /**
      * @param enabled when given, only the checked actions are validated — the "Action N" numbers
      *   then still match the rows on screen, because indices come from the full list either way
      */
@@ -76,6 +83,7 @@ object ActionValidator {
                         if (op == "create_post") scope.newPosts.add(key) else scope.newContainers.add(key)
                     }
                     if (op == "create_post") {
+                        action.ref?.trim()?.takeIf { it.isNotEmpty() }?.let { scope.postRefs.add(it) }
                         checkContent(action.content, n, errors, required = false)
                         checkTags(action.tags, n, errors)
                         checkStatus(action.status, n, errors, required = false)
@@ -166,6 +174,9 @@ object ActionValidator {
     /** Live nodes plus the items earlier actions in the same batch will have created. */
     private class Scope(val byTitle: Map<String, Node>) {
         val refs = HashSet<String>()
+
+        /** Refs of `create_post` actions only — a postRef naming a container is not a post. */
+        val postRefs = HashSet<String>()
         val newPosts = HashSet<String>()
         val newContainers = HashSet<String>()
 
@@ -236,7 +247,10 @@ object ActionValidator {
     ): Node? {
         val postRef = action.postRef?.trim().orEmpty()
         if (postRef.isNotEmpty()) {
-            if (postRef !in scope.refs) errors.add("Action $n: unknown postRef \"$postRef\"")
+            when (postRef) {
+                !in scope.refs -> errors.add("Action $n: unknown postRef \"$postRef\"")
+                !in scope.postRefs -> errors.add("Action $n: \"$postRef\" is not a post")
+            }
             return null
         }
         val title = (action.postTitle ?: action.title)?.trim().orEmpty()
@@ -269,7 +283,12 @@ object ActionValidator {
     ) {
         val fromRef = action.fromRef?.trim().orEmpty()
         if (fromRef.isNotEmpty()) {
-            if (fromRef !in scope.refs) errors.add("Action $n: unknown fromRef \"$fromRef\"")
+            // A link is written into the source post's markdown, so a ref naming a branch or
+            // folder would append body text to a container that never renders it.
+            when {
+                fromRef !in scope.refs -> errors.add("Action $n: unknown fromRef \"$fromRef\"")
+                fromRef !in scope.postRefs -> errors.add("Action $n: \"$fromRef\" is not a post")
+            }
             return
         }
         resolveExistingTitle(action.fromTitle, n, "fromTitle", scope, errors)

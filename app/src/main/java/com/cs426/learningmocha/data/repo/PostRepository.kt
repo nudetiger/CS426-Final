@@ -5,6 +5,7 @@ import com.cs426.learningmocha.data.local.AppDatabase
 import com.cs426.learningmocha.data.local.InlineResources
 import com.cs426.learningmocha.data.local.KnowledgeSync
 import com.cs426.learningmocha.data.local.SeedData
+import com.cs426.learningmocha.data.local.dao.TagWithCount
 import com.cs426.learningmocha.data.local.entity.DictionaryEntry
 import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
@@ -90,6 +91,12 @@ class PostRepository(private val db: AppDatabase) {
     }
 
     suspend fun getTag(id: Long): Tag? = knowledge.getTag(id)
+
+    /** Alphabetical tag index. One query, so the screen never reads a post row to count it. */
+    suspend fun tagCounts(): List<TagWithCount> {
+        SeedData.ensureSeeded(db)
+        return knowledge.tagCounts()
+    }
 
     suspend fun postTitles(): List<String> = dao.postTitleIds().map { it.title }
 
@@ -241,15 +248,20 @@ class PostRepository(private val db: AppDatabase) {
         )
     }
 
+    /** Read-then-replace, so the whole edit is one transaction like the editor's save path. */
     suspend fun addTag(postId: Long, name: String) {
-        val current = knowledge.tagsForPost(postId).map { it.name }
-        KnowledgeSync.replaceTags(db, postId, current + name)
+        db.withTransaction {
+            val current = knowledge.tagsForPost(postId).map { it.name }
+            KnowledgeSync.replaceTags(db, postId, current + name)
+        }
     }
 
     suspend fun removeTag(postId: Long, name: String) {
-        val current = knowledge.tagsForPost(postId).map { it.name }
-            .filter { !it.equals(name, ignoreCase = true) }
-        KnowledgeSync.replaceTags(db, postId, current)
+        db.withTransaction {
+            val current = knowledge.tagsForPost(postId).map { it.name }
+                .filter { !it.equals(name, ignoreCase = true) }
+            KnowledgeSync.replaceTags(db, postId, current)
+        }
     }
 
     suspend fun addWikiLink(fromId: Long, toTitle: String) {

@@ -71,6 +71,13 @@
         <item name="fontFamily">@font/comfortaa</item>
     </style>
 
+    <!-- Body, but monospace: Markdown source only reads as source when indentation, list
+         markers and fences line up. Lives here so no layout has to name a font family. -->
+    <style name="TextAppearance.Mocha.Code" parent="TextAppearance.Mocha.Body">
+        <item name="android:fontFamily">monospace</item>
+        <item name="fontFamily">monospace</item>
+    </style>
+
     <style name="TextAppearance.Mocha.Caption" parent="TextAppearance.MaterialComponents.Caption">
         <item name="android:textColor">@color/mocha_text_secondary</item>
         <item name="android:textSize">@dimen/text_caption</item>

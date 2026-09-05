@@ -55,7 +55,7 @@ class FavoritesFragment : Fragment() {
                         emptyText = getString(R.string.favorites_empty),
                         errorText = state.errorMessage,
                         offlineText = getString(R.string.state_offline),
-                        onRetry = { },
+                        onRetry = { viewModel.retry() },
                     )
                     adapter.submitList(state.posts)
                 }

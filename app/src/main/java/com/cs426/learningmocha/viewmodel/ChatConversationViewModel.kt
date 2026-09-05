@@ -9,7 +9,8 @@ import com.cs426.learningmocha.ai.chat.SendResult
 import com.cs426.learningmocha.ai.chat.StreamingBubble
 import com.cs426.learningmocha.data.local.entity.ChatMessage
 import com.cs426.learningmocha.ui.common.ListState
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,22 +42,21 @@ class ChatConversationViewModel(
     val sessionId: Long = savedStateHandle.get<Long>(ARG_SESSION_ID) ?: 0L
 
     private val mode = MutableStateFlow("answer")
-    private val sending = MutableStateFlow(false)
     private val online = MutableStateFlow(true)
+
+    /** Owned by the repository, so it stays true across a trip away from this screen. */
+    private val sending = app.chatRepository.busySessions.map { sessionId in it }
 
     /**
      * The reply currently arriving over SSE, or null. Filtered to this session so
-     * a stream started elsewhere never shows up here. Leaving the screen clears
-     * the ViewModel scope, which cancels [sendJob] and with it the stream — the
-     * partial text is dropped and nothing was persisted.
+     * a stream started elsewhere never shows up here. The stream belongs to the
+     * repository, so leaving and returning mid-reply picks it up where it is.
      */
     val streaming: StateFlow<StreamingBubble?> = app.chatRepository.streaming
         .map { bubble -> bubble?.takeIf { it.sessionId == sessionId } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val reviewNav = MutableSharedFlow<Long>(extraBufferCapacity = 1)
-
-    private var sendJob: Job? = null
 
     private val history = app.chatRepository.observeMessages(sessionId)
         .combine(app.chatRepository.sharedContext) { messages, shared -> messages to shared }
@@ -89,6 +89,9 @@ class ChatConversationViewModel(
 
     init {
         ping()
+        // A send started before this screen was left is still generating: re-attach so its
+        // proposed batch still opens the review screen when it lands.
+        app.chatRepository.inFlight(sessionId)?.let(::observe)
     }
 
     fun setMode(value: String) {
@@ -103,24 +106,32 @@ class ChatConversationViewModel(
         app.chatRepository.getSession(sessionId)?.title.orEmpty()
 
     fun send(text: String) {
-        if (sendJob?.isActive == true) return
-        sendJob = launchSend { app.chatRepository.send(sessionId, mode.value, text) }
+        if (app.chatRepository.inFlight(sessionId) != null) return
+        observe(app.chatRepository.sendAsync(sessionId, mode.value, text))
     }
 
     fun retry() {
-        if (sendJob?.isActive == true) return
-        sendJob = launchSend { app.chatRepository.retry(sessionId, mode.value) }
+        if (app.chatRepository.inFlight(sessionId) != null) return
+        observe(app.chatRepository.retryAsync(sessionId, mode.value))
     }
 
-    private fun launchSend(request: suspend () -> SendResult): Job = viewModelScope.launch {
-        sending.value = true
-        try {
-            when (val result = request()) {
-                is SendResult.NeedsReview -> reviewNav.emit(result.messageId)
-                else -> Unit
+    /**
+     * Waits on a send that outlives this ViewModel, purely to know whether to open the
+     * review screen. Losing this wait — the user navigates away — leaves the send running;
+     * the reply is persisted either way and this screen just stops listening.
+     */
+    private fun observe(pending: Deferred<SendResult>) {
+        viewModelScope.launch {
+            val result = try {
+                pending.await()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // Anything the repository could not turn into a message row is already an
+                // error bubble with Retry on it; there is nothing here to navigate to.
+                return@launch
             }
-        } finally {
-            sending.value = false
+            if (result is SendResult.NeedsReview) reviewNav.emit(result.messageId)
         }
     }
 
