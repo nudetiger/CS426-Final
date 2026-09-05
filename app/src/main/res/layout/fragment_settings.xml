@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The settings hub. Four rooms, not one long corridor: everything used to live on a single
+     scroll, which made the theme radio and the destructive Import button neighbours. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/mocha_cream"
+    android:background="?attr/mochaCream"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/mocha_header_bg"
+        android:background="?attr/mochaHeaderBg"
         android:gravity="center_vertical"
         android:minHeight="@dimen/header_min_height"
         android:orientation="horizontal"
@@ -20,15 +23,14 @@
             android:layout_height="wrap_content"
             android:text="@string/nav_settings"
             android:textAppearance="@style/TextAppearance.Mocha.Title"
-            android:textColor="@color/mocha_brown" />
+            android:textColor="?attr/mochaBrown" />
     </LinearLayout>
 
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingBottom="@dimen/space_l">
+        android:clipToPadding="false">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -37,165 +39,157 @@
             android:paddingStart="@dimen/content_gutter"
             android:paddingTop="@dimen/space_m"
             android:paddingEnd="@dimen/content_gutter"
-            android:paddingBottom="@dimen/space_m">
-
-            <!-- Appearance -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_appearance"
-                android:textAppearance="@style/TextAppearance.Mocha.Section" />
-
-            <RadioGroup
-                android:id="@+id/settings_theme_group"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_s"
-                android:background="@drawable/bg_card"
-                android:orientation="vertical"
-                android:padding="@dimen/space_s">
-
-                <RadioButton
-                    android:id="@+id/settings_theme_system"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="@dimen/touch_target"
-                    android:text="@string/settings_theme_system"
-                    android:textAppearance="@style/TextAppearance.Mocha.Body" />
-
-                <RadioButton
-                    android:id="@+id/settings_theme_light"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="@dimen/touch_target"
-                    android:text="@string/settings_theme_light"
-                    android:textAppearance="@style/TextAppearance.Mocha.Body" />
-
-                <RadioButton
-                    android:id="@+id/settings_theme_dark"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="@dimen/touch_target"
-                    android:text="@string/settings_theme_dark"
-                    android:textAppearance="@style/TextAppearance.Mocha.Body" />
-            </RadioGroup>
-
-            <!-- AI gateway -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_l"
-                android:text="@string/settings_backend"
-                android:textAppearance="@style/TextAppearance.Mocha.Section" />
-
-            <EditText
-                android:id="@+id/settings_backend_url"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_s"
-                android:background="@drawable/bg_card"
-                android:hint="@string/settings_backend_hint"
-                android:importantForAutofill="no"
-                android:inputType="textUri"
-                android:minHeight="@dimen/touch_target"
-                android:padding="@dimen/space_s"
-                android:textAppearance="@style/TextAppearance.Mocha.Body"
-                android:textColorHint="@color/mocha_text_secondary" />
+            android:paddingBottom="@dimen/space_l">
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:id="@+id/settings_open_appearance"
+                style="@style/Widget.Mocha.SettingsGroup">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/settings_backend_save"
-                    style="@style/Widget.Mocha.ToolbarButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_backend_save" />
+                <ImageView
+                    android:layout_width="@dimen/settings_group_icon"
+                    android:layout_height="@dimen/settings_group_icon"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_palette" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/settings_backend_reset"
-                    style="@style/Widget.Mocha.ToolbarButton"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="@string/settings_backend_reset" />
+                    android:layout_marginStart="@dimen/space_m"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/settings_backend_test"
-                    style="@style/Widget.Mocha.ToolbarButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_backend_test" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_appearance"
+                        android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_appearance_summary"
+                        android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="@dimen/icon_small"
+                    android:layout_height="@dimen/icon_small"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chevron_right" />
             </LinearLayout>
-
-            <TextView
-                android:id="@+id/settings_backend_status"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_backend_help"
-                android:textAppearance="@style/TextAppearance.Mocha.Caption" />
-
-            <!-- Backup -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_l"
-                android:text="@string/settings_backup"
-                android:textAppearance="@style/TextAppearance.Mocha.Section" />
 
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:id="@+id/settings_open_ai"
+                style="@style/Widget.Mocha.SettingsGroup">
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/settings_export"
-                    style="@style/Widget.Mocha.ToolbarButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/settings_export" />
+                <ImageView
+                    android:layout_width="@dimen/settings_group_icon"
+                    android:layout_height="@dimen/settings_group_icon"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_nav_chat"
+                    app:tint="?attr/modeModifyInk" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/settings_import"
-                    style="@style/Widget.Mocha.ToolbarButton"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="@string/settings_import" />
+                    android:layout_marginStart="@dimen/space_m"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_backend"
+                        android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_ai_summary"
+                        android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="@dimen/icon_small"
+                    android:layout_height="@dimen/icon_small"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chevron_right" />
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/settings_backup_status"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/settings_backup_never"
-                android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+            <LinearLayout
+                android:id="@+id/settings_open_backup"
+                style="@style/Widget.Mocha.SettingsGroup">
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/settings_backup_reminder"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_s"
-                android:minHeight="@dimen/touch_target"
-                android:text="@string/settings_backup_reminder"
-                android:textAppearance="@style/TextAppearance.Mocha.Body" />
+                <ImageView
+                    android:layout_width="@dimen/settings_group_icon"
+                    android:layout_height="@dimen/settings_group_icon"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_backup" />
 
-            <!-- Privacy -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_l"
-                android:text="@string/settings_privacy"
-                android:textAppearance="@style/TextAppearance.Mocha.Section" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_m"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_s"
-                android:background="@drawable/bg_card"
-                android:padding="@dimen/space_m"
-                android:text="@string/settings_privacy_body"
-                android:textAppearance="@style/TextAppearance.Mocha.Body" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_backup"
+                        android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+                    <TextView
+                        android:id="@+id/settings_backup_hint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_backup_never"
+                        android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="@dimen/icon_small"
+                    android:layout_height="@dimen/icon_small"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chevron_right" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/settings_open_about"
+                style="@style/Widget.Mocha.SettingsGroup">
+
+                <ImageView
+                    android:layout_width="@dimen/settings_group_icon"
+                    android:layout_height="@dimen/settings_group_icon"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_privacy" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_m"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_privacy"
+                        android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/settings_privacy_summary"
+                        android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="@dimen/icon_small"
+                    android:layout_height="@dimen/icon_small"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chevron_right" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"

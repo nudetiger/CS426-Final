@@ -7,6 +7,9 @@
         android:id="@+id/action_move"
         android:title="@string/browse_move" />
     <item
+        android:id="@+id/action_set_status"
+        android:title="@string/browse_set_status" />
+    <item
         android:id="@+id/action_delete"
         android:title="@string/browse_delete" />
 </menu>

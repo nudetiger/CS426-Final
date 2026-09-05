@@ -21,10 +21,61 @@
         android:id="@+id/chatFragment"
         android:name="com.cs426.learningmocha.ui.chat.ChatFragment"
         android:label="@string/nav_chat" />
+    <!-- Settings is a hub of four screens. The actions are local rather than global: these
+         are only reachable from the hub, so nothing else should be able to jump into them. -->
     <fragment
         android:id="@+id/settingsFragment"
         android:name="com.cs426.learningmocha.ui.settings.SettingsFragment"
-        android:label="@string/nav_settings" />
+        android:label="@string/nav_settings">
+        <action
+            android:id="@+id/action_settings_to_appearance"
+            app:destination="@id/appearanceSettingsFragment"
+            app:enterAnim="@anim/nav_enter"
+            app:exitAnim="@anim/nav_exit"
+            app:popEnterAnim="@anim/nav_pop_enter"
+            app:popExitAnim="@anim/nav_pop_exit" />
+        <action
+            android:id="@+id/action_settings_to_ai"
+            app:destination="@id/aiSettingsFragment"
+            app:enterAnim="@anim/nav_enter"
+            app:exitAnim="@anim/nav_exit"
+            app:popEnterAnim="@anim/nav_pop_enter"
+            app:popExitAnim="@anim/nav_pop_exit" />
+        <action
+            android:id="@+id/action_settings_to_backup"
+            app:destination="@id/backupSettingsFragment"
+            app:enterAnim="@anim/nav_enter"
+            app:exitAnim="@anim/nav_exit"
+            app:popEnterAnim="@anim/nav_pop_enter"
+            app:popExitAnim="@anim/nav_pop_exit" />
+        <action
+            android:id="@+id/action_settings_to_about"
+            app:destination="@id/aboutSettingsFragment"
+            app:enterAnim="@anim/nav_enter"
+            app:exitAnim="@anim/nav_exit"
+            app:popEnterAnim="@anim/nav_pop_enter"
+            app:popExitAnim="@anim/nav_pop_exit" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/appearanceSettingsFragment"
+        android:name="com.cs426.learningmocha.ui.settings.AppearanceSettingsFragment"
+        android:label="@string/settings_appearance" />
+
+    <fragment
+        android:id="@+id/aiSettingsFragment"
+        android:name="com.cs426.learningmocha.ui.settings.AiSettingsFragment"
+        android:label="@string/settings_backend" />
+
+    <fragment
+        android:id="@+id/backupSettingsFragment"
+        android:name="com.cs426.learningmocha.ui.settings.BackupSettingsFragment"
+        android:label="@string/settings_backup" />
+
+    <fragment
+        android:id="@+id/aboutSettingsFragment"
+        android:name="com.cs426.learningmocha.ui.settings.AboutSettingsFragment"
+        android:label="@string/settings_privacy" />
 
     <fragment
         android:id="@+id/postReaderFragment"
@@ -54,6 +105,11 @@
             android:name="parentId"
             android:defaultValue="-1L"
             app:argType="long" />
+        <!-- Set when Browse already asked for a title, so a new post opens pre-filled. -->
+        <argument
+            android:name="title"
+            android:defaultValue=""
+            app:argType="string" />
     </fragment>
 
     <fragment

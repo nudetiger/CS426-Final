@@ -3,6 +3,6 @@
      Material chips in Search / Editor / Dictionary match the hand-rolled @drawable/bg_chip
      pills used for reader tags and breadcrumbs. -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="@color/mocha_cream_dark" android:state_checked="true" />
-    <item android:color="@color/mocha_surface" />
+    <item android:color="?attr/mochaCreamDark" android:state_checked="true" />
+    <item android:color="?attr/mochaSurface" />
 </selector>

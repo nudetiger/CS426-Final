@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A theme card. Selection is a thicker accent border rather than a tick alone, because the
+     card's own colours are the content: tinting the card to say "chosen" would lie about what
+     the theme looks like. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/mochaSurface" />
+            <corners android:radius="@dimen/feature_card_corner" />
+            <stroke android:width="@dimen/stroke_thick" android:color="?attr/mochaBrown" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/mochaSurface" />
+            <corners android:radius="@dimen/feature_card_corner" />
+            <stroke android:width="@dimen/stroke_thin" android:color="?attr/mochaDivider" />
+        </shape>
+    </item>
+</selector>

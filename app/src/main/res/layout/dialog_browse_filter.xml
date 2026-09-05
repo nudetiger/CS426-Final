@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_dialog"
+    android:padding="@dimen/space_m">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/browse_filter_title"
+            android:textAppearance="@style/TextAppearance.Mocha.Title" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_m"
+            android:text="@string/browse_filter_types"
+            android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+        <!-- Multi-select on purpose: nothing checked means "everything", so the default view
+             needs no separate "All" chip that could disagree with the other three. -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/filter_types"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            app:singleSelection="false">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filter_type_branch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/browse_type_branch" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filter_type_folder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/browse_type_folder" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filter_type_post"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/browse_type_post" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_m"
+            android:text="@string/browse_filter_statuses"
+            android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/filter_statuses"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            app:singleSelection="false">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filter_status_none"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/status_none" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filter_status_reading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/status_reading" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filter_status_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/status_in_progress" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/filter_status_finished"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/status_finished" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/filter_favorites"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_m"
+            android:minHeight="@dimen/touch_target"
+            android:text="@string/browse_filter_favorites"
+            android:textAppearance="@style/TextAppearance.Mocha.Body" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_s"
+            android:text="@string/browse_filter_note"
+            android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+    </LinearLayout>
+</ScrollView>

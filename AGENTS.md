@@ -31,8 +31,13 @@ XML-Views phone app — ignore them unless the stack changes.
 3. **Layers**: Fragment → ViewModel → Repository → DAO. No DB/network calls in UI code.
 4. **Language split**: Kotlin for Android-facing code; Java only for framework-free
    utilities in `util/` (parsers, export/import, diff).
-5. **Design tokens**: always use `@color/mocha_*`, `@dimen/*`, `@font/comfortaa` and the
-   `TextAppearance.Mocha.*` styles. Never hardcode hex colors or px sizes in layouts.
+5. **Design tokens**: colours are **theme attributes**, not colour resources — write
+   `?attr/mochaBrown` in layouts and drawables, `R.attr.mochaBrown` + `Context.themeColor()`
+   in code (`res/values/attrs_theme.xml` lists them all). `@color/mocha_*` is now only the
+   default Mocha palette's *values*, wired up in `Theme.Mocha.Base`; referencing it directly
+   breaks Rose Pine, Catppuccin and Nord, which swap the attributes and nothing else. Use
+   `@dimen/*`, `@font/comfortaa` and the `TextAppearance.Mocha.*` styles the same way.
+   Never hardcode hex colours or px sizes in layouts.
 6. The backend (`backend/`) stays stateless: no database, no storing user content,
    key only via `.env` (never committed, never in the APK).
 7. Every list screen needs loading / empty / error / offline states.
@@ -43,6 +48,13 @@ XML-Views phone app — ignore them unless the stack changes.
 - Post content = Markdown + `[[Post Title]]` wiki-links (parsed by
   `util/MarkdownLinkParser.java`).
 - Tree model: single `nodes` table (`BRANCH | FOLDER | POST`, `parentId`, `orderIndex`).
+  **Any node can be a parent, posts included** — a post under a post is a sub-post, and Browse
+  walks into it. Only cycles are refused (`util/TreeRules`).
+- Creating never fails on a taken title: a duplicate post is numbered by `util/TitleDedup`
+  ("Raft (2)"), and `TreeRepository.createContainer` reuses a container that is already under
+  that parent instead of making a second one. Renaming still refuses a taken title.
+- Browse has no manual reordering; `orderIndex` survives only as a tiebreaker for legacy rows.
+  Order comes from `ui/browse/BrowseQuery` (sort + filter).
 - Search = `posts_fts`, an **FTS4** table (`@Fts4(contentEntity = Node::class)` — Room 2.6 has
   no FTS5 annotation). It is content-backed, so Room's triggers keep it in sync automatically;
   never write to it by hand.

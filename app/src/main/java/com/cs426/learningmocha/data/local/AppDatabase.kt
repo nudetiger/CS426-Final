@@ -33,7 +33,7 @@ import com.cs426.learningmocha.data.local.entity.Tag
         ChatSession::class,
         ChatMessage::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(NodeConverters::class)
@@ -161,12 +161,25 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Adds `chat_messages.mode`. Rows written before this migration are stamped "answer":
+         * that was the default mode, and it is the only one that never proposes changes, so an
+         * old row can never be re-coloured as something it was not.
+         */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `chat_messages` ADD COLUMN `mode` TEXT NOT NULL DEFAULT 'answer'",
+                )
+            }
+        }
+
         fun build(context: Context): AppDatabase {
             return Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "learning_mocha.db",
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .addCallback(
                     object : RoomDatabase.Callback() {
                         // Fires once, when the file is created — so SeedData can tell a first

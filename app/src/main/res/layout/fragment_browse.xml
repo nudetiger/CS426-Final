@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/mocha_cream">
+    android:background="?attr/mochaCream">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -13,7 +13,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/mocha_header_bg"
+            android:background="?attr/mochaHeaderBg"
             android:orientation="vertical"
             android:paddingStart="@dimen/content_gutter"
             android:paddingTop="@dimen/space_m"
@@ -25,7 +25,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.Mocha.Title"
-                android:textColor="@color/mocha_brown" />
+                android:textColor="?attr/mochaBrown" />
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
@@ -40,6 +40,54 @@
                     android:gravity="center_vertical"
                     android:orientation="horizontal" />
             </HorizontalScrollView>
+
+            <!-- What this folder holds, before the list of what is directly in it: the meter
+                 answers "how far through am I" without opening a single post. -->
+            <include
+                android:id="@+id/browse_meter"
+                layout="@layout/view_status_meter"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_s" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/mochaCreamDark"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/space_s"
+            android:paddingEnd="@dimen/space_s">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/browse_sort"
+                style="@style/Widget.Mocha.ToolbarButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/browse_sort"
+                app:icon="@drawable/ic_sort"
+                app:iconTint="?attr/mochaBrown" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/browse_filter"
+                style="@style/Widget.Mocha.ToolbarButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/browse_filter"
+                app:icon="@drawable/ic_filter"
+                app:iconTint="?attr/mochaBrown" />
+
+            <TextView
+                android:id="@+id/browse_filter_note"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:gravity="end"
+                android:maxLines="2"
+                android:textAppearance="@style/TextAppearance.Mocha.Caption"
+                android:visibility="gone" />
         </LinearLayout>
 
         <FrameLayout
@@ -70,7 +118,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/space_m"
         android:contentDescription="@string/cd_add"
-        app:backgroundTint="@color/mocha_brown"
+        app:backgroundTint="?attr/mochaBrown"
         app:srcCompat="@drawable/ic_add"
-        app:tint="@color/mocha_on_primary" />
+        app:tint="?attr/mochaOnPrimary" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

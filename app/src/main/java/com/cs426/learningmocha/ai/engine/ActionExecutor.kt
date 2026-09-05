@@ -33,6 +33,11 @@ class ActionExecutor(
 ) {
     suspend fun apply(actions: List<KbAction>): UndoSnapshot {
         val refs = HashMap<String, Long>()
+        // What this batch itself created, keyed by the title it *asked* for. A later action that
+        // names one by title has to reach the batch's own row, not a namesake that was already in
+        // the library - and a duplicate post is stored under a numbered title, so its wanted name
+        // would otherwise resolve to the wrong post entirely.
+        val createdByTitle = HashMap<String, Long>()
         val created = ArrayList<Long>()
         val restored = ArrayList<Node>()
         val restoredTags = HashMap<Long, List<String>>()
@@ -43,28 +48,36 @@ class ActionExecutor(
             for (action in actions) {
                 when (action.op) {
                     "create_branch" -> {
-                        val id = tree.create(null, NodeType.BRANCH, action.title.orEmpty())
-                        remember(action.ref, id, refs)
-                        created.add(id)
+                        val made = tree.createContainer(null, NodeType.BRANCH, action.title.orEmpty())
+                        remember(action.ref, made.id, refs)
+                        rememberTitle(action.title, made.id, createdByTitle)
+                        // A reused container was already the user's; undo must not delete it.
+                        if (made.isNew) created.add(made.id)
                     }
                     "create_folder" -> {
-                        val id = tree.create(parentId(action, refs), NodeType.FOLDER, action.title.orEmpty())
-                        remember(action.ref, id, refs)
-                        created.add(id)
+                        val made = tree.createContainer(
+                            parentId(action, refs, createdByTitle),
+                            NodeType.FOLDER,
+                            action.title.orEmpty(),
+                        )
+                        remember(action.ref, made.id, refs)
+                        rememberTitle(action.title, made.id, createdByTitle)
+                        if (made.isNew) created.add(made.id)
                     }
                     "create_post" -> {
                         val id = posts.createPost(
-                            parentId = parentId(action, refs),
+                            parentId = parentId(action, refs, createdByTitle),
                             title = action.title.orEmpty(),
                             content = action.content.orEmpty(),
                             status = parseStatus(action.status) ?: LearningStatus.READING,
                             tagNames = action.tags.orEmpty(),
                         )
                         remember(action.ref, id, refs)
+                        rememberTitle(action.title, id, createdByTitle)
                         created.add(id)
                     }
                     "update_post" -> {
-                        val node = requirePost(action, refs)
+                        val node = requirePost(action, refs, createdByTitle)
                         snapshot(node, restored, restoredTags)
                         posts.updatePost(
                             id = node.id,
@@ -79,49 +92,51 @@ class ActionExecutor(
                         )
                     }
                     "move_post" -> {
-                        val node = requirePost(action, refs)
+                        val node = requirePost(action, refs, createdByTitle)
                         snapshot(node, restored, restoredTags)
-                        val parent = tree.findByTitle(action.newParentTitle.orEmpty())
-                        tree.move(node.id, parent?.id)
+                        val wanted = action.newParentTitle.orEmpty()
+                        val parent = createdByTitle[wanted.trim().lowercase()]
+                            ?: tree.findByTitle(wanted)?.id
+                        tree.move(node.id, parent)
                     }
                     "delete_post" -> {
                         // ponytail: undo does not resurrect deleted posts (cascade drops children).
-                        val node = requirePost(action, refs)
+                        val node = requirePost(action, refs, createdByTitle)
                         tree.delete(node.id)
                     }
                     "create_link" -> {
-                        val from = requireFrom(action, refs)
+                        val from = requireFrom(action, refs, createdByTitle)
                         // addWikiLink appends `[[Target]]` to the body, so undo needs the content.
                         snapshot(from, restored, restoredTags)
                         posts.addWikiLink(from.id, action.toTitle.orEmpty())
                     }
                     "remove_link" -> {
-                        val from = requireFrom(action, refs)
+                        val from = requireFrom(action, refs, createdByTitle)
                         snapshot(from, restored, restoredTags)
                         posts.removeWikiLink(from.id, action.toTitle.orEmpty())
                     }
                     "add_tag" -> {
-                        val node = requirePost(action, refs)
+                        val node = requirePost(action, refs, createdByTitle)
                         snapshot(node, restored, restoredTags)
                         posts.addTag(node.id, action.tag.orEmpty())
                     }
                     "remove_tag" -> {
-                        val node = requirePost(action, refs)
+                        val node = requirePost(action, refs, createdByTitle)
                         snapshot(node, restored, restoredTags)
                         posts.removeTag(node.id, action.tag.orEmpty())
                     }
                     "set_status" -> {
-                        val node = requirePost(action, refs)
+                        val node = requirePost(action, refs, createdByTitle)
                         snapshot(node, restored, restoredTags)
                         posts.setStatus(node.id, parseStatus(action.status) ?: node.status)
                     }
                     "set_favorite" -> {
-                        val node = requirePost(action, refs)
+                        val node = requirePost(action, refs, createdByTitle)
                         snapshot(node, restored, restoredTags)
                         posts.setFavorite(node.id, action.favorite == true)
                     }
                     "add_resource" -> {
-                        val node = requirePost(action, refs)
+                        val node = requirePost(action, refs, createdByTitle)
                         val type = try {
                             ResourceType.valueOf(action.type?.uppercase() ?: "OTHER")
                         } catch (_: Exception) {
@@ -138,7 +153,7 @@ class ActionExecutor(
                     }
                     "add_dictionary_entry" -> {
                         val postId = if (action.postRef != null || !action.postTitle.isNullOrBlank()) {
-                            requirePost(action, refs).id
+                            requirePost(action, refs, createdByTitle).id
                         } else {
                             null
                         }
@@ -210,6 +225,11 @@ class ActionExecutor(
         ref?.trim()?.takeIf { it.isNotEmpty() }?.let { refs[it] = id }
     }
 
+    /** First writer wins, so two creates asking for one title do not steal each other's rows. */
+    private fun rememberTitle(title: String?, id: Long, byTitle: MutableMap<String, Long>) {
+        title?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }?.let { byTitle.putIfAbsent(it, id) }
+    }
+
     /** Existing tags first, then the proposed ones the post does not already carry. */
     private fun merged(existing: List<String>, proposed: List<String>): List<String> {
         val seen = existing.mapTo(HashSet()) { it.lowercase() }
@@ -217,27 +237,46 @@ class ActionExecutor(
             .filter { it.isNotEmpty() && seen.add(it.lowercase()) }
     }
 
-    private suspend fun parentId(action: KbAction, refs: Map<String, Long>): Long? {
+    /** Null means the library root. A post is a legal parent - that is a sub-post. */
+    private suspend fun parentId(
+        action: KbAction,
+        refs: Map<String, Long>,
+        createdByTitle: Map<String, Long>,
+    ): Long? {
         action.parentRef?.trim()?.takeIf { it.isNotEmpty() }?.let { return refs.getValue(it) }
         val title = action.parentTitle?.trim().orEmpty()
         if (title.isEmpty()) return null
-        return tree.findByTitle(title)?.id
+        return createdByTitle[title.lowercase()] ?: tree.findByTitle(title)?.id
     }
 
-    private suspend fun requirePost(action: KbAction, refs: Map<String, Long>): Node {
+    private suspend fun requirePost(
+        action: KbAction,
+        refs: Map<String, Long>,
+        createdByTitle: Map<String, Long>,
+    ): Node {
         action.postRef?.trim()?.takeIf { it.isNotEmpty() }?.let { ref ->
             return tree.getNode(refs.getValue(ref)) ?: error("missing ref $ref")
         }
         val title = (action.postTitle ?: action.title).orEmpty()
-        return posts.findPostByTitle(title) ?: error("missing post $title")
+        return resolveByTitle(title, createdByTitle) ?: error("missing post $title")
     }
 
-    private suspend fun requireFrom(action: KbAction, refs: Map<String, Long>): Node {
+    private suspend fun requireFrom(
+        action: KbAction,
+        refs: Map<String, Long>,
+        createdByTitle: Map<String, Long>,
+    ): Node {
         action.fromRef?.trim()?.takeIf { it.isNotEmpty() }?.let { ref ->
             return tree.getNode(refs.getValue(ref)) ?: error("missing ref $ref")
         }
-        return posts.findPostByTitle(action.fromTitle.orEmpty())
-            ?: error("missing post ${action.fromTitle}")
+        val title = action.fromTitle.orEmpty()
+        return resolveByTitle(title, createdByTitle) ?: error("missing post $title")
+    }
+
+    /** The batch's own creation wins over a namesake that was already in the library. */
+    private suspend fun resolveByTitle(title: String, createdByTitle: Map<String, Long>): Node? {
+        createdByTitle[title.trim().lowercase()]?.let { id -> tree.getNode(id)?.let { return it } }
+        return posts.findPostByTitle(title)
     }
 
     private fun parseStatus(raw: String?): LearningStatus? {

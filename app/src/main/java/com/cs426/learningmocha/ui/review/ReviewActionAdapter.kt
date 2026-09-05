@@ -3,7 +3,6 @@ package com.cs426.learningmocha.ui.review
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePaddingRelative
 import androidx.recyclerview.widget.DiffUtil
@@ -11,6 +10,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.cs426.learningmocha.R
 import com.cs426.learningmocha.databinding.ItemReviewActionBinding
+import com.cs426.learningmocha.ui.common.themeColor
 import com.cs426.learningmocha.viewmodel.ReviewRow
 
 class ReviewActionAdapter(
@@ -47,13 +47,12 @@ class ReviewActionAdapter(
             binding.reviewRowIcon.setImageResource(iconFor(item.op))
             binding.reviewRowTitle.text = item.title
             binding.reviewRowTitle.setTextColor(
-                ContextCompat.getColor(
-                    context,
-                    if (item.destructive) R.color.mocha_error else R.color.mocha_text_primary,
+                context.themeColor(
+                    if (item.destructive) R.attr.mochaError else R.attr.mochaTextPrimary,
                 ),
             )
             if (item.destructive) {
-                binding.reviewRowIcon.setColorFilter(ContextCompat.getColor(context, R.color.mocha_error))
+                binding.reviewRowIcon.setColorFilter(context.themeColor(R.attr.mochaError))
             } else {
                 binding.reviewRowIcon.clearColorFilter()
             }
@@ -77,7 +76,7 @@ class ReviewActionAdapter(
             "create_folder" -> R.drawable.ic_folder
             "create_post" -> R.drawable.ic_post
             "update_post", "set_status" -> R.drawable.ic_edit
-            "move_post" -> R.drawable.ic_drag
+            "move_post" -> R.drawable.ic_chevron_right
             "delete_post", "remove_tag", "remove_link" -> R.drawable.ic_delete
             "create_link" -> R.drawable.ic_chevron
             "set_favorite" -> R.drawable.ic_star

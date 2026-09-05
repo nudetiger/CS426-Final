@@ -11,7 +11,7 @@
 
 import "dotenv/config";
 import express from "express";
-import { buildMessages, MODES } from "./prompts.js";
+import { buildMessages, parseModes } from "./prompts.js";
 
 const PORT = Number(process.env.PORT ?? 8787);
 const MODEL = process.env.MODEL ?? "deepseek-chat";
@@ -53,7 +53,7 @@ function validate(body) {
   }
   const { mode = "answer", messages = [], kbIndex = "", toolResults } =
     body ?? {};
-  if (!MODES.includes(mode)) {
+  if (parseModes(mode) === null) {
     return { status: 400, error: `Unknown mode "${mode}"`, retryable: false };
   }
   if (!Array.isArray(messages) || messages.length === 0) {

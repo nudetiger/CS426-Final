@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Every palette token the app draws with, declared as a theme attribute.
+
+     Layouts, drawables and colour selectors reference "?attr/mochaBrown" rather than
+     "@color/mocha_brown" so that a whole palette can be swapped by setting one theme on
+     the Activity. values/colors.xml (+ values-night) still holds the default Mocha values;
+     the named palettes in values/colors_palettes.xml supply the rest. -->
+<resources>
+    <attr name="mochaCream" format="color|reference" />
+    <attr name="mochaCreamDark" format="color|reference" />
+    <attr name="mochaHeaderBg" format="color|reference" />
+    <attr name="mochaBrown" format="color|reference" />
+    <attr name="mochaBrownDeep" format="color|reference" />
+    <attr name="mochaSage" format="color|reference" />
+    <attr name="mochaTaupe" format="color|reference" />
+    <attr name="mochaSurface" format="color|reference" />
+    <attr name="mochaSurfaceElevated" format="color|reference" />
+    <attr name="mochaTextPrimary" format="color|reference" />
+    <attr name="mochaTextSecondary" format="color|reference" />
+    <attr name="mochaOnPrimary" format="color|reference" />
+    <attr name="mochaDivider" format="color|reference" />
+    <attr name="mochaError" format="color|reference" />
+    <attr name="mochaRowEven" format="color|reference" />
+    <attr name="mochaRowOdd" format="color|reference" />
+    <attr name="mochaFavorite" format="color|reference" />
+    <attr name="statusNoneInk" format="color|reference" />
+    <attr name="statusNoneWash" format="color|reference" />
+    <attr name="statusReadingInk" format="color|reference" />
+    <attr name="statusReadingWash" format="color|reference" />
+    <attr name="statusProgressInk" format="color|reference" />
+    <attr name="statusProgressWash" format="color|reference" />
+    <attr name="statusFinishedInk" format="color|reference" />
+    <attr name="statusFinishedWash" format="color|reference" />
+    <attr name="typeBranchInk" format="color|reference" />
+    <attr name="typeBranchWash" format="color|reference" />
+    <attr name="typeFolderInk" format="color|reference" />
+    <attr name="typeFolderWash" format="color|reference" />
+    <attr name="typePostInk" format="color|reference" />
+    <attr name="typePostWash" format="color|reference" />
+    <attr name="modeAnswerInk" format="color|reference" />
+    <attr name="modeAnswerWash" format="color|reference" />
+    <attr name="modeSuggestInk" format="color|reference" />
+    <attr name="modeSuggestWash" format="color|reference" />
+    <attr name="modeModifyInk" format="color|reference" />
+    <attr name="modeModifyWash" format="color|reference" />
+    <attr name="modeOrganizeInk" format="color|reference" />
+    <attr name="modeOrganizeWash" format="color|reference" />
+</resources>

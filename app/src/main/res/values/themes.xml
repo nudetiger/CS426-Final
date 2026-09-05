@@ -1,32 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Base theme: calm coffee-shop chrome, Comfortaa everywhere.
-         Every colour below is a DayNight resource (values/colors.xml + values-night/colors.xml),
-         so values-night only has to override the two things that are genuinely mode-specific.
+         Nothing here names a colour twice. The palette arrives as the theme attributes declared
+         in attrs_theme.xml, every Material attribute below is pointed at one of them, and the
+         attributes themselves resolve to the DayNight tokens at the bottom of this style — so
+         Mocha follows the system, and a named palette in themes_palettes.xml swaps the whole
+         app by overriding those attributes and nothing else.
          Keeping the body here rather than duplicating it was how alertDialogTheme and
          windowBackground silently went missing from dark mode before. -->
     <style name="Theme.Mocha.Base" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/mocha_brown</item>
-        <item name="colorPrimaryVariant">@color/mocha_brown_deep</item>
-        <item name="colorOnPrimary">@color/mocha_on_primary</item>
-        <item name="colorSecondary">@color/mocha_sage</item>
-        <item name="colorOnSecondary">@color/mocha_on_primary</item>
-        <item name="colorError">@color/mocha_error</item>
-        <item name="colorOnError">@color/mocha_on_primary</item>
-        <item name="android:colorBackground">@color/mocha_cream</item>
-        <item name="android:windowBackground">@color/mocha_cream</item>
-        <item name="colorSurface">@color/mocha_surface</item>
+        <item name="colorPrimary">?attr/mochaBrown</item>
+        <item name="colorPrimaryVariant">?attr/mochaBrownDeep</item>
+        <item name="colorOnPrimary">?attr/mochaOnPrimary</item>
+        <item name="colorSecondary">?attr/mochaSage</item>
+        <item name="colorOnSecondary">?attr/mochaOnPrimary</item>
+        <item name="colorError">?attr/mochaError</item>
+        <item name="colorOnError">?attr/mochaOnPrimary</item>
+        <item name="android:colorBackground">?attr/mochaCream</item>
+        <item name="android:windowBackground">?attr/mochaCream</item>
+        <item name="colorSurface">?attr/mochaSurface</item>
         <!-- Material derives chip, text-field stroke and switch-track colours from these. -->
-        <item name="colorOnSurface">@color/mocha_text_primary</item>
-        <item name="colorOnBackground">@color/mocha_text_primary</item>
+        <item name="colorOnSurface">?attr/mochaTextPrimary</item>
+        <item name="colorOnBackground">?attr/mochaTextPrimary</item>
         <item name="android:fontFamily">@font/comfortaa</item>
         <item name="fontFamily">@font/comfortaa</item>
-        <item name="android:statusBarColor">@color/mocha_header_bg</item>
+        <item name="android:statusBarColor">?attr/mochaHeaderBg</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:navigationBarColor">@color/mocha_header_bg</item>
+        <item name="android:navigationBarColor">?attr/mochaHeaderBg</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.Mocha.Dialog</item>
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.Mocha.Dialog</item>
         <item name="chipStyle">@style/Widget.Mocha.Chip</item>
+
+        <!-- The palette itself. Everything in the app draws through these attributes, so
+             a named palette (values/themes_palettes.xml) only has to re-point them. Here
+             they resolve to the DayNight tokens, which is what makes Mocha the one theme
+             that follows the system light/dark setting. -->
+        <item name="mochaCream">@color/mocha_cream</item>
+        <item name="mochaCreamDark">@color/mocha_cream_dark</item>
+        <item name="mochaHeaderBg">@color/mocha_header_bg</item>
+        <item name="mochaBrown">@color/mocha_brown</item>
+        <item name="mochaBrownDeep">@color/mocha_brown_deep</item>
+        <item name="mochaSage">@color/mocha_sage</item>
+        <item name="mochaTaupe">@color/mocha_taupe</item>
+        <item name="mochaSurface">@color/mocha_surface</item>
+        <item name="mochaSurfaceElevated">@color/mocha_surface_elevated</item>
+        <item name="mochaTextPrimary">@color/mocha_text_primary</item>
+        <item name="mochaTextSecondary">@color/mocha_text_secondary</item>
+        <item name="mochaOnPrimary">@color/mocha_on_primary</item>
+        <item name="mochaDivider">@color/mocha_divider</item>
+        <item name="mochaError">@color/mocha_error</item>
+        <item name="mochaRowEven">@color/mocha_row_even</item>
+        <item name="mochaRowOdd">@color/mocha_row_odd</item>
+        <item name="mochaFavorite">@color/mocha_favorite</item>
+        <item name="statusNoneInk">@color/status_none_ink</item>
+        <item name="statusNoneWash">@color/status_none_wash</item>
+        <item name="statusReadingInk">@color/status_reading_ink</item>
+        <item name="statusReadingWash">@color/status_reading_wash</item>
+        <item name="statusProgressInk">@color/status_progress_ink</item>
+        <item name="statusProgressWash">@color/status_progress_wash</item>
+        <item name="statusFinishedInk">@color/status_finished_ink</item>
+        <item name="statusFinishedWash">@color/status_finished_wash</item>
+        <item name="typeBranchInk">@color/type_branch_ink</item>
+        <item name="typeBranchWash">@color/type_branch_wash</item>
+        <item name="typeFolderInk">@color/type_folder_ink</item>
+        <item name="typeFolderWash">@color/type_folder_wash</item>
+        <item name="typePostInk">@color/type_post_ink</item>
+        <item name="typePostWash">@color/type_post_wash</item>
+        <item name="modeAnswerInk">@color/mode_answer_ink</item>
+        <item name="modeAnswerWash">@color/mode_answer_wash</item>
+        <item name="modeSuggestInk">@color/mode_suggest_ink</item>
+        <item name="modeSuggestWash">@color/mode_suggest_wash</item>
+        <item name="modeModifyInk">@color/mode_modify_ink</item>
+        <item name="modeModifyWash">@color/mode_modify_wash</item>
+        <item name="modeOrganizeInk">@color/mode_organize_ink</item>
+        <item name="modeOrganizeWash">@color/mode_organize_wash</item>
     </style>
 
     <style name="Theme.LearningMocha" parent="Theme.Mocha.Base" />
@@ -34,13 +81,24 @@
     <style name="ThemeOverlay.Mocha.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
         <item name="android:fontFamily">@font/comfortaa</item>
         <item name="fontFamily">@font/comfortaa</item>
-        <item name="colorPrimary">@color/mocha_brown</item>
-        <item name="colorSurface">@color/mocha_surface_elevated</item>
-        <item name="colorOnSurface">@color/mocha_text_primary</item>
+        <item name="colorPrimary">?attr/mochaBrown</item>
+        <item name="colorSurface">?attr/mochaSurfaceElevated</item>
+        <item name="colorOnSurface">?attr/mochaTextPrimary</item>
+    </style>
+
+    <!-- The wordmark, and only the wordmark. A serif against Comfortaa everywhere else is the
+         whole point: the brand should not look like another section header. -->
+    <style name="TextAppearance.Mocha.Brand" parent="TextAppearance.MaterialComponents.Headline4">
+        <item name="android:textColor">?attr/mochaBrown</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">@dimen/text_brand</item>
+        <item name="android:letterSpacing">0.02</item>
+        <item name="android:fontFamily">serif</item>
+        <item name="fontFamily">serif</item>
     </style>
 
     <style name="TextAppearance.Mocha.Headline" parent="TextAppearance.MaterialComponents.Headline5">
-        <item name="android:textColor">@color/mocha_text_primary</item>
+        <item name="android:textColor">?attr/mochaTextPrimary</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textSize">@dimen/text_headline</item>
         <item name="android:fontFamily">@font/comfortaa</item>
@@ -48,7 +106,7 @@
     </style>
 
     <style name="TextAppearance.Mocha.Title" parent="TextAppearance.MaterialComponents.Headline6">
-        <item name="android:textColor">@color/mocha_text_primary</item>
+        <item name="android:textColor">?attr/mochaTextPrimary</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textSize">@dimen/text_title</item>
         <item name="android:fontFamily">@font/comfortaa</item>
@@ -56,7 +114,7 @@
     </style>
 
     <style name="TextAppearance.Mocha.Section" parent="TextAppearance.MaterialComponents.Subtitle1">
-        <item name="android:textColor">@color/mocha_text_primary</item>
+        <item name="android:textColor">?attr/mochaTextPrimary</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textSize">@dimen/text_section</item>
         <item name="android:fontFamily">@font/comfortaa</item>
@@ -64,7 +122,7 @@
     </style>
 
     <style name="TextAppearance.Mocha.Body" parent="TextAppearance.MaterialComponents.Body1">
-        <item name="android:textColor">@color/mocha_text_primary</item>
+        <item name="android:textColor">?attr/mochaTextPrimary</item>
         <item name="android:lineSpacingMultiplier">1.5</item>
         <item name="android:textSize">@dimen/text_body</item>
         <item name="android:fontFamily">@font/comfortaa</item>
@@ -79,14 +137,20 @@
     </style>
 
     <style name="TextAppearance.Mocha.Caption" parent="TextAppearance.MaterialComponents.Caption">
-        <item name="android:textColor">@color/mocha_text_secondary</item>
+        <item name="android:textColor">?attr/mochaTextSecondary</item>
         <item name="android:textSize">@dimen/text_caption</item>
         <item name="android:fontFamily">@font/comfortaa</item>
         <item name="fontFamily">@font/comfortaa</item>
     </style>
 
+    <!-- Rounded corners for the YouTube poster frames on reader resource cards. -->
+    <style name="ShapeAppearance.Mocha.Thumbnail" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/resource_thumb_corner</item>
+    </style>
+
     <style name="Widget.Mocha.BottomNav" parent="Widget.MaterialComponents.BottomNavigationView">
-        <item name="backgroundTint">@color/mocha_header_bg</item>
+        <item name="backgroundTint">?attr/mochaHeaderBg</item>
         <item name="itemIconTint">@color/bottom_nav_color</item>
         <item name="itemTextColor">@color/bottom_nav_color</item>
         <item name="elevation">0dp</item>
@@ -97,23 +161,108 @@
     <style name="Widget.Mocha.ToolbarButton" parent="Widget.MaterialComponents.Button.TextButton">
         <item name="android:minWidth">@dimen/toolbar_btn_min_width</item>
         <item name="android:minHeight">@dimen/touch_target</item>
-        <item name="android:textColor">@color/mocha_brown</item>
+        <item name="android:textColor">?attr/mochaBrown</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
         <item name="android:fontFamily">@font/comfortaa</item>
         <item name="fontFamily">@font/comfortaa</item>
     </style>
 
+    <!-- One column of the status meter legend: dot, share, label. Equal weights so the four
+         columns line up whatever the numbers are, and clickable because tapping a share is the
+         fastest way to filter the folder down to it. -->
+    <style name="Widget.Mocha.MeterLegend" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:paddingTop">@dimen/space_xs</item>
+        <item name="android:paddingBottom">@dimen/space_xs</item>
+    </style>
+
+    <style name="Widget.Mocha.MeterDot" parent="">
+        <item name="android:layout_width">@dimen/status_dot</item>
+        <item name="android:layout_height">@dimen/status_dot</item>
+        <item name="android:src">@drawable/bg_status_dot</item>
+        <item name="android:contentDescription">@null</item>
+    </style>
+
+    <style name="Widget.Mocha.MeterValue" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.Mocha.Caption</item>
+        <item name="android:textColor">?attr/mochaTextPrimary</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Widget.Mocha.MeterLabel" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textAppearance">@style/TextAppearance.Mocha.Caption</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <!-- Home quick action: a 2x2 tile big enough to hit without aiming. -->
+    <style name="Widget.Mocha.QuickAction" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:minHeight">@dimen/quick_action_min_height</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/bg_feature_card</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:padding">@dimen/space_s</item>
+    </style>
+
+    <style name="Widget.Mocha.QuickActionIcon" parent="">
+        <item name="android:layout_width">@dimen/quick_action_icon</item>
+        <item name="android:layout_height">@dimen/quick_action_icon</item>
+        <item name="android:contentDescription">@null</item>
+    </style>
+
+    <style name="Widget.Mocha.QuickActionLabel" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_xs</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textAppearance">@style/TextAppearance.Mocha.Section</item>
+    </style>
+
+    <!-- A settings category row on the hub screen. -->
+    <style name="Widget.Mocha.SettingsGroup" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">@dimen/space_s</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:minHeight">@dimen/zebra_row_min</item>
+        <item name="android:background">@drawable/bg_card</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:padding">@dimen/space_m</item>
+    </style>
+
     <!-- Registered as chipStyle above, so every com.google.android.material.chip.Chip in the
          app picks it up without a per-layout style attribute. -->
     <style name="Widget.Mocha.Chip" parent="Widget.MaterialComponents.Chip.Filter">
         <item name="chipBackgroundColor">@color/mocha_chip_bg</item>
-        <item name="chipStrokeColor">@color/mocha_brown</item>
+        <item name="chipStrokeColor">?attr/mochaBrown</item>
         <item name="chipStrokeWidth">@dimen/stroke_thin</item>
         <item name="chipMinTouchTargetSize">@dimen/touch_target</item>
         <item name="ensureMinTouchTargetSize">true</item>
         <item name="android:textAppearance">@style/TextAppearance.Mocha.Caption</item>
-        <item name="android:textColor">@color/mocha_text_primary</item>
+        <item name="android:textColor">?attr/mochaTextPrimary</item>
         <item name="android:fontFamily">@font/comfortaa</item>
         <item name="fontFamily">@font/comfortaa</item>
     </style>

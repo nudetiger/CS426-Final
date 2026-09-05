@@ -8,6 +8,7 @@ import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.core.os.bundleOf
+import androidx.core.view.isVisible
 import androidx.core.widget.TextViewCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -20,13 +21,18 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.cs426.learningmocha.R
+import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.local.entity.Node
 import com.cs426.learningmocha.data.local.entity.NodeType
+import com.cs426.learningmocha.databinding.DialogBrowseFilterBinding
 import com.cs426.learningmocha.databinding.DialogCreateNodeBinding
 import com.cs426.learningmocha.databinding.DialogNodeTitleBinding
 import com.cs426.learningmocha.databinding.FragmentBrowseBinding
 import com.cs426.learningmocha.ui.common.ListStateBinder
+import com.cs426.learningmocha.ui.common.StatusMeterBinder
+import com.cs426.learningmocha.ui.common.labelRes
 import com.cs426.learningmocha.viewmodel.BrowseLocatorViewModel
+import com.cs426.learningmocha.viewmodel.BrowseUiState
 import com.cs426.learningmocha.viewmodel.BrowseViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -41,12 +47,22 @@ class BrowseFragment : Fragment() {
     private val adapter = BrowseAdapter(
         onClick = { node ->
             when (node.type) {
+                // A post opens to be read even when it has sub-posts; the chevron on the row
+                // is what descends into them.
                 NodeType.POST -> openPost(node.id)
                 NodeType.BRANCH, NodeType.FOLDER -> viewModel.open(node.id)
             }
         },
+        onOpenChildren = { node -> viewModel.open(node.id) },
+        onToggleFavorite = { node -> viewModel.toggleFavorite(node) },
         onMenu = { node, anchor -> showNodeMenu(node, anchor) },
     )
+
+    /**
+     * Cached rather than read per row. Refreshed in [onResume] because Settings is a round
+     * trip away, and the list has to come back in the colours the user just chose.
+     */
+    private var colorfulLists = true
 
     private val backCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
@@ -67,36 +83,25 @@ class BrowseFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val b = binding ?: return
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
+        colorfulLists = (requireActivity().application as com.cs426.learningmocha.LearningMochaApp)
+            .settings.colorfulLists
 
         locator.consume()?.let { viewModel.open(it) }
 
         b.browseList.layoutManager = LinearLayoutManager(requireContext())
         b.browseList.adapter = adapter
-        ItemTouchHelper(touchCallback).attachToRecyclerView(b.browseList)
+        // Swipe-to-delete only. Drag reordering is gone: it described one folder at a time,
+        // could not be undone, and sorting says something the order of a drag never did.
+        ItemTouchHelper(swipeToDelete).attachToRecyclerView(b.browseList)
 
         b.browseFab.setOnClickListener { showCreateDialog() }
+        b.browseSort.setOnClickListener { showSortMenu(it) }
+        b.browseFilter.setOnClickListener { showFilterDialog() }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.uiState.collect { state ->
-                        b.browseTitle.text = state.title
-                        backCallback.isEnabled = state.parentId != null
-                        renderBreadcrumbs(state.breadcrumbs)
-                        adapter.submitList(state.children)
-                        ListStateBinder.bind(
-                            overlay = b.listState.root,
-                            progress = b.listState.listStateProgress,
-                            message = b.listState.listStateMessage,
-                            retry = b.listState.listStateRetry,
-                            content = b.browseList,
-                            state = state.listState,
-                            emptyText = getString(R.string.browse_empty),
-                            errorText = state.errorMessage,
-                            offlineText = getString(R.string.state_offline),
-                            onRetry = { },
-                        )
-                    }
+                    viewModel.uiState.collect { state -> render(state) }
                 }
                 launch {
                     viewModel.messagesFlow.collect { message ->
@@ -107,10 +112,78 @@ class BrowseFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        val current = (requireActivity().application as com.cs426.learningmocha.LearningMochaApp)
+            .settings.colorfulLists
+        if (current == colorfulLists) return
+        colorfulLists = current
+        render(viewModel.uiState.value)
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         binding = null
     }
+
+    private fun render(state: BrowseUiState) {
+        val b = binding ?: return
+        b.browseTitle.text = state.title
+        backCallback.isEnabled = state.parentId != null
+        renderBreadcrumbs(state.breadcrumbs)
+
+        StatusMeterBinder.bind(b.browseMeter, state.currentStats) { status ->
+            // Tapping a share of the meter is the shortest path to "show me only those".
+            val current = state.filter
+            val next = if (current.statuses == setOf(status)) {
+                current.copy(statuses = emptySet())
+            } else {
+                current.copy(statuses = setOf(status))
+            }
+            viewModel.setFilter(next)
+        }
+
+        b.browseFilter.text = if (state.filter.isActive) {
+            getString(R.string.browse_filter_badge, state.filter.activeCount)
+        } else {
+            getString(R.string.browse_filter)
+        }
+        val hidden = state.unfilteredCount - state.children.size
+        b.browseFilterNote.isVisible = hidden > 0
+        if (hidden > 0) {
+            b.browseFilterNote.text =
+                resources.getQuantityString(R.plurals.browse_hidden_by_filter, hidden, hidden)
+        }
+
+        adapter.submitList(rowsOf(state))
+        ListStateBinder.bind(
+            overlay = b.listState.root,
+            progress = b.listState.listStateProgress,
+            message = b.listState.listStateMessage,
+            retry = b.listState.listStateRetry,
+            content = b.browseList,
+            state = state.listState,
+            emptyText = getString(
+                if (state.filter.isActive) R.string.browse_empty_filtered else R.string.browse_empty,
+            ),
+            errorText = state.errorMessage,
+            offlineText = getString(R.string.state_offline),
+            onRetry = { },
+        )
+    }
+
+    private fun rowsOf(state: BrowseUiState): List<BrowseRow> =
+        state.children.mapIndexed { index, node ->
+            BrowseRow(
+                node = node,
+                // A post counts itself in its own subtree, so what is "inside" it is one less.
+                postsInside = (state.stats[node.id]?.total ?: 0)
+                    .let { if (node.type == NodeType.POST) it - 1 else it },
+                directChildren = state.childCounts[node.id] ?: 0,
+                stripe = index % 2 == 1,
+                colorful = colorfulLists,
+            )
+        }
 
     private fun renderBreadcrumbs(crumbs: List<Node>) {
         val row = binding?.browseBreadcrumbs ?: return
@@ -150,9 +223,60 @@ class BrowseFragment : Fragment() {
         row.addView(slash)
     }
 
+    private fun showSortMenu(anchor: View) {
+        PopupMenu(requireContext(), anchor).apply {
+            BrowseSort.entries.forEachIndexed { index, sort ->
+                menu.add(SORT_GROUP, index, index, getString(sort.labelRes))
+            }
+            menu.setGroupCheckable(SORT_GROUP, true, true)
+            menu.findItem(viewModel.uiState.value.sort.ordinal)?.isChecked = true
+            setOnMenuItemClickListener { item ->
+                BrowseSort.entries.getOrNull(item.itemId)?.let { viewModel.setSort(it) }
+                true
+            }
+            show()
+        }
+    }
+
+    private fun showFilterDialog() {
+        val fields = DialogBrowseFilterBinding.inflate(layoutInflater)
+        val current = viewModel.uiState.value.filter
+        fields.filterTypeBranch.isChecked = NodeType.BRANCH in current.types
+        fields.filterTypeFolder.isChecked = NodeType.FOLDER in current.types
+        fields.filterTypePost.isChecked = NodeType.POST in current.types
+        fields.filterStatusNone.isChecked = LearningStatus.NONE in current.statuses
+        fields.filterStatusReading.isChecked = LearningStatus.READING in current.statuses
+        fields.filterStatusProgress.isChecked = LearningStatus.IN_PROGRESS in current.statuses
+        fields.filterStatusFinished.isChecked = LearningStatus.FINISHED in current.statuses
+        fields.filterFavorites.isChecked = current.favoritesOnly
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setView(fields.root)
+            .setNeutralButton(R.string.browse_filter_clear) { _, _ -> viewModel.clearFilter() }
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.browse_filter_apply) { _, _ ->
+                val types = buildSet {
+                    if (fields.filterTypeBranch.isChecked) add(NodeType.BRANCH)
+                    if (fields.filterTypeFolder.isChecked) add(NodeType.FOLDER)
+                    if (fields.filterTypePost.isChecked) add(NodeType.POST)
+                }
+                val statuses = buildSet {
+                    if (fields.filterStatusNone.isChecked) add(LearningStatus.NONE)
+                    if (fields.filterStatusReading.isChecked) add(LearningStatus.READING)
+                    if (fields.filterStatusProgress.isChecked) add(LearningStatus.IN_PROGRESS)
+                    if (fields.filterStatusFinished.isChecked) add(LearningStatus.FINISHED)
+                }
+                viewModel.setFilter(
+                    BrowseFilter(types, statuses, fields.filterFavorites.isChecked),
+                )
+            }
+            .show()
+    }
+
     private fun showNodeMenu(node: Node, anchor: View) {
         PopupMenu(requireContext(), anchor).apply {
             menuInflater.inflate(R.menu.menu_node, menu)
+            menu.findItem(R.id.action_set_status)?.isVisible = node.type == NodeType.POST
             setOnMenuItemClickListener { item ->
                 when (item.itemId) {
                     R.id.action_rename -> {
@@ -161,6 +285,10 @@ class BrowseFragment : Fragment() {
                     }
                     R.id.action_move -> {
                         showMoveDialog(node)
+                        true
+                    }
+                    R.id.action_set_status -> {
+                        pickStatus(node)
                         true
                     }
                     R.id.action_delete -> {
@@ -172,6 +300,19 @@ class BrowseFragment : Fragment() {
             }
             show()
         }
+    }
+
+    private fun pickStatus(node: Node) {
+        val options = LearningStatus.entries
+        val labels = options.map { getString(it.labelRes()) }.toTypedArray()
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.browse_set_status)
+            .setSingleChoiceItems(labels, options.indexOf(node.status)) { dialog, which ->
+                viewModel.setStatus(node, options[which])
+                dialog.dismiss()
+            }
+            .setNegativeButton(R.string.action_cancel, null)
+            .show()
     }
 
     private fun showCreateDialog() {
@@ -193,7 +334,7 @@ class BrowseFragment : Fragment() {
                     val parentId = viewModel.uiState.value.parentId ?: -1L
                     findNavController().navigate(
                         R.id.action_global_edit_post,
-                        bundleOf("postId" to 0L, "parentId" to parentId),
+                        bundleOf("postId" to 0L, "parentId" to parentId, "title" to title),
                     )
                 } else {
                     viewModel.create(type, title)
@@ -219,7 +360,15 @@ class BrowseFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             val parents = viewModel.possibleParents(node.id)
             val labels = mutableListOf(getString(R.string.browse_move_root))
-            labels.addAll(parents.map { it.title })
+            // Posts are offered too: moving a post under a post is how a sub-post is made.
+            labels.addAll(
+                parents.map { parent ->
+                    val kind = getString(
+                        com.cs426.learningmocha.ui.common.NodePalette.typeLabelRes(parent.type),
+                    )
+                    "${parent.title}  ·  $kind"
+                },
+            )
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle(getString(R.string.browse_move_title, node.title))
                 .setItems(labels.toTypedArray()) { _, which ->
@@ -248,28 +397,22 @@ class BrowseFragment : Fragment() {
         )
     }
 
-    private val touchCallback = object : ItemTouchHelper.SimpleCallback(
-        ItemTouchHelper.UP or ItemTouchHelper.DOWN,
-        ItemTouchHelper.START,
-    ) {
+    private val swipeToDelete = object : ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.START) {
         override fun onMove(
             recyclerView: RecyclerView,
             viewHolder: RecyclerView.ViewHolder,
             target: RecyclerView.ViewHolder,
-        ): Boolean {
-            adapter.onItemMove(viewHolder.bindingAdapterPosition, target.bindingAdapterPosition)
-            return true
-        }
+        ): Boolean = false
 
         override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
             val position = viewHolder.bindingAdapterPosition
-            val node = adapter.currentList.getOrNull(position) ?: return
+            val node = adapter.currentList.getOrNull(position)?.node ?: return
             confirmDelete(node, onCancel = { adapter.notifyItemChanged(position) })
         }
+    }
 
-        override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
-            super.clearView(recyclerView, viewHolder)
-            viewModel.persistOrder(adapter.currentIds())
-        }
+    private companion object {
+        /** Menu group for the sort choices, so they can be made mutually exclusive. */
+        const val SORT_GROUP = 1
     }
 }

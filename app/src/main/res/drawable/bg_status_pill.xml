@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tinted at bind time with the status wash, so one shape serves all four states. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="?attr/statusNoneWash" />
+    <corners android:radius="@dimen/chip_corner" />
+</shape>

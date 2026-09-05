@@ -3,13 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/mocha_cream"
+    android:background="?attr/mochaCream"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/mocha_header_bg"
+        android:background="?attr/mochaHeaderBg"
         android:orientation="vertical">
 
         <LinearLayout
@@ -37,7 +37,7 @@
                 android:maxLines="1"
                 android:text="@string/graph_title"
                 android:textAppearance="@style/TextAppearance.Mocha.Title"
-                android:textColor="@color/mocha_brown" />
+                android:textColor="?attr/mochaBrown" />
         </LinearLayout>
 
         <TextView

@@ -15,7 +15,7 @@
             android:layout_height="wrap_content"
             android:text="@string/review_location_heading"
             android:textAppearance="@style/TextAppearance.Mocha.Title"
-            android:textColor="@color/mocha_brown" />
+            android:textColor="?attr/mochaBrown" />
 
         <RadioGroup
             android:id="@+id/review_location_group"

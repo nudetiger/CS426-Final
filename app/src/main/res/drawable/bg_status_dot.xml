@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Legend marker for the status meter; tinted per status at bind time. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="?attr/statusNoneInk" />
+    <size
+        android:width="@dimen/status_dot"
+        android:height="@dimen/status_dot" />
+</shape>

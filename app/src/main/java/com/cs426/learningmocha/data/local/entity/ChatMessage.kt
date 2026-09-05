@@ -24,8 +24,15 @@ data class ChatMessage(
     val text: String,
     val actionsJson: String? = null,
     val status: String = STATUS_OK,
+    /**
+     * The chat mode this turn was sent in ("answer", "modify", "modify+organize", …).
+     * Stored rather than derived so scrolling back through a conversation still shows what
+     * each exchange was asking for, long after the mode chips have moved on.
+     */
+    val mode: String = MODE_ANSWER,
 ) {
     companion object {
+        const val MODE_ANSWER = "answer"
         const val ROLE_USER = "user"
         const val ROLE_ASSISTANT = "assistant"
         const val STATUS_OK = "ok"

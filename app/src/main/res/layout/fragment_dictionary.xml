@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/mocha_cream">
+    android:background="?attr/mochaCream">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -13,7 +13,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/mocha_header_bg"
+            android:background="?attr/mochaHeaderBg"
             android:gravity="center_vertical"
             android:minHeight="@dimen/header_min_height"
             android:orientation="horizontal"
@@ -36,7 +36,7 @@
                 android:maxLines="1"
                 android:text="@string/dictionary_title"
                 android:textAppearance="@style/TextAppearance.Mocha.Title"
-                android:textColor="@color/mocha_brown" />
+                android:textColor="?attr/mochaBrown" />
         </LinearLayout>
 
         <EditText
@@ -56,7 +56,7 @@
             android:minHeight="@dimen/touch_target"
             android:padding="@dimen/space_s"
             android:textAppearance="@style/TextAppearance.Mocha.Body"
-            android:textColorHint="@color/mocha_text_secondary" />
+            android:textColorHint="?attr/mochaTextSecondary" />
 
         <HorizontalScrollView
             android:layout_width="match_parent"
@@ -125,7 +125,7 @@
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/space_m"
         android:contentDescription="@string/cd_dict_add"
-        app:backgroundTint="@color/mocha_brown"
+        app:backgroundTint="?attr/mochaBrown"
         app:srcCompat="@drawable/ic_add"
-        app:tint="@color/mocha_on_primary" />
+        app:tint="?attr/mochaOnPrimary" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

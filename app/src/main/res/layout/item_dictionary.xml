@@ -41,7 +41,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:textAppearance="@style/TextAppearance.Mocha.Caption"
-            android:textColor="@color/mocha_brown" />
+            android:textColor="?attr/mochaBrown" />
     </LinearLayout>
 
     <ImageButton

@@ -12,6 +12,7 @@ import com.cs426.learningmocha.data.repo.SearchRepository
 import com.cs426.learningmocha.data.repo.TreeRepository
 import com.cs426.learningmocha.net.ApiClient
 import com.cs426.learningmocha.net.SseChatClient
+import com.cs426.learningmocha.ui.common.AppTheme
 
 /**
  * Learning Mocha — local-first personal learning / knowledge management app.
@@ -50,8 +51,9 @@ class LearningMochaApp : Application() {
     override fun onCreate() {
         super.onCreate()
         // Theme must be applied before the first view inflates; this reads SharedPreferences
-        // only, so it does not open the database and cold start stays cheap.
-        settings.applyTheme()
+        // only, so it does not open the database and cold start stays cheap. The palette half
+        // of the choice is applied by MainActivity, which is the thing that owns a window.
+        AppTheme.of(settings.themeKey).applyNightMode()
         BackupReminder.createChannel(this)
         BackupReminder.notifyIfOverdue(this, settings)
     }

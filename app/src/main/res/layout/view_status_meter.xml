@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The breakdown of a folder by learning status, drawn like a disk-usage bar: one stripe per
+     status, sized by share, with the counts spelled out underneath for anyone who cannot rely
+     on the colours. Each legend column is tappable and filters the list to that status.
+     Bound by ui/common/StatusMeterBinder. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/meter_root"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/meter_summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/space_xs"
+        android:textAppearance="@style/TextAppearance.Mocha.Caption"
+        android:textStyle="bold" />
+
+    <!-- clipToOutline makes the square stripes take the track's rounded ends. -->
+    <LinearLayout
+        android:id="@+id/meter_bar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/meter_height"
+        android:background="@drawable/bg_meter_track"
+        android:clipToOutline="true"
+        android:orientation="horizontal"
+        android:weightSum="1">
+
+        <View
+            android:id="@+id/meter_none"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:background="?attr/statusNoneInk" />
+
+        <View
+            android:id="@+id/meter_reading"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:background="?attr/statusReadingInk" />
+
+        <View
+            android:id="@+id/meter_progress"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:background="?attr/statusProgressInk" />
+
+        <View
+            android:id="@+id/meter_finished"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:background="?attr/statusFinishedInk" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:baselineAligned="false"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/legend_none"
+            style="@style/Widget.Mocha.MeterLegend">
+
+            <ImageView
+                android:id="@+id/legend_none_dot"
+                style="@style/Widget.Mocha.MeterDot" />
+
+            <TextView
+                android:id="@+id/legend_none_value"
+                style="@style/Widget.Mocha.MeterValue" />
+
+            <TextView
+                style="@style/Widget.Mocha.MeterLabel"
+                android:text="@string/status_none" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/legend_reading"
+            style="@style/Widget.Mocha.MeterLegend">
+
+            <ImageView
+                android:id="@+id/legend_reading_dot"
+                style="@style/Widget.Mocha.MeterDot" />
+
+            <TextView
+                android:id="@+id/legend_reading_value"
+                style="@style/Widget.Mocha.MeterValue" />
+
+            <TextView
+                style="@style/Widget.Mocha.MeterLabel"
+                android:text="@string/status_reading" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/legend_progress"
+            style="@style/Widget.Mocha.MeterLegend">
+
+            <ImageView
+                android:id="@+id/legend_progress_dot"
+                style="@style/Widget.Mocha.MeterDot" />
+
+            <TextView
+                android:id="@+id/legend_progress_value"
+                style="@style/Widget.Mocha.MeterValue" />
+
+            <TextView
+                style="@style/Widget.Mocha.MeterLabel"
+                android:text="@string/status_in_progress" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/legend_finished"
+            style="@style/Widget.Mocha.MeterLegend">
+
+            <ImageView
+                android:id="@+id/legend_finished_dot"
+                style="@style/Widget.Mocha.MeterDot" />
+
+            <TextView
+                android:id="@+id/legend_finished_value"
+                style="@style/Widget.Mocha.MeterValue" />
+
+            <TextView
+                style="@style/Widget.Mocha.MeterLabel"
+                android:text="@string/status_finished" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

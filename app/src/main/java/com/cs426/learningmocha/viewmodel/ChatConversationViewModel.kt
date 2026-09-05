@@ -8,6 +8,7 @@ import com.cs426.learningmocha.LearningMochaApp
 import com.cs426.learningmocha.ai.chat.SendResult
 import com.cs426.learningmocha.ai.chat.StreamingBubble
 import com.cs426.learningmocha.data.local.entity.ChatMessage
+import com.cs426.learningmocha.ui.chat.ChatModes
 import com.cs426.learningmocha.ui.common.ListState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
@@ -27,7 +28,8 @@ data class ChatConversationUiState(
     val messages: List<ChatMessage> = emptyList(),
     val sharedContext: Map<Long, Int> = emptyMap(),
     val streaming: StreamingBubble? = null,
-    val mode: String = "answer",
+    /** Wire mode for this conversation: "answer", or the action modes joined by "+". */
+    val mode: String = ChatModes.ANSWER,
     val sending: Boolean = false,
     val online: Boolean = true,
     val errorMessage: String? = null,
@@ -41,7 +43,7 @@ class ChatConversationViewModel(
     private val app = application as LearningMochaApp
     val sessionId: Long = savedStateHandle.get<Long>(ARG_SESSION_ID) ?: 0L
 
-    private val mode = MutableStateFlow("answer")
+    private val mode = MutableStateFlow(ChatModes.ANSWER)
     private val online = MutableStateFlow(true)
 
     /** Owned by the repository, so it stays true across a trip away from this screen. */
@@ -98,6 +100,20 @@ class ChatConversationViewModel(
         mode.value = value
     }
 
+    /**
+     * What the message about to be sent looks like it needs, or null when the picked mode
+     * already fits. The screen asks before sending; nothing here changes the mode by itself.
+     */
+    fun suggestedModeFor(text: String): String? {
+        if (!app.settings.suggestChatMode) return null
+        return com.cs426.learningmocha.ui.chat.ChatModeHint.suggest(mode.value, text)
+    }
+
+    /** Stops the mode prompt for good, from the "do not ask again" box on that dialog. */
+    fun stopSuggestingModes() {
+        app.settings.suggestChatMode = false
+    }
+
     fun ping() {
         viewModelScope.launch { online.value = app.chatRepository.ping() }
     }
@@ -105,8 +121,13 @@ class ChatConversationViewModel(
     suspend fun sessionTitle(): String =
         app.chatRepository.getSession(sessionId)?.title.orEmpty()
 
-    fun send(text: String) {
+    /**
+     * @param overrideMode set when the user accepted a suggested switch, so the message goes
+     *   under the mode they just agreed to rather than the one the chips still showed
+     */
+    fun send(text: String, overrideMode: String? = null) {
         if (app.chatRepository.inFlight(sessionId) != null) return
+        overrideMode?.let { mode.value = it }
         observe(app.chatRepository.sendAsync(sessionId, mode.value, text))
     }
 

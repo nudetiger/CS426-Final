@@ -14,12 +14,14 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
-import androidx.core.content.ContextCompat
+import androidx.annotation.AttrRes
+import androidx.annotation.ColorInt
 import com.cs426.learningmocha.R
 import com.cs426.learningmocha.data.local.entity.LearningStatus
 import com.cs426.learningmocha.data.repo.GraphEdge
 import com.cs426.learningmocha.data.repo.GraphEdgeType
 import com.cs426.learningmocha.data.repo.GraphNode
+import com.cs426.learningmocha.ui.common.themeColor
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -76,14 +78,14 @@ class GraphView @JvmOverloads constructor(
         style = Paint.Style.STROKE
         strokeWidth = dp(1.6f)
         strokeCap = Paint.Cap.ROUND
-        color = color(R.color.mocha_brown)
+        color = color(R.attr.mochaBrown)
         alpha = 150
     }
 
     private val tagPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = dp(0.8f)
-        color = color(R.color.mocha_taupe)
+        color = color(R.attr.mochaTaupe)
         alpha = 90
     }
 
@@ -94,28 +96,28 @@ class GraphView @JvmOverloads constructor(
     private val nodeOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = dp(1.5f)
-        color = color(R.color.mocha_cream)
+        color = color(R.attr.mochaCream)
     }
 
     private val accentPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        color = color(R.color.mocha_on_primary)
+        color = color(R.attr.mochaOnPrimary)
     }
 
     private val selectionPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = dp(2.5f)
-        color = color(R.color.mocha_text_primary)
+        color = color(R.attr.mochaTextPrimary)
     }
 
     private val labelPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-        color = color(R.color.mocha_text_secondary)
+        color = color(R.attr.mochaTextSecondary)
         textSize = resources.getDimension(R.dimen.text_caption)
         textAlign = Paint.Align.CENTER
     }
 
     private val selectedLabelPaint = TextPaint(labelPaint).apply {
-        color = color(R.color.mocha_text_primary)
+        color = color(R.attr.mochaTextPrimary)
         isFakeBoldText = true
     }
 
@@ -457,17 +459,18 @@ class GraphView @JvmOverloads constructor(
         (baseRadius + degreeRadius * sqrt(degree.toFloat())).coerceAtMost(maxRadius)
 
     private fun fillColor(status: LearningStatus): Int = when (status) {
-        LearningStatus.FINISHED -> color(R.color.mocha_sage)
-        LearningStatus.READING -> color(R.color.mocha_brown)
-        LearningStatus.IN_PROGRESS -> color(R.color.mocha_brown_deep)
-        LearningStatus.NONE -> color(R.color.mocha_taupe)
+        LearningStatus.FINISHED -> color(R.attr.mochaSage)
+        LearningStatus.READING -> color(R.attr.mochaBrown)
+        LearningStatus.IN_PROGRESS -> color(R.attr.mochaBrownDeep)
+        LearningStatus.NONE -> color(R.attr.mochaTaupe)
     }
 
     private fun screenX(index: Int): Float = positions[index * 2] * scale + translateX
 
     private fun screenY(index: Int): Float = positions[index * 2 + 1] * scale + translateY
 
-    private fun color(id: Int): Int = ContextCompat.getColor(context, id)
+    @ColorInt
+    private fun color(@AttrRes id: Int): Int = context.themeColor(id)
 
     private fun dp(value: Float): Float = value * density
 

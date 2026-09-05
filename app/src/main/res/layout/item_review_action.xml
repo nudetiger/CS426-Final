@@ -49,7 +49,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.Mocha.Caption"
-            android:textColor="@color/mocha_error"
+            android:textColor="?attr/mochaError"
             android:visibility="gone" />
     </LinearLayout>
 

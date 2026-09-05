@@ -2,6 +2,7 @@ package com.cs426.learningmocha.ui.reader
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -11,7 +12,6 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.StringRes
-import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -31,8 +31,11 @@ import com.cs426.learningmocha.databinding.ItemResourceBinding
 import com.cs426.learningmocha.ui.common.ChipBar
 import com.cs426.learningmocha.ui.common.ListState
 import com.cs426.learningmocha.ui.common.ListStateBinder
+import com.cs426.learningmocha.ui.common.NodePalette
 import com.cs426.learningmocha.ui.common.WikiMarkdown
+import com.cs426.learningmocha.ui.common.YouTubeThumbnails
 import com.cs426.learningmocha.ui.common.labelRes
+import com.cs426.learningmocha.ui.common.themeColor
 import com.cs426.learningmocha.viewmodel.PostReaderViewModel
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -62,6 +65,15 @@ class PostReaderFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val b = binding ?: return
         markwon = buildMarkwon()
+
+        // Reading comfort from Settings. Applied here rather than in the theme because the
+        // values are per-user, and only long-form body text should follow them.
+        val settings = (requireActivity().application as com.cs426.learningmocha.LearningMochaApp)
+            .settings
+        b.readerBody.textSize =
+            resources.getDimension(R.dimen.reader_text) / resources.displayMetrics.scaledDensity *
+            settings.readerTextScale
+        b.readerBody.setLineSpacing(0f, settings.readerLineSpacing)
 
         b.readerBack.setOnClickListener { findNavController().popBackStack() }
         b.readerFavorite.setOnClickListener { viewModel.toggleFavorite() }
@@ -114,6 +126,14 @@ class PostReaderFragment : Fragment() {
                             },
                         )
                         b.readerStatus.setText(post.status.labelRes())
+                        // The same status colours Browse uses, so the button is recognisable
+                        // as the thing that was amber in the list a tap ago.
+                        b.readerStatus.setTextColor(
+                            requireContext().themeColor(NodePalette.statusInk(post.status)),
+                        )
+                        b.readerStatus.backgroundTintList = ColorStateList.valueOf(
+                            requireContext().themeColor(NodePalette.statusWash(post.status)),
+                        )
                         b.readerStatus.contentDescription = getString(
                             R.string.reader_cd_status,
                             getString(post.status.labelRes()),
@@ -138,6 +158,7 @@ class PostReaderFragment : Fragment() {
                             b.readerResources,
                             state.resources,
                         )
+                        bindNodeRows(b.readerChildrenHeader, b.readerChildren, state.children)
                         bindNodeRows(b.readerBacklinksHeader, b.readerBacklinks, state.backlinks)
                         bindNodeRows(b.readerRelatedHeader, b.readerRelated, state.related)
                     }
@@ -204,12 +225,12 @@ class PostReaderFragment : Fragment() {
         val gap = resources.getDimensionPixelSize(R.dimen.space_s)
         val content = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundResource(R.color.mocha_cream)
+            setBackgroundColor(context.themeColor(R.attr.mochaCream))
             setPadding(gutter, gutter, gutter, gutter)
             addView(
                 TextView(context).apply {
                     setTextAppearance(R.style.TextAppearance_Mocha_Title)
-                    setTextColor(ContextCompat.getColor(context, R.color.mocha_brown))
+                    setTextColor(context.themeColor(R.attr.mochaBrown))
                     text = entry.term
                 },
             )
@@ -269,8 +290,38 @@ class PostReaderFragment : Fragment() {
                 if (item.type == ResourceType.YOUTUBE) R.drawable.ic_play else R.drawable.ic_post,
             )
             card.resourceIcon.contentDescription = typeLabel
+            bindThumbnail(card, item)
             card.root.setOnClickListener { openResource(item, title) }
             container.addView(card.root)
+        }
+    }
+
+    /**
+     * Swaps the play glyph for the video's own poster frame, which is the only thing on the
+     * card that says *which* video it is — the title of an inline link is usually just the URL.
+     * The glyph stays as the fallback: no network, or a video with no thumbnail, leaves the
+     * card exactly as it looked before rather than a grey rectangle.
+     */
+    private fun bindThumbnail(card: ItemResourceBinding, item: ResourceItem) {
+        val videoId = if (item.type == ResourceType.YOUTUBE) {
+            YouTubePlayerSheet.videoId(item.url)
+        } else {
+            null
+        }
+        if (videoId == null) {
+            card.resourceThumbFrame.isVisible = false
+            card.resourceIcon.isVisible = true
+            return
+        }
+        card.resourceThumbFrame.isVisible = true
+        card.resourceIcon.isVisible = false
+        YouTubeThumbnails.into(
+            card.resourceThumb,
+            videoId,
+            viewLifecycleOwner.lifecycleScope,
+        ) {
+            card.resourceThumbFrame.isVisible = false
+            card.resourceIcon.isVisible = true
         }
     }
 

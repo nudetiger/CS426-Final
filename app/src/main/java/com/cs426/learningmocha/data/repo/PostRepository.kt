@@ -13,6 +13,7 @@ import com.cs426.learningmocha.data.local.entity.NodeType
 import com.cs426.learningmocha.data.local.entity.ResourceItem
 import com.cs426.learningmocha.data.local.entity.ResourceType
 import com.cs426.learningmocha.data.local.entity.Tag
+import com.cs426.learningmocha.util.TitleDedup
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
@@ -22,6 +23,8 @@ import kotlinx.coroutines.flow.mapLatest
 data class PostDetail(
     val post: Node,
     val tags: List<Tag>,
+    /** Sub-posts and any folders filed under this post, so the reader can offer them. */
+    val children: List<Node>,
     val backlinks: List<Node>,
     val related: List<Node>,
     val resources: List<ResourceItem>,
@@ -51,6 +54,7 @@ class PostRepository(private val db: AppDatabase) {
             PostDetail(
                 post = node,
                 tags = knowledge.tagsForPost(id),
+                children = dao.getChildren(id),
                 backlinks = knowledge.backlinks(id),
                 related = related(id),
                 resources = InlineResources.merge(id, content, knowledge.resourcesForPost(id)),
@@ -102,6 +106,12 @@ class PostRepository(private val db: AppDatabase) {
 
     suspend fun tagsForPost(id: Long): List<Tag> = knowledge.tagsForPost(id)
 
+    /**
+     * Creates a post. [parentId] may name another post — that is a sub-post, and Browse walks
+     * into it like any other container. A title another post already holds is numbered rather
+     * than refused (see [TitleDedup]), so a create never costs the user the write; the caller
+     * learns which title was actually used by reading the returned row.
+     */
     suspend fun createPost(
         parentId: Long?,
         title: String,
@@ -110,15 +120,12 @@ class PostRepository(private val db: AppDatabase) {
         tagNames: List<String> = emptyList(),
         terms: List<DictionaryEntry> = emptyList(),
     ): Long {
-        val trimmed = title.trim()
-        require(trimmed.isNotEmpty()) { "Title is required" }
+        val wanted = title.trim()
+        require(wanted.isNotEmpty()) { "Title is required" }
         val max = if (parentId == null) dao.maxOrderRoot() else dao.maxOrder(parentId)
         val now = System.currentTimeMillis()
         return db.withTransaction {
-            requireTitleFree(trimmed, null)
-            require(parentId == null || dao.getById(parentId)?.type != NodeType.POST) {
-                "Posts cannot contain other items"
-            }
+            val trimmed = freeTitle(wanted, null)
             val id = dao.insert(
                 Node(
                     parentId = parentId,
@@ -333,6 +340,18 @@ class PostRepository(private val db: AppDatabase) {
         require(existing == null || existing.id == selfId) {
             "A post called \"$title\" already exists"
         }
+    }
+
+    /**
+     * The title [wanted] if it is free, else the first numbered variant that is — "Raft (2)",
+     * "Raft (3)", and so on. [selfId] is the post being written, so re-saving a post under its
+     * own title is not treated as a clash with itself.
+     */
+    suspend fun freeTitle(wanted: String, selfId: Long?): String {
+        val taken = dao.postTitleIds()
+            .filter { it.id != selfId }
+            .mapTo(HashSet()) { TitleDedup.lower(it.title) }
+        return TitleDedup.unique(wanted, taken)
     }
 
     suspend fun touch(id: Long) {

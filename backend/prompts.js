@@ -4,13 +4,35 @@
 
 export const MODES = ["answer", "suggest", "modify", "organize"];
 
+/**
+ * A request may combine the three action modes ("modify+organize"), because a single
+ * ask is often both — "write me posts on X and file them properly". "answer" is the
+ * one mode that cannot be combined: it is read-only by contract.
+ *
+ * @param {string} raw mode field as the app sent it
+ * @returns {string[]|null} the modes it names, or null if any of them is unknown
+ */
+export function parseModes(raw) {
+  const parts = String(raw ?? "answer")
+    .split("+")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (parts.length === 0) return null;
+  if (parts.some((part) => !MODES.includes(part))) return null;
+  const unique = [...new Set(parts)];
+  if (unique.includes("answer") && unique.length > 1) return null;
+  return unique;
+}
+
 const ACTION_PROTOCOL = `
 You operate on the user's LOCAL knowledge base only through structured JSON
 actions. You can never touch their database directly.
 
-Knowledge model: branches and folders contain children; posts are markdown
-articles with status (READING | IN_PROGRESS | FINISHED), favorite flag, tags,
-dictionary entries, and resources (e.g. YouTube links).
+Knowledge model: branches, folders AND posts can all contain children. A post
+nested under another post is a sub-post, which is a normal and encouraged shape
+for breaking a long topic into parts. Posts are markdown articles with a status
+(NONE | READING | IN_PROGRESS | FINISHED), a favorite flag, tags, dictionary
+entries, and resources (e.g. YouTube links).
 
 Reply with EXACTLY ONE JSON object, no prose outside it:
 
@@ -60,6 +82,15 @@ Rules:
 - The user reviews every change before it is applied; never claim a change
   has already happened.
 - Internal links inside markdown content use [[Post Title]] syntax.
+- Any existing item can be a parent, posts included. Use a sub-post when a topic
+  is genuinely a part of its parent, and a folder when it is just a grouping.
+- Post titles are unique library-wide. Creating one whose title is taken is not
+  an error: the app stores it as "Title (2)". So do not invent awkward titles to
+  dodge a collision -- but do prefer update_post when you mean to edit what is
+  already there.
+- create_branch and create_folder are idempotent: naming a container that already
+  sits under that parent reuses it instead of making a second one. Use this freely
+  when reorganizing; you do not have to check whether a folder exists first.
 `;
 
 const MODE_BRIEFS = {
@@ -84,11 +115,18 @@ const MODE_BRIEFS = {
  * @returns {{role: string, content: string}[]} messages for DeepSeek
  */
 export function buildMessages({ mode, kbIndex, messages, toolResults }) {
+  const modes = parseModes(mode) ?? ["answer"];
+  const brief =
+    modes.length === 1
+      ? MODE_BRIEFS[modes[0]]
+      : "The user asked for several of these at once, so do all of them in ONE " +
+        "actions batch:\n" +
+        modes.map((m) => `- ${MODE_BRIEFS[m]}`).join("\n");
   const system = [
     "You are Mocha, the learning assistant inside the Learning Mocha app: " +
       "a personal Wikipedia + learning tracker. Be calm, precise, encouraging.",
     ACTION_PROTOCOL,
-    MODE_BRIEFS[mode] ?? MODE_BRIEFS.answer,
+    brief,
     kbIndex
       ? `The user's knowledge base index (id-less titles, trust the app for ids):\n${kbIndex}`
       : "The user's knowledge base is currently empty.",

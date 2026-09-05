@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/mochaCream"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/mochaHeaderBg"
+        android:gravity="center_vertical"
+        android:minHeight="@dimen/header_min_height"
+        android:orientation="horizontal"
+        android:paddingStart="@dimen/space_xs"
+        android:paddingEnd="@dimen/content_gutter">
+
+        <ImageButton
+            android:id="@+id/backup_back"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/cd_back"
+            android:src="@drawable/ic_back" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_backup"
+            android:textAppearance="@style/TextAppearance.Mocha.Title"
+            android:textColor="?attr/mochaBrown" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="@dimen/content_gutter"
+            android:paddingTop="@dimen/space_m"
+            android:paddingEnd="@dimen/content_gutter"
+            android:paddingBottom="@dimen/space_l">
+
+            <TextView
+                android:id="@+id/settings_backup_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card"
+                android:padding="@dimen/space_m"
+                android:text="@string/settings_backup_never"
+                android:textAppearance="@style/TextAppearance.Mocha.Body" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_s"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/settings_export"
+                    style="@style/Widget.Mocha.ToolbarButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_export" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/settings_import"
+                    style="@style/Widget.Mocha.ToolbarButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_import" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_backup_help"
+                android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/settings_backup_reminder"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_l"
+                android:minHeight="@dimen/touch_target"
+                android:text="@string/settings_backup_reminder"
+                android:textAppearance="@style/TextAppearance.Mocha.Body" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

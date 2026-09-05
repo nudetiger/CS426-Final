@@ -31,10 +31,11 @@ class MigrationTest {
     /**
      * v1 predates `exportSchema`, so there is no 1.json for MigrationTestHelper to build from —
      * the v1 file is recreated by hand instead. Opening the result through Room still validates
-     * the end state: Room compares the live schema against v3 and throws on any mismatch.
+     * the end state: Room compares the live schema against the current version and throws on
+     * any mismatch, so this covers every migration in the chain at once.
      */
     @Test
-    fun migrates1To3KeepingPosts() {
+    fun migratesFromV1KeepingPosts() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         context.deleteDatabase(dbName)
         val v1 = android.database.sqlite.SQLiteDatabase.openOrCreateDatabase(
@@ -75,7 +76,11 @@ class MigrationTest {
             InstrumentationRegistry.getInstrumentation().targetContext,
             AppDatabase::class.java,
             dbName,
-        ).addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
+        ).addMigrations(
+            AppDatabase.MIGRATION_1_2,
+            AppDatabase.MIGRATION_2_3,
+            AppDatabase.MIGRATION_3_4,
+        )
             .allowMainThreadQueries()
             .build()
 
@@ -124,6 +129,30 @@ class MigrationTest {
         db.query("SELECT COUNT(*) FROM chat_messages").use { c ->
             assertTrue(c.moveToFirst())
             assertEquals(0, c.getInt(0))
+        }
+    }
+
+    /**
+     * Chat rows written before modes were recorded have to survive with a mode, not a null.
+     * They are stamped "answer" because that was the default and the one mode that never
+     * proposes changes — an old row can therefore never be re-coloured as something it wasn't.
+     */
+    @Test
+    fun migrates3To4StampingOldMessagesAsAnswer() {
+        helper.createDatabase(dbName, 3).use { db ->
+            db.execSQL("INSERT INTO chat_sessions (id, title, createdAt) VALUES (1, 'Old', 1)")
+            db.execSQL(
+                "INSERT INTO chat_messages (id, sessionId, role, text, actionsJson, status) " +
+                    "VALUES (1, 1, 'user', 'hello', NULL, 'ok')",
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(dbName, 4, true, AppDatabase.MIGRATION_3_4)
+
+        db.query("SELECT text, mode FROM chat_messages WHERE id = 1").use { c ->
+            assertTrue("the message survived", c.moveToFirst())
+            assertEquals("hello", c.getString(0))
+            assertEquals("answer", c.getString(1))
         }
     }
 }

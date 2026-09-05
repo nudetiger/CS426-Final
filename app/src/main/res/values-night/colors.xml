@@ -15,4 +15,36 @@
     <color name="mocha_on_primary">#2A2420</color>
     <color name="mocha_divider">#453C35</color>
     <color name="mocha_error">#D97B6C</color>
+
+    <!-- Same four hues, lifted and desaturated so they read on a dark ground; the washes
+         become deep tints rather than pale ones, keeping the ink/wash roles identical. -->
+    <color name="status_none_ink">#E99183</color>
+    <color name="status_none_wash">#4A2E2A</color>
+    <color name="status_reading_ink">#E7BE6A</color>
+    <color name="status_reading_wash">#4A3B20</color>
+    <color name="status_progress_ink">#83B6DE</color>
+    <color name="status_progress_wash">#25384A</color>
+    <color name="status_finished_ink">#84C39A</color>
+    <color name="status_finished_wash">#25402F</color>
+
+    <color name="type_branch_ink">#B79AE8</color>
+    <color name="type_branch_wash">#332A47</color>
+    <color name="type_folder_ink">#6FCCCC</color>
+    <color name="type_folder_wash">#1E3B3B</color>
+    <color name="type_post_ink">#E0A071</color>
+    <color name="type_post_wash">#432E1F</color>
+
+    <color name="mode_answer_ink">#9DC0AB</color>
+    <color name="mode_answer_wash">#28362D</color>
+    <color name="mode_suggest_ink">#E7BE6A</color>
+    <color name="mode_suggest_wash">#3F3320</color>
+    <color name="mode_modify_ink">#83B6DE</color>
+    <color name="mode_modify_wash">#25384A</color>
+    <color name="mode_organize_ink">#B79AE8</color>
+    <color name="mode_organize_wash">#332A47</color>
+
+    <color name="mocha_row_even">#332C27</color>
+    <color name="mocha_row_odd">#3B332D</color>
+
+    <color name="mocha_favorite">#F0C64B</color>
 </resources>

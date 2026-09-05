@@ -15,4 +15,44 @@
     <color name="mocha_on_primary">#FFFBF7</color>
     <color name="mocha_divider">#E8DDD3</color>
     <color name="mocha_error">#B54A3C</color>
+
+    <!-- Learning status. Each has a saturated "ink" for dots, bars and text, and a "wash"
+         pale enough to sit behind body text at AA contrast. The hues are the ones the app
+         has to teach once and then never explain again: red = untouched, amber = reading,
+         blue = mid-flight, green = done. -->
+    <color name="status_none_ink">#C2564A</color>
+    <color name="status_none_wash">#FBE4E0</color>
+    <color name="status_reading_ink">#C68A1E</color>
+    <color name="status_reading_wash">#FBEED2</color>
+    <color name="status_progress_ink">#3B7BAE</color>
+    <color name="status_progress_wash">#DCE9F5</color>
+    <color name="status_finished_ink">#43855A</color>
+    <color name="status_finished_wash">#DCEEE2</color>
+
+    <!-- Node types, so a branch, a folder and a post are told apart by hue before the label
+         is read. Warm enough to still belong to the coffee palette. -->
+    <color name="type_branch_ink">#8257C4</color>
+    <color name="type_branch_wash">#EBE2F8</color>
+    <color name="type_folder_ink">#1F8F8F</color>
+    <color name="type_folder_wash">#D9F0F0</color>
+    <color name="type_post_ink">#B96A33</color>
+    <color name="type_post_wash">#FAE7D8</color>
+
+    <!-- Chat modes. A bubble keeps the colour of the mode it was sent in, so scrolling back
+         through a conversation shows at a glance what each exchange was asking for. -->
+    <color name="mode_answer_ink">#5E7F6B</color>
+    <color name="mode_answer_wash">#E2EDE6</color>
+    <color name="mode_suggest_ink">#C68A1E</color>
+    <color name="mode_suggest_wash">#FBEED2</color>
+    <color name="mode_modify_ink">#3B7BAE</color>
+    <color name="mode_modify_wash">#DCE9F5</color>
+    <color name="mode_organize_ink">#8257C4</color>
+    <color name="mode_organize_wash">#EBE2F8</color>
+
+    <!-- Zebra striping for list rows. The odd row is barely tinted: enough to follow a long
+         row across the screen, not enough to read as a different kind of item. -->
+    <color name="mocha_row_even">#FFFBF7</color>
+    <color name="mocha_row_odd">#F8EFE6</color>
+
+    <color name="mocha_favorite">#D9A400</color>
 </resources>

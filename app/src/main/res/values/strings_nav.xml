@@ -8,9 +8,4 @@
         <item quantity="one">%d post</item>
         <item quantity="other">%d posts</item>
     </plurals>
-
-    <plurals name="home_library_posts">
-        <item quantity="one">%d post in your library</item>
-        <item quantity="other">%d posts in your library</item>
-    </plurals>
 </resources>

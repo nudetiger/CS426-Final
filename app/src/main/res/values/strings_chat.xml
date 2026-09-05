@@ -4,6 +4,14 @@
     <string name="chat_stream_typing">Mocha is typing…</string>
     <string name="chat_stream_working">Mocha is working…</string>
 
+    <!-- Mode mismatch prompt. Both buttons send; the question is only which mode. -->
+    <string name="chat_mode_switch_title">Switch mode?</string>
+    <string name="chat_mode_switch_message">This looks like a %2$s request, but the mode is set to %1$s. Answer mode never changes your library.</string>
+    <string name="chat_mode_switch_accept">Switch and send</string>
+    <string name="chat_mode_switch_keep">Send as is</string>
+    <string name="chat_mode_switch_remember">Stop asking me this</string>
+    <string name="chat_modes_hint">Pick one or more. Suggest, Modify and Organize can be combined.</string>
+
     <plurals name="chat_shared_with_ai">
         <item quantity="one">Shared with AI: %1$d note</item>
         <item quantity="other">Shared with AI: %1$d notes</item>

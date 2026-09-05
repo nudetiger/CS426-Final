@@ -34,9 +34,39 @@
 
     <!-- Settings -->
     <string name="settings_appearance">Appearance</string>
-    <string name="settings_theme_system">Follow system</string>
-    <string name="settings_theme_light">Light</string>
-    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_appearance_summary">Theme, reading size, list colour</string>
+    <string name="settings_ai_summary">Gateway address and assistant behaviour</string>
+    <string name="settings_privacy_summary">What leaves this device</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_reading">Reading</string>
+    <string name="settings_reading_sample">Mocha keeps every note on this device. Drag the sliders until this paragraph is comfortable to read — post bodies use exactly these settings.</string>
+    <string name="settings_text_size">Text size</string>
+    <string name="settings_text_size_value">Text size · %1$d%%</string>
+    <string name="settings_line_spacing">Line spacing</string>
+    <string name="settings_line_spacing_value">Line spacing · %1$.1f×</string>
+    <string name="settings_reading_reset">Reset to default</string>
+    <string name="settings_lists">Lists</string>
+    <string name="settings_colorful">Colour-code lists</string>
+    <string name="settings_colorful_help">Tints each row by learning status and stripes alternating rows in Browse. Turn it off for a plainer list.</string>
+    <string name="settings_backend_address">Gateway address</string>
+    <string name="settings_assistant">Assistant</string>
+    <string name="settings_suggest_mode">Offer to switch mode</string>
+    <string name="settings_suggest_mode_help">Asks before sending when a message looks like it needs a different chat mode — for example asking for a new post while the mode is still Answer.</string>
+    <string name="settings_backup_help">Exports write a .mocha.json file you choose. Importing can merge into your library or replace it entirely.</string>
+    <string name="settings_theme_help">The first three are the Mocha palette; the rest are fixed dark schemes.</string>
+    <string name="theme_mocha_system">Mocha</string>
+    <string name="theme_mocha_system_caption">Follows your phone</string>
+    <string name="theme_mocha_light">Mocha Light</string>
+    <string name="theme_mocha_light_caption">Warm cream and coffee</string>
+    <string name="theme_mocha_dark">Mocha Dark</string>
+    <string name="theme_mocha_dark_caption">The same palette after dark</string>
+    <string name="theme_rose_pine">Rosé Pine</string>
+    <string name="theme_rose_pine_caption">Muted plum, foam and gold</string>
+    <string name="theme_catppuccin">Catppuccin</string>
+    <string name="theme_catppuccin_caption">Pastels on deep indigo</string>
+    <string name="theme_nord">Nord</string>
+    <string name="theme_nord_caption">Arctic blue and slate</string>
+    <string name="cd_theme_selected">Selected theme</string>
     <string name="settings_backend">AI gateway</string>
     <string name="settings_backend_hint">http://10.0.2.2:8787/</string>
     <string name="settings_backend_help">Address of your Learning Mocha backend. Use 10.0.2.2 on the emulator, or your computer\'s LAN address on a real device. If you leave out http://, it is added for you.</string>
@@ -83,11 +113,11 @@
     <string name="backup_reminder_text">It has been a week since your last export.</string>
 
     <!-- Home -->
-    <string name="home_brand">Learning Mocha</string>
+    <!-- Two halves of the wordmark, because the cup is set between them. -->
+    <string name="home_brand_learning">Learning</string>
+    <string name="home_brand_mocha">Mocha</string>
     <string name="home_tagline">Your personal Wikipedia</string>
-    <string name="home_greeting_morning">Good morning</string>
-    <string name="home_greeting_afternoon">Good afternoon</string>
-    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_section_progress">Your library</string>
     <string name="home_section_continue">Continue reading</string>
     <string name="home_section_recents">Recent posts</string>
     <string name="home_section_branches">Branches</string>
@@ -157,6 +187,7 @@
     <string name="reader_status_title">Learning status</string>
     <string name="reader_terms">Terms</string>
     <string name="reader_dictionary">Open dictionary</string>
+    <string name="reader_sub_posts">Sub-posts</string>
     <string name="reader_backlinks">Linked from</string>
     <string name="reader_related">Related</string>
     <string name="reader_link_missing">“%1$s” is not in your library yet.</string>
@@ -191,7 +222,6 @@
     <string name="cd_edit">Edit post</string>
     <string name="cd_favorite">Favorite</string>
     <string name="cd_more">More actions</string>
-    <string name="cd_drag">Reorder</string>
     <string name="cd_branch">Branch</string>
     <string name="cd_folder">Folder</string>
     <string name="cd_post">Post</string>

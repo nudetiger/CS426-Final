@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for Browse sorting, filtering, the status meter and the sub-post tree. -->
+<resources>
+
+    <!-- Sorting. These replaced hand reordering, so the labels say what the order means
+         rather than naming a mechanism the user has to think about. -->
+    <string name="browse_sort">Sort</string>
+    <string name="browse_sort_title">Sort by</string>
+    <string name="browse_sort_title_asc">Title A → Z</string>
+    <string name="browse_sort_title_desc">Title Z → A</string>
+    <string name="browse_sort_updated_desc">Recently updated</string>
+    <string name="browse_sort_updated_asc">Least recently updated</string>
+    <string name="browse_sort_created_desc">Newest first</string>
+    <string name="browse_sort_status">Learning status</string>
+
+    <!-- Filtering -->
+    <string name="browse_filter">Filter</string>
+    <string name="browse_filter_title">Filter this folder</string>
+    <string name="browse_filter_types">Show</string>
+    <string name="browse_filter_statuses">Learning status</string>
+    <string name="browse_filter_favorites">Starred posts only</string>
+    <string name="browse_filter_clear">Clear</string>
+    <string name="browse_filter_apply">Apply</string>
+    <string name="browse_filter_badge">Filter (%1$d)</string>
+    <string name="browse_filter_note">Branches and folders stay visible so you can keep browsing.</string>
+    <string name="browse_empty_filtered">Nothing here matches the filter.</string>
+    <plurals name="browse_hidden_by_filter">
+        <item quantity="one">%1$d item hidden by the filter</item>
+        <item quantity="other">%1$d items hidden by the filter</item>
+    </plurals>
+
+    <!-- Status meter -->
+    <plurals name="browse_meter_summary">
+        <item quantity="one">%1$d post in here</item>
+        <item quantity="other">%1$d posts in here</item>
+    </plurals>
+    <string name="browse_meter_empty">No posts in here yet.</string>
+    <string name="browse_meter_percent">%1$d%%</string>
+    <string name="browse_meter_legend_cd">%1$s: %2$d of %3$d posts</string>
+
+    <!-- Rows -->
+    <plurals name="browse_row_contains">
+        <item quantity="one">%1$d post</item>
+        <item quantity="other">%1$d posts</item>
+    </plurals>
+    <plurals name="browse_row_sub_posts">
+        <item quantity="one">%1$d sub-post</item>
+        <item quantity="other">%1$d sub-posts</item>
+    </plurals>
+    <string name="browse_row_empty_container">Empty</string>
+    <string name="browse_open_post">Open post</string>
+    <string name="browse_open_children">Open sub-posts</string>
+    <string name="browse_set_status">Change status</string>
+    <string name="browse_created_numbered">Saved as “%1$s” — that title was already taken</string>
+
+    <string name="cd_favorite_add">Add to favorites</string>
+    <string name="cd_favorite_remove">Remove from favorites</string>
+</resources>

@@ -1,5 +1,6 @@
 package com.cs426.learningmocha.ui.chat
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -16,10 +17,15 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.cs426.learningmocha.R
 import com.cs426.learningmocha.data.local.entity.ChatMessage
+import com.cs426.learningmocha.databinding.DialogModeSwitchBinding
 import com.cs426.learningmocha.databinding.FragmentChatConversationBinding
 import com.cs426.learningmocha.ui.common.ListStateBinder
+import com.cs426.learningmocha.ui.common.NodePalette
+import com.cs426.learningmocha.ui.common.themeColor
 import com.cs426.learningmocha.viewmodel.ChatConversationUiState
 import com.cs426.learningmocha.viewmodel.ChatConversationViewModel
+import com.google.android.material.chip.Chip
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.noties.markwon.Markwon
 import io.noties.markwon.linkify.LinkifyPlugin
 import kotlinx.coroutines.launch
@@ -29,6 +35,9 @@ class ChatConversationFragment : Fragment() {
     private var binding: FragmentChatConversationBinding? = null
     private val viewModel: ChatConversationViewModel by viewModels()
     private var adapter: ChatMessageAdapter? = null
+
+    /** The three combinable action chips; Answer is handled apart because it is exclusive. */
+    private var modeChips: Map<Chip, String> = emptyMap()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -59,16 +68,18 @@ class ChatConversationFragment : Fragment() {
         b.conversationSend.setOnClickListener { send() }
         b.conversationBannerRetry.setOnClickListener { viewModel.ping() }
 
-        b.conversationModes.setOnCheckedStateChangeListener { _, _ ->
-            viewModel.setMode(
-                when (b.conversationModes.checkedChipId) {
-                    R.id.chip_suggest -> "suggest"
-                    R.id.chip_modify -> "modify"
-                    R.id.chip_organize -> "organize"
-                    else -> "answer"
-                },
-            )
+        modeChips = mapOf(
+            b.chipSuggest to ChatModes.SUGGEST,
+            b.chipModify to ChatModes.MODIFY,
+            b.chipOrganize to ChatModes.ORGANIZE,
+        )
+        b.chipAnswer.setOnClickListener { pickMode(ChatModes.ANSWER, checked = true) }
+        modeChips.forEach { (chip, mode) ->
+            chip.setOnClickListener { pickMode(mode, chip.isChecked) }
         }
+        paintModeChip(b.chipAnswer, ChatModes.ANSWER)
+        modeChips.forEach { (chip, mode) -> paintModeChip(chip, mode) }
+        applyModeChips(ChatModes.ANSWER)
 
         viewLifecycleOwner.lifecycleScope.launch {
             b.conversationTitle.text = viewModel.sessionTitle()
@@ -120,6 +131,7 @@ class ChatConversationFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         adapter = null
+        modeChips = emptyMap()
         binding = null
     }
 
@@ -127,19 +139,114 @@ class ChatConversationFragment : Fragment() {
         val b = binding ?: return
         val text = b.conversationInput.text?.toString().orEmpty()
         if (text.isBlank()) return
+        // Asked before the message is cleared, so declining leaves the screen exactly as it
+        // was and the user can still edit what they wrote.
+        val suggested = viewModel.suggestedModeFor(text)
+        if (suggested != null) {
+            askAboutMode(suggested, text)
+            return
+        }
+        dispatch(text, null)
+    }
+
+    /**
+     * Offers the mode the message looks like it needs. Both buttons send: the choice is which
+     * mode to send under, never whether to send at all, so declining costs nothing.
+     */
+    private fun askAboutMode(suggested: String, text: String) {
+        val fields = DialogModeSwitchBinding.inflate(layoutInflater)
+        fields.modeSwitchMessage.text = getString(
+            R.string.chat_mode_switch_message,
+            modeLabel(viewModel.uiState.value.mode),
+            modeLabel(suggested),
+        )
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.chat_mode_switch_title)
+            .setView(fields.root)
+            .setNegativeButton(R.string.chat_mode_switch_keep) { _, _ ->
+                if (fields.modeSwitchRemember.isChecked) viewModel.stopSuggestingModes()
+                dispatch(text, null)
+            }
+            .setPositiveButton(R.string.chat_mode_switch_accept) { _, _ ->
+                if (fields.modeSwitchRemember.isChecked) viewModel.stopSuggestingModes()
+                applyModeChips(suggested)
+                dispatch(text, suggested)
+            }
+            .show()
+    }
+
+    private fun dispatch(text: String, overrideMode: String?) {
+        val b = binding ?: return
         b.conversationInput.text = null
-        viewModel.send(text)
+        viewModel.send(text, overrideMode)
         viewLifecycleOwner.lifecycleScope.launch {
             b.conversationTitle.text = viewModel.sessionTitle()
         }
     }
+
+    /**
+     * Applies the exclusivity a ChipGroup cannot express: the three action modes combine with
+     * each other, Answer clears them, and unchecking the last action chip falls back to Answer
+     * rather than leaving the conversation with no mode at all.
+     */
+    private fun pickMode(mode: String, checked: Boolean) {
+        val current = ChatModes.parse(viewModel.uiState.value.mode).toMutableSet()
+        if (mode == ChatModes.ANSWER) {
+            current.clear()
+        } else {
+            current.remove(ChatModes.ANSWER)
+            if (checked) current.add(mode) else current.remove(mode)
+        }
+        val next = ChatModes.join(current)
+        viewModel.setMode(next)
+        applyModeChips(next)
+    }
+
+    /**
+     * Gives each mode chip the colour its replies are already drawn in — green Answer, amber
+     * Suggest, blue Modify, violet Organize — taken from the same [NodePalette] the bubbles and
+     * their mode pills use. The row was four identical brown chips before, which made the one
+     * control that changes what the assistant is allowed to do the least visible thing on the
+     * screen, and left the bubble colours looking arbitrary.
+     *
+     * The ink stays on the outline and the label whether or not the chip is checked, so the row
+     * reads as a colour key at rest; checking one fills it with the matching wash instead of
+     * inventing a selected colour of its own.
+     */
+    private fun paintModeChip(chip: Chip, mode: String) {
+        val context = chip.context
+        val ink = context.themeColor(NodePalette.modeInk(mode))
+        val wash = context.themeColor(NodePalette.modeWash(mode))
+        val surface = context.themeColor(R.attr.mochaSurface)
+        val states = arrayOf(
+            intArrayOf(android.R.attr.state_checked),
+            intArrayOf(-android.R.attr.state_checked),
+        )
+        chip.chipBackgroundColor = ColorStateList(states, intArrayOf(wash, surface))
+        chip.chipStrokeColor = ColorStateList.valueOf(ink)
+        chip.setTextColor(ink)
+        chip.checkedIconTint = ColorStateList.valueOf(ink)
+    }
+
+    private fun applyModeChips(mode: String) {
+        val b = binding ?: return
+        val parts = ChatModes.parse(mode)
+        b.chipAnswer.isChecked = ChatModes.ANSWER in parts
+        modeChips.forEach { (chip, value) -> chip.isChecked = value in parts }
+    }
+
+    private fun modeLabel(mode: String): String =
+        ChatModes.parse(mode).joinToString(" + ") {
+            getString(NodePalette.modeLabelRes(it))
+        }
 
     private fun buildRows(state: ChatConversationUiState): List<ChatRow> {
         val rows = state.messages.map { message ->
             ChatRow.Message(message, state.sharedContext[message.id] ?: 0)
         }
         val bubble = state.streaming ?: return rows
-        return rows + ChatRow.Streaming(bubble.text, bubble.working)
+        // The live bubble has no stored row yet, so it borrows the mode it was sent under.
+        return rows + ChatRow.Streaming(bubble.text, bubble.working, state.mode)
     }
 
     private fun openReview(message: ChatMessage) {

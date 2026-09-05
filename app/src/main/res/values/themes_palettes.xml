@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The named palettes. Each one only re-points the palette attributes declared in
+     attrs_theme.xml — every layout, drawable and colour selector already reads them through
+     "?attr/", so nothing else in the app has to know a palette exists.
+
+     All three are dark schemes, so AppTheme also forces MODE_NIGHT_YES when one is picked:
+     the framework's own widget defaults (dialog scrims, spinner popups, text-selection
+     handles) come from the DayNight parent, and light defaults on a Catppuccin ground look
+     exactly as broken as they sound. -->
+<resources>
+
+    <!-- Rose Pine (main) -->
+    <style name="Theme.LearningMocha.RosePine" parent="Theme.Mocha.Base">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="mochaCream">@color/rp_cream</item>
+        <item name="mochaCreamDark">@color/rp_cream_dark</item>
+        <item name="mochaHeaderBg">@color/rp_header_bg</item>
+        <item name="mochaBrown">@color/rp_brown</item>
+        <item name="mochaBrownDeep">@color/rp_brown_deep</item>
+        <item name="mochaSage">@color/rp_sage</item>
+        <item name="mochaTaupe">@color/rp_taupe</item>
+        <item name="mochaSurface">@color/rp_surface</item>
+        <item name="mochaSurfaceElevated">@color/rp_surface_elevated</item>
+        <item name="mochaTextPrimary">@color/rp_text_primary</item>
+        <item name="mochaTextSecondary">@color/rp_text_secondary</item>
+        <item name="mochaOnPrimary">@color/rp_on_primary</item>
+        <item name="mochaDivider">@color/rp_divider</item>
+        <item name="mochaError">@color/rp_error</item>
+        <item name="mochaRowEven">@color/rp_row_even</item>
+        <item name="mochaRowOdd">@color/rp_row_odd</item>
+        <item name="mochaFavorite">@color/rp_favorite</item>
+        <item name="statusNoneInk">@color/rp_status_none_ink</item>
+        <item name="statusNoneWash">@color/rp_status_none_wash</item>
+        <item name="statusReadingInk">@color/rp_status_reading_ink</item>
+        <item name="statusReadingWash">@color/rp_status_reading_wash</item>
+        <item name="statusProgressInk">@color/rp_status_progress_ink</item>
+        <item name="statusProgressWash">@color/rp_status_progress_wash</item>
+        <item name="statusFinishedInk">@color/rp_status_finished_ink</item>
+        <item name="statusFinishedWash">@color/rp_status_finished_wash</item>
+        <item name="typeBranchInk">@color/rp_type_branch_ink</item>
+        <item name="typeBranchWash">@color/rp_type_branch_wash</item>
+        <item name="typeFolderInk">@color/rp_type_folder_ink</item>
+        <item name="typeFolderWash">@color/rp_type_folder_wash</item>
+        <item name="typePostInk">@color/rp_type_post_ink</item>
+        <item name="typePostWash">@color/rp_type_post_wash</item>
+        <item name="modeAnswerInk">@color/rp_mode_answer_ink</item>
+        <item name="modeAnswerWash">@color/rp_mode_answer_wash</item>
+        <item name="modeSuggestInk">@color/rp_mode_suggest_ink</item>
+        <item name="modeSuggestWash">@color/rp_mode_suggest_wash</item>
+        <item name="modeModifyInk">@color/rp_mode_modify_ink</item>
+        <item name="modeModifyWash">@color/rp_mode_modify_wash</item>
+        <item name="modeOrganizeInk">@color/rp_mode_organize_ink</item>
+        <item name="modeOrganizeWash">@color/rp_mode_organize_wash</item>
+    </style>
+
+    <!-- Catppuccin Mocha -->
+    <style name="Theme.LearningMocha.Catppuccin" parent="Theme.Mocha.Base">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="mochaCream">@color/ctp_cream</item>
+        <item name="mochaCreamDark">@color/ctp_cream_dark</item>
+        <item name="mochaHeaderBg">@color/ctp_header_bg</item>
+        <item name="mochaBrown">@color/ctp_brown</item>
+        <item name="mochaBrownDeep">@color/ctp_brown_deep</item>
+        <item name="mochaSage">@color/ctp_sage</item>
+        <item name="mochaTaupe">@color/ctp_taupe</item>
+        <item name="mochaSurface">@color/ctp_surface</item>
+        <item name="mochaSurfaceElevated">@color/ctp_surface_elevated</item>
+        <item name="mochaTextPrimary">@color/ctp_text_primary</item>
+        <item name="mochaTextSecondary">@color/ctp_text_secondary</item>
+        <item name="mochaOnPrimary">@color/ctp_on_primary</item>
+        <item name="mochaDivider">@color/ctp_divider</item>
+        <item name="mochaError">@color/ctp_error</item>
+        <item name="mochaRowEven">@color/ctp_row_even</item>
+        <item name="mochaRowOdd">@color/ctp_row_odd</item>
+        <item name="mochaFavorite">@color/ctp_favorite</item>
+        <item name="statusNoneInk">@color/ctp_status_none_ink</item>
+        <item name="statusNoneWash">@color/ctp_status_none_wash</item>
+        <item name="statusReadingInk">@color/ctp_status_reading_ink</item>
+        <item name="statusReadingWash">@color/ctp_status_reading_wash</item>
+        <item name="statusProgressInk">@color/ctp_status_progress_ink</item>
+        <item name="statusProgressWash">@color/ctp_status_progress_wash</item>
+        <item name="statusFinishedInk">@color/ctp_status_finished_ink</item>
+        <item name="statusFinishedWash">@color/ctp_status_finished_wash</item>
+        <item name="typeBranchInk">@color/ctp_type_branch_ink</item>
+        <item name="typeBranchWash">@color/ctp_type_branch_wash</item>
+        <item name="typeFolderInk">@color/ctp_type_folder_ink</item>
+        <item name="typeFolderWash">@color/ctp_type_folder_wash</item>
+        <item name="typePostInk">@color/ctp_type_post_ink</item>
+        <item name="typePostWash">@color/ctp_type_post_wash</item>
+        <item name="modeAnswerInk">@color/ctp_mode_answer_ink</item>
+        <item name="modeAnswerWash">@color/ctp_mode_answer_wash</item>
+        <item name="modeSuggestInk">@color/ctp_mode_suggest_ink</item>
+        <item name="modeSuggestWash">@color/ctp_mode_suggest_wash</item>
+        <item name="modeModifyInk">@color/ctp_mode_modify_ink</item>
+        <item name="modeModifyWash">@color/ctp_mode_modify_wash</item>
+        <item name="modeOrganizeInk">@color/ctp_mode_organize_ink</item>
+        <item name="modeOrganizeWash">@color/ctp_mode_organize_wash</item>
+    </style>
+
+    <!-- Nord -->
+    <style name="Theme.LearningMocha.Nord" parent="Theme.Mocha.Base">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="mochaCream">@color/nord_cream</item>
+        <item name="mochaCreamDark">@color/nord_cream_dark</item>
+        <item name="mochaHeaderBg">@color/nord_header_bg</item>
+        <item name="mochaBrown">@color/nord_brown</item>
+        <item name="mochaBrownDeep">@color/nord_brown_deep</item>
+        <item name="mochaSage">@color/nord_sage</item>
+        <item name="mochaTaupe">@color/nord_taupe</item>
+        <item name="mochaSurface">@color/nord_surface</item>
+        <item name="mochaSurfaceElevated">@color/nord_surface_elevated</item>
+        <item name="mochaTextPrimary">@color/nord_text_primary</item>
+        <item name="mochaTextSecondary">@color/nord_text_secondary</item>
+        <item name="mochaOnPrimary">@color/nord_on_primary</item>
+        <item name="mochaDivider">@color/nord_divider</item>
+        <item name="mochaError">@color/nord_error</item>
+        <item name="mochaRowEven">@color/nord_row_even</item>
+        <item name="mochaRowOdd">@color/nord_row_odd</item>
+        <item name="mochaFavorite">@color/nord_favorite</item>
+        <item name="statusNoneInk">@color/nord_status_none_ink</item>
+        <item name="statusNoneWash">@color/nord_status_none_wash</item>
+        <item name="statusReadingInk">@color/nord_status_reading_ink</item>
+        <item name="statusReadingWash">@color/nord_status_reading_wash</item>
+        <item name="statusProgressInk">@color/nord_status_progress_ink</item>
+        <item name="statusProgressWash">@color/nord_status_progress_wash</item>
+        <item name="statusFinishedInk">@color/nord_status_finished_ink</item>
+        <item name="statusFinishedWash">@color/nord_status_finished_wash</item>
+        <item name="typeBranchInk">@color/nord_type_branch_ink</item>
+        <item name="typeBranchWash">@color/nord_type_branch_wash</item>
+        <item name="typeFolderInk">@color/nord_type_folder_ink</item>
+        <item name="typeFolderWash">@color/nord_type_folder_wash</item>
+        <item name="typePostInk">@color/nord_type_post_ink</item>
+        <item name="typePostWash">@color/nord_type_post_wash</item>
+        <item name="modeAnswerInk">@color/nord_mode_answer_ink</item>
+        <item name="modeAnswerWash">@color/nord_mode_answer_wash</item>
+        <item name="modeSuggestInk">@color/nord_mode_suggest_ink</item>
+        <item name="modeSuggestWash">@color/nord_mode_suggest_wash</item>
+        <item name="modeModifyInk">@color/nord_mode_modify_ink</item>
+        <item name="modeModifyWash">@color/nord_mode_modify_wash</item>
+        <item name="modeOrganizeInk">@color/nord_mode_organize_ink</item>
+        <item name="modeOrganizeWash">@color/nord_mode_organize_wash</item>
+    </style>
+</resources>

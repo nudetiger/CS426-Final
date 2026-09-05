@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Track behind the status meter, so an empty folder still shows the bar's shape. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="?attr/mochaDivider" />
+    <corners android:radius="@dimen/meter_corner" />
+</shape>

@@ -71,15 +71,15 @@ object ActionValidator {
                     checkTitle(action.title, n, errors)
                     checkRef(action.ref, n, scope.refs, errors)
                     val key = action.title?.trim()?.lowercase().orEmpty()
-                    val taken = key.isNotEmpty() && scope.knows(key)
-                    if (taken) {
-                        errors.add("Action $n: title \"${action.title}\" already exists")
-                    }
+                    // A taken title is no longer an error: the executor numbers a duplicate post
+                    // ("Raft (2)") and reuses a container that is already where it asked for one.
+                    // Failing here instead cost the user every later action in the batch, which is
+                    // exactly what made a whole-library reorganize unusable.
                     if (op != "create_branch") {
                         checkParent(action, n, scope, errors)
                     }
                     // Registered after the parent check so an action cannot become its own parent.
-                    if (key.isNotEmpty() && !taken) {
+                    if (key.isNotEmpty()) {
                         if (op == "create_post") scope.newPosts.add(key) else scope.newContainers.add(key)
                     }
                     if (op == "create_post") {
@@ -112,12 +112,9 @@ object ActionValidator {
                 }
                 "move_post" -> {
                     val post = resolvePost(action, n, scope, errors)
+                    // Any node can be a parent, a post included — that is a sub-post. Only a
+                    // cycle is still refused, since it would strand the subtree.
                     val parent = resolveExistingTitle(action.newParentTitle, n, "newParentTitle", scope, errors)
-                    val parentKey = action.newParentTitle?.trim()?.lowercase().orEmpty()
-                    // Only containers hold children; a post nested under a post vanishes from Browse.
-                    if (parent?.type == NodeType.POST || (parent == null && parentKey in scope.newPosts)) {
-                        errors.add("Action $n: parent cannot be a post")
-                    }
                     if (post != null && parent != null) {
                         if (TreeRules.wouldCreateCycle(post.id, parent.id, parentById)) {
                             errors.add("Action $n: move would create a cycle")
@@ -209,15 +206,10 @@ object ActionValidator {
         val parentTitle = action.parentTitle?.trim().orEmpty()
         if (parentTitle.isEmpty()) return
         val key = parentTitle.lowercase()
-        val parent = scope.byTitle[key]
-        if (parent == null) {
-            when (key) {
-                in scope.newContainers -> Unit
-                in scope.newPosts -> errors.add("Action $n: parent cannot be a post")
-                else -> errors.add("Action $n: parent \"${action.parentTitle}\" does not exist")
-            }
-        } else if (parent.type == NodeType.POST) {
-            errors.add("Action $n: parent cannot be a post")
+        // Branches, folders and posts can all hold children; a post under a post is a sub-post.
+        // The parent only has to exist, either already or as an earlier action in this batch.
+        if (scope.byTitle[key] == null && key !in scope.newContainers && key !in scope.newPosts) {
+            errors.add("Action $n: parent \"${action.parentTitle}\" does not exist")
         }
     }
 

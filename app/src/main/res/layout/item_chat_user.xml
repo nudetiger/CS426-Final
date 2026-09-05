@@ -12,6 +12,21 @@
     android:paddingBottom="@dimen/space_xs"
     tools:ignore="RtlSymmetry">
 
+
+    <!-- Which mode this exchange was sent in. Tinted at bind time, so scrolling back through
+         a conversation shows what each turn was asking for without reading a word of it. -->
+    <TextView
+        android:id="@+id/bubble_mode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/space_xs"
+        android:background="@drawable/bg_status_pill"
+        android:paddingStart="@dimen/space_s"
+        android:paddingTop="2dp"
+        android:paddingEnd="@dimen/space_s"
+        android:paddingBottom="2dp"
+        android:textAppearance="@style/TextAppearance.Mocha.Caption"
+        android:textStyle="bold" />
     <TextView
         android:id="@+id/bubble_text"
         android:layout_width="wrap_content"
@@ -23,5 +38,5 @@
         android:paddingEnd="@dimen/space_m"
         android:paddingBottom="@dimen/space_s"
         android:textAppearance="@style/TextAppearance.Mocha.Body"
-        android:textColor="@color/mocha_on_primary" />
+        android:textColor="?attr/mochaOnPrimary" />
 </LinearLayout>

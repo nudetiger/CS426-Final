@@ -11,6 +11,7 @@ import androidx.core.view.updatePadding
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
 import com.cs426.learningmocha.databinding.ActivityMainBinding
+import com.cs426.learningmocha.ui.common.AppTheme
 
 /**
  * Single-activity shell: NavHost + bottom navigation with the five top-level tabs
@@ -21,6 +22,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Before anything inflates, and before enableEdgeToEdge reads the theme's bar colours.
+        // The manifest names Theme.LearningMocha so the launch window has something to draw;
+        // this is where a named palette (Rose Pine, Catppuccin, Nord) takes over.
+        setTheme(AppTheme.of((application as LearningMochaApp).settings.themeKey).styleRes)
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)

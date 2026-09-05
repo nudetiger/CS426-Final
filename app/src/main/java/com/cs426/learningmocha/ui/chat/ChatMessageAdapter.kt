@@ -1,7 +1,9 @@
 package com.cs426.learningmocha.ui.chat
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -10,6 +12,8 @@ import com.cs426.learningmocha.R
 import com.cs426.learningmocha.data.local.entity.ChatMessage
 import com.cs426.learningmocha.databinding.ItemChatAssistantBinding
 import com.cs426.learningmocha.databinding.ItemChatUserBinding
+import com.cs426.learningmocha.ui.common.NodePalette
+import com.cs426.learningmocha.ui.common.themeColor
 import io.noties.markwon.Markwon
 
 /** A row of the conversation: a stored message, or the reply currently streaming in. */
@@ -20,7 +24,7 @@ sealed class ChatRow {
         override val key: Long get() = message.id
     }
 
-    data class Streaming(val text: String, val working: Boolean) : ChatRow() {
+    data class Streaming(val text: String, val working: Boolean, val mode: String) : ChatRow() {
         override val key: Long get() = STREAMING_KEY
     }
 
@@ -65,6 +69,7 @@ class ChatMessageAdapter(
     class UserHolder(private val binding: ItemChatUserBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(item: ChatMessage) {
             binding.bubbleText.text = item.text
+            tintMode(binding.bubbleMode, item.mode)
         }
     }
 
@@ -79,6 +84,12 @@ class ChatMessageAdapter(
         ) {
             val item = row.message
             markwon.setMarkdown(binding.bubbleText, item.text)
+            tintMode(binding.bubbleMode, item.mode)
+            // The bubble itself carries the mode too, not just the pill: the pill says which
+            // mode, the wash makes a run of replies in one mode read as one stretch.
+            binding.bubbleText.backgroundTintList = ColorStateList.valueOf(
+                binding.root.context.themeColor(NodePalette.modeWash(item.mode)),
+            )
             if (row.sharedNotes > 0) {
                 binding.bubbleContext.isVisible = true
                 binding.bubbleContext.text = binding.root.resources.getQuantityString(
@@ -125,6 +136,10 @@ class ChatMessageAdapter(
         fun bind(row: ChatRow.Streaming, markwon: Markwon) {
             binding.bubbleText.isVisible = row.text.isNotBlank()
             if (row.text.isNotBlank()) markwon.setMarkdown(binding.bubbleText, row.text)
+            binding.bubbleText.backgroundTintList = ColorStateList.valueOf(
+                binding.root.context.themeColor(NodePalette.modeWash(row.mode)),
+            )
+            tintMode(binding.bubbleMode, row.mode)
             binding.bubbleStatus.isVisible = true
             binding.bubbleStatus.setText(
                 if (row.working) R.string.chat_stream_working else R.string.chat_stream_typing,
@@ -146,5 +161,21 @@ class ChatMessageAdapter(
         private const val TYPE_USER = 0
         private const val TYPE_ASSISTANT = 1
         private const val TYPE_STREAMING = 2
+
+        /**
+         * Names the mode on the pill and paints it. A combined mode gets both labels, so
+         * "Modify · Organize" is distinguishable from either on its own.
+         */
+        private fun tintMode(pill: TextView, mode: String) {
+            val context = pill.context
+            val parts = ChatModes.parse(mode)
+            pill.text = parts.joinToString(" · ") {
+                context.getString(NodePalette.modeLabelRes(it))
+            }
+            pill.setTextColor(context.themeColor(NodePalette.modeInk(mode)))
+            pill.backgroundTintList = ColorStateList.valueOf(
+                context.themeColor(NodePalette.modeWash(mode)),
+            )
+        }
     }
 }

@@ -45,6 +45,9 @@ class PostEditorFragment : Fragment() {
     private val viewModel: PostEditorViewModel by viewModels()
     private var markwon: Markwon? = null
 
+    /** Source tab only: whether the rendered preview is showing instead of the Markdown. */
+    private var previewing = false
+
     private val backCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
             if (viewModel.isDirty()) confirmDiscard() else findNavController().popBackStack()
@@ -68,6 +71,15 @@ class PostEditorFragment : Fragment() {
             .usePlugin(LinkifyPlugin.create())
             .build()
 
+        // The preview is a view of the finished post, so it reads under the same size and
+        // spacing the reader will use rather than the raw source metrics next to it.
+        val settings = (requireActivity().application as com.cs426.learningmocha.LearningMochaApp)
+            .settings
+        b.editorPreview.textSize =
+            resources.getDimension(R.dimen.reader_text) / resources.displayMetrics.scaledDensity *
+            settings.readerTextScale
+        b.editorPreview.setLineSpacing(0f, settings.readerLineSpacing)
+
         b.editorBack.setOnClickListener { backCallback.handleOnBackPressed() }
         b.editorSave.setOnClickListener { viewModel.save() }
         b.editorBold.setOnClickListener { wrapSelection("**", "**") }
@@ -78,6 +90,7 @@ class PostEditorFragment : Fragment() {
         b.editorWikilink.setOnClickListener { insertWikiLink() }
         b.editorTerm.setOnClickListener { addTerm() }
         b.editorAddResource.setOnClickListener { addResource() }
+        b.editorPreviewToggle.setOnClickListener { showPreview(!previewing) }
 
         // Every edit goes to the ViewModel first; the collector below renders back from state.
         b.editorTitleInput.doAfterTextChanged { viewModel.onTitleChanged(it?.toString().orEmpty()) }
@@ -88,13 +101,7 @@ class PostEditorFragment : Fragment() {
         }
 
         b.editorTabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab) {
-                val preview = tab.position == 1
-                b.editorBody.isVisible = !preview
-                b.editorPreviewScroll.isVisible = preview
-                if (preview) renderPreview()
-            }
-
+            override fun onTabSelected(tab: TabLayout.Tab) = showSourceTab(tab.position == 1)
             override fun onTabUnselected(tab: TabLayout.Tab) = Unit
             override fun onTabReselected(tab: TabLayout.Tab) = Unit
         })
@@ -138,15 +145,42 @@ class PostEditorFragment : Fragment() {
                         .collect { renderResources(it) }
                 }
                 launch {
-                    viewModel.savedFlow.collect { postId ->
-                        Snackbar.make(b.root, R.string.editor_saved, Snackbar.LENGTH_SHORT).show()
+                    viewModel.uiState
+                        .map { it.pendingTerms.size }
+                        .distinctUntilChanged()
+                        .collect { count ->
+                            b.editorTermsSummary.text = if (count == 0) {
+                                getString(R.string.editor_terms_empty)
+                            } else {
+                                resources.getQuantityString(
+                                    R.plurals.editor_terms_pending,
+                                    count,
+                                    count,
+                                )
+                            }
+                        }
+                }
+                launch {
+                    viewModel.savedFlow.collect { result ->
+                        // A numbered title is not a failure, but the user has to be told:
+                        // they typed one name and the library stored another.
+                        if (result.renamed) {
+                            Snackbar.make(
+                                b.root,
+                                getString(R.string.browse_created_numbered, result.storedTitle),
+                                Snackbar.LENGTH_LONG,
+                            ).show()
+                        } else {
+                            Snackbar.make(b.root, R.string.editor_saved, Snackbar.LENGTH_SHORT)
+                                .show()
+                        }
                         val nav = findNavController()
                         if (nav.previousBackStackEntry?.destination?.id == R.id.postReaderFragment) {
                             nav.popBackStack()
                         } else {
                             nav.navigate(
                                 R.id.action_global_open_post,
-                                bundleOf("postId" to postId),
+                                bundleOf("postId" to result.postId),
                                 NavOptions.Builder()
                                     .setPopUpTo(R.id.postEditorFragment, true)
                                     .build(),
@@ -247,6 +281,29 @@ class PostEditorFragment : Fragment() {
                 Snackbar.make(root, R.string.editor_resource_added, Snackbar.LENGTH_SHORT).show()
             }
             .show()
+    }
+
+    /** Switches between the Details and Source panes; the tab bar is the only caller. */
+    private fun showSourceTab(source: Boolean) {
+        val b = binding ?: return
+        b.editorDetailsPane.isVisible = !source
+        b.editorSourcePane.isVisible = source
+        b.editorPreviewToggle.isVisible = source
+        // Leaving the tab drops back to editing, so returning never lands on a read-only pane
+        // with a cursor the user cannot see.
+        if (!source) showPreview(false)
+    }
+
+    /** Source-vs-preview inside the Source tab. Preview is a view of the draft, not a tab. */
+    private fun showPreview(preview: Boolean) {
+        val b = binding ?: return
+        previewing = preview
+        b.editorBody.isVisible = !preview
+        b.editorPreviewScroll.isVisible = preview
+        b.editorPreviewToggle.setText(
+            if (preview) R.string.editor_tab_source else R.string.editor_tab_preview,
+        )
+        if (preview) renderPreview()
     }
 
     private fun renderPreview() {

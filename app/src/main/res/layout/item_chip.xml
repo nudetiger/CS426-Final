@@ -13,4 +13,4 @@
     android:paddingEnd="@dimen/space_s"
     android:paddingBottom="@dimen/space_xs"
     android:textAppearance="@style/TextAppearance.Mocha.Caption"
-    android:textColor="@color/mocha_brown" />
+    android:textColor="?attr/mochaBrown" />

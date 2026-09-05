@@ -157,7 +157,12 @@ class ChatRepository(
         val trimmed = userText.trim()
         if (trimmed.isEmpty()) return SendResult.Failed("Empty message", false)
         chat.insertMessage(
-            ChatMessage(sessionId = sessionId, role = ChatMessage.ROLE_USER, text = trimmed),
+            ChatMessage(
+                sessionId = sessionId,
+                role = ChatMessage.ROLE_USER,
+                text = trimmed,
+                mode = mode,
+            ),
         )
         maybeTitle(sessionId, trimmed)
         return complete(sessionId, mode)
@@ -194,7 +199,7 @@ class ChatRepository(
     private suspend fun complete(sessionId: Long, mode: String): SendResult {
         val health = health()
         if (health == null || !health.ok) {
-            return persistError(sessionId, "AI unavailable — your library still works", true)
+            return persistError(sessionId, mode, "AI unavailable — your library still works", true)
         }
         SeedData.ensureSeeded(db)
         val history = chat.getMessages(sessionId)
@@ -221,7 +226,7 @@ class ChatRepository(
                 when (envelope.type) {
                     "context_request" -> {
                         if (round >= 3) {
-                            return persistError(sessionId, "Could not gather enough context", true)
+                            return persistError(sessionId, mode, "Could not gather enough context", true)
                         }
                         val queries = envelope.queries.orEmpty()
                         toolResults = tools.run(queries)
@@ -239,6 +244,7 @@ class ChatRepository(
                                     text = (envelope.summary ?: "I have some changes in mind") +
                                         "\n\nSwitch to Suggest or Modify to review them.",
                                     status = ChatMessage.STATUS_OK,
+                                    mode = mode,
                                 ),
                             )
                             recordShared(id, sharedNotes)
@@ -251,6 +257,7 @@ class ChatRepository(
                                 text = envelope.summary ?: "Proposed changes",
                                 actionsJson = reply,
                                 status = ChatMessage.STATUS_PENDING,
+                                mode = mode,
                             ),
                         )
                         recordShared(id, sharedNotes)
@@ -266,6 +273,7 @@ class ChatRepository(
                         if (prose.isBlank()) {
                             return persistError(
                                 sessionId,
+                                mode,
                                 "The assistant replied with nothing usable — try again",
                                 true,
                             )
@@ -276,6 +284,7 @@ class ChatRepository(
                                 role = ChatMessage.ROLE_ASSISTANT,
                                 text = prose,
                                 status = ChatMessage.STATUS_OK,
+                                mode = mode,
                             ),
                         )
                         recordShared(id, sharedNotes)
@@ -283,15 +292,15 @@ class ChatRepository(
                     }
                 }
             }
-            persistError(sessionId, "Could not gather enough context", true)
+            persistError(sessionId, mode, "Could not gather enough context", true)
         } catch (cancelled: CancellationException) {
             // Not a failure and no longer something a departing screen causes, so it stays
             // distinct from the branches below: no error row, nothing to retry.
             throw cancelled
         } catch (error: ApiError) {
-            persistError(sessionId, error.message ?: "Request failed", error.retryable)
+            persistError(sessionId, mode, error.message ?: "Request failed", error.retryable)
         } catch (error: Exception) {
-            persistError(sessionId, error.message ?: "Request failed", true)
+            persistError(sessionId, mode, error.message ?: "Request failed", true)
         } finally {
             clearStreaming(sessionId)
         }
@@ -365,13 +374,19 @@ class ChatRepository(
         _sharedContext.value = _sharedContext.value + (messageId to notes)
     }
 
-    private suspend fun persistError(sessionId: Long, text: String, retryable: Boolean): SendResult {
+    private suspend fun persistError(
+        sessionId: Long,
+        mode: String,
+        text: String,
+        retryable: Boolean,
+    ): SendResult {
         chat.insertMessage(
             ChatMessage(
                 sessionId = sessionId,
                 role = ChatMessage.ROLE_ASSISTANT,
                 text = text,
                 status = ChatMessage.STATUS_ERROR,
+                mode = mode,
             ),
         )
         return SendResult.Failed(text, retryable)
@@ -415,7 +430,10 @@ class ChatRepository(
         /** Mirrors the cap in [ContextTools.run], so the shared-notes count matches reality. */
         const val CONTEXT_QUERY_CAP = 8
 
-        /** The one mode that may not propose changes (see `backend/prompts.js`). */
+        /**
+         * The one mode that may not propose changes, and the one that cannot be combined
+         * with the others (see `backend/prompts.js`).
+         */
         const val MODE_ANSWER = "answer"
     }
 }

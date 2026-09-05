@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The header bar inside a theme card's swatch: rounded on top only, so it sits flush
+     inside @drawable/bg_theme_preview instead of poking out of its corners. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@android:color/white" />
+    <corners
+        android:topLeftRadius="@dimen/card_corner"
+        android:topRightRadius="@dimen/card_corner" />
+</shape>

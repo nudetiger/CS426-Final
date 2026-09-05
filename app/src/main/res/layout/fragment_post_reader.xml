@@ -2,13 +2,13 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/mocha_cream"
+    android:background="?attr/mochaCream"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/mocha_header_bg"
+        android:background="?attr/mochaHeaderBg"
         android:gravity="center_vertical"
         android:minHeight="@dimen/header_min_height"
         android:orientation="horizontal"
@@ -31,7 +31,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:textAppearance="@style/TextAppearance.Mocha.Title"
-            android:textColor="@color/mocha_brown" />
+            android:textColor="?attr/mochaBrown" />
 
         <ImageButton
             android:id="@+id/reader_graph"
@@ -91,7 +91,7 @@
                     android:paddingEnd="@dimen/space_s"
                     android:paddingBottom="@dimen/space_xs"
                     android:textAppearance="@style/TextAppearance.Mocha.Caption"
-                    android:textColor="@color/mocha_brown" />
+                    android:textColor="?attr/mochaBrown" />
 
                 <TextView
                     android:id="@+id/reader_path"
@@ -147,7 +147,7 @@
                     android:minHeight="@dimen/touch_target"
                     android:text="@string/reader_dictionary"
                     android:textAppearance="@style/TextAppearance.Mocha.Caption"
-                    android:textColor="@color/mocha_brown" />
+                    android:textColor="?attr/mochaBrown" />
 
                 <TextView
                     android:id="@+id/reader_body"
@@ -170,6 +170,24 @@
 
                 <LinearLayout
                     android:id="@+id/reader_resources"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+                <!-- Posts filed under this one. Above backlinks because they are part of
+                     this article rather than references to it. -->
+                <TextView
+                    android:id="@+id/reader_children_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_l"
+                    android:layout_marginBottom="@dimen/space_s"
+                    android:text="@string/reader_sub_posts"
+                    android:textAppearance="@style/TextAppearance.Mocha.Section"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/reader_children"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical" />

@@ -18,6 +18,7 @@ import com.cs426.learningmocha.R
 import com.cs426.learningmocha.databinding.FragmentHomeBinding
 import com.cs426.learningmocha.ui.common.ListState
 import com.cs426.learningmocha.ui.common.ListStateBinder
+import com.cs426.learningmocha.ui.common.StatusMeterBinder
 import com.cs426.learningmocha.viewmodel.BrowseLocatorViewModel
 import com.cs426.learningmocha.viewmodel.HomeViewModel
 import kotlinx.coroutines.launch
@@ -76,12 +77,9 @@ class HomeFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    b.homeGreeting.setText(state.greetingRes)
-                    b.homeLibraryCount.text = resources.getQuantityString(
-                        R.plurals.home_library_posts,
-                        state.postCount,
-                        state.postCount,
-                    )
+                    // Read-only here: Home has no list to narrow, so the legend is a summary
+                    // rather than the filter control it is in Browse.
+                    StatusMeterBinder.bind(b.homeMeter, state.progress)
                     ListStateBinder.bind(
                         overlay = b.listState.root,
                         progress = b.listState.listStateProgress,

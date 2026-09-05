@@ -40,11 +40,12 @@ class ActionValidatorTest {
         assertFalse(ActionValidator.validate(actions, emptyList()).isEmpty())
     }
 
+    // Creating a post whose title the library already holds is allowed: the executor stores it
+    // as "Raft (2)". Only a deliberate retitle still refuses a taken name.
     @Test
-    fun rejectsDuplicateTitle() {
+    fun acceptsCreatingAPostWhoseTitleIsTaken() {
         val actions = listOf(KbAction(op = "create_post", title = "Raft", content = "x"))
-        val errors = ActionValidator.validate(actions, listOf(post(2, "Raft")))
-        assertTrue(errors.any { it.contains("already exists") })
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, listOf(post(2, "Raft"))))
     }
 
     @Test
@@ -126,18 +127,30 @@ class ActionValidatorTest {
         )
     }
 
+    // A post under a post is a sub-post, which the library supports; the parent only has to
+    // exist, and one created earlier in the same batch counts.
     @Test
-    fun rejectsBatchCreatedPostUsedAsParent() {
+    fun acceptsBatchCreatedPostUsedAsParent() {
         val actions = listOf(
             KbAction(op = "create_post", title = "Raft", content = "# Raft"),
             KbAction(op = "create_post", parentTitle = "Raft", title = "Raft Election"),
         )
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, emptyList()))
+    }
+
+    @Test
+    fun rejectsParentThatIsNowhereInTheLibraryOrTheBatch() {
+        val actions = listOf(
+            KbAction(op = "create_post", parentTitle = "Nothing Here", title = "Raft"),
+        )
         assertTrue(
             ActionValidator.validate(actions, emptyList())
-                .any { it.contains("parent cannot be a post") },
+                .any { it.contains("does not exist") },
         )
     }
 
+    // "Loop" is not in the library and nothing earlier in the batch creates it, so the parent
+    // reference dangles — an action can still never be its own parent.
     @Test
     fun rejectsActionThatIsItsOwnParent() {
         val actions = listOf(
@@ -146,15 +159,24 @@ class ActionValidatorTest {
         assertTrue(ActionValidator.validate(actions, emptyList()).isNotEmpty())
     }
 
+    // The executor numbers a duplicate post ("Raft (2)") and reuses a container that is
+    // already in place, so a taken title no longer costs the batch every action after it.
     @Test
-    fun rejectsDuplicateTitleWithinBatch() {
+    fun acceptsDuplicateTitleWithinBatch() {
         val actions = listOf(
             KbAction(op = "create_post", title = "Raft", content = "a"),
             KbAction(op = "create_post", title = "raft", content = "b"),
         )
-        assertTrue(
-            ActionValidator.validate(actions, emptyList()).any { it.contains("already exists") },
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, emptyList()))
+    }
+
+    @Test
+    fun acceptsCreatingAFolderThatAlreadyExists() {
+        val nodes = listOf(branch(1, "Root"))
+        val actions = listOf(
+            KbAction(op = "create_folder", parentTitle = "Root", title = "Root"),
         )
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, nodes))
     }
 
     @Test
@@ -254,28 +276,24 @@ class ActionValidatorTest {
         assertTrue(ActionValidator.validate(actions, nodes).any { it.contains("cycle") })
     }
 
-    // A post nested under a post is unreachable in Browse, so the batch must be rejected first.
+    // Moving a post under another post makes it a sub-post — a shape Browse walks into.
     @Test
-    fun rejectsMoveUnderAPost() {
+    fun acceptsMoveUnderAPost() {
         val nodes = listOf(branch(1, "Root"), post(3, "Raft"), post(4, "Paxos"))
         val actions = listOf(
             KbAction(op = "move_post", postTitle = "Raft", newParentTitle = "Paxos"),
         )
-        assertTrue(
-            ActionValidator.validate(actions, nodes).any { it.contains("parent cannot be a post") },
-        )
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, nodes))
     }
 
     @Test
-    fun rejectsMoveUnderAPostCreatedEarlierInBatch() {
+    fun acceptsMoveUnderAPostCreatedEarlierInBatch() {
         val nodes = listOf(branch(1, "Root"), post(3, "Raft"))
         val actions = listOf(
             KbAction(op = "create_post", title = "Paxos", content = "# Paxos"),
             KbAction(op = "move_post", postTitle = "Raft", newParentTitle = "Paxos"),
         )
-        assertTrue(
-            ActionValidator.validate(actions, nodes).any { it.contains("parent cannot be a post") },
-        )
+        assertEquals(emptyList<String>(), ActionValidator.validate(actions, nodes))
     }
 
     @Test

@@ -12,7 +12,7 @@
         android:id="@+id/list_state_progress"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:indeterminateTint="@color/mocha_brown" />
+        android:indeterminateTint="?attr/mochaBrown" />
 
     <TextView
         android:id="@+id/list_state_message"

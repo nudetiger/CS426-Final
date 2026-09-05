@@ -2,13 +2,13 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/mocha_cream"
+    android:background="?attr/mochaCream"
     android:orientation="vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/mocha_header_bg"
+        android:background="?attr/mochaHeaderBg"
         android:gravity="center_vertical"
         android:minHeight="@dimen/header_min_height"
         android:orientation="horizontal"
@@ -29,7 +29,7 @@
             android:layout_weight="1"
             android:text="@string/review_title"
             android:textAppearance="@style/TextAppearance.Mocha.Title"
-            android:textColor="@color/mocha_brown" />
+            android:textColor="?attr/mochaBrown" />
     </LinearLayout>
 
     <TextView
@@ -59,7 +59,7 @@
         android:paddingEnd="@dimen/content_gutter"
         android:text="@string/review_delete_warning"
         android:textAppearance="@style/TextAppearance.Mocha.Caption"
-        android:textColor="@color/mocha_error"
+        android:textColor="?attr/mochaError"
         android:visibility="gone" />
 
     <TextView
@@ -70,7 +70,7 @@
         android:paddingTop="@dimen/space_s"
         android:paddingEnd="@dimen/content_gutter"
         android:textAppearance="@style/TextAppearance.Mocha.Caption"
-        android:textColor="@color/mocha_error"
+        android:textColor="?attr/mochaError"
         android:visibility="gone" />
 
     <FrameLayout
@@ -94,7 +94,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/mocha_header_bg"
+        android:background="?attr/mochaHeaderBg"
         android:orientation="horizontal"
         android:padding="@dimen/space_s">
 

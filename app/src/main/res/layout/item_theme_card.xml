@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One theme card. The swatch above the name is the whole point: a row of labels cannot say
+     what "Rose Pine" looks like, and a radio dot says even less. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/theme_card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_theme_card"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
+    android:orientation="vertical"
+    android:padding="@dimen/space_s">
+
+    <LinearLayout
+        android:id="@+id/theme_swatch"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/theme_swatch_height"
+        android:background="@drawable/bg_theme_preview"
+        android:orientation="vertical">
+
+        <View
+            android:id="@+id/theme_swatch_chrome"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/theme_swatch_strip"
+            android:background="@drawable/bg_theme_strip" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/space_s"
+            android:paddingEnd="@dimen/space_s">
+
+            <View
+                android:id="@+id/theme_dot_one"
+                android:layout_width="@dimen/theme_swatch_dot"
+                android:layout_height="@dimen/theme_swatch_dot"
+                android:background="@drawable/bg_theme_dot" />
+
+            <View
+                android:id="@+id/theme_dot_two"
+                android:layout_width="@dimen/theme_swatch_dot"
+                android:layout_height="@dimen/theme_swatch_dot"
+                android:layout_marginStart="@dimen/space_xs"
+                android:background="@drawable/bg_theme_dot" />
+
+            <View
+                android:id="@+id/theme_dot_three"
+                android:layout_width="@dimen/theme_swatch_dot"
+                android:layout_height="@dimen/theme_swatch_dot"
+                android:layout_marginStart="@dimen/space_xs"
+                android:background="@drawable/bg_theme_dot" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/theme_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="@style/TextAppearance.Mocha.Section" />
+
+        <ImageView
+            android:id="@+id/theme_check"
+            android:layout_width="@dimen/icon_small"
+            android:layout_height="@dimen/icon_small"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_check"
+            android:visibility="invisible" />
+    </LinearLayout>
+
+    <!-- Exactly two lines, whether the caption needs them or not: the two cards in a grid row
+         are sized independently, so a one-line caption next to a two-line one leaves the row
+         visibly ragged. -->
+    <TextView
+        android:id="@+id/theme_caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="2"
+        android:minLines="2"
+        android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+</LinearLayout>

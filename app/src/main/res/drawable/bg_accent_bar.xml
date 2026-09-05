@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The leading colour rail on a Browse row; tinted per node type or learning status. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="?attr/typePostInk" />
+    <corners android:radius="@dimen/accent_bar_corner" />
+</shape>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Swatches for the theme cards on the Appearance screen, and nothing else.
+     They have to be literal rather than the DayNight @color/mocha_* tokens: the Mocha Light
+     card has to look light while the phone is in dark mode, or the card is not a preview of
+     anything. The named palettes need no entries here — rp_/ctp_/nord_ are already fixed. -->
+<resources>
+    <color name="preview_mocha_light_bg">#FFF7F0</color>
+    <color name="preview_mocha_light_chrome">#F0E4D8</color>
+    <color name="preview_mocha_light_one">#6B4F3A</color>
+    <color name="preview_mocha_light_two">#7A8F7A</color>
+    <color name="preview_mocha_light_three">#C68A1E</color>
+
+    <color name="preview_mocha_dark_bg">#2A2420</color>
+    <color name="preview_mocha_dark_chrome">#241F1B</color>
+    <color name="preview_mocha_dark_one">#C9A68A</color>
+    <color name="preview_mocha_dark_two">#9DB59D</color>
+    <color name="preview_mocha_dark_three">#E7BE6A</color>
+</resources>

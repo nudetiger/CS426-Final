@@ -2,7 +2,19 @@
 <!-- Strings for the post editor (references, term dialog) and the Dictionary CRUD screen. -->
 <resources>
 
-    <!-- Post editor: references & resources -->
+    <!-- Post editor: the Details tab -->
+    <string name="editor_tab_details">Details</string>
+    <string name="editor_section_status">Learning status</string>
+    <string name="editor_section_tags">Tags</string>
+    <string name="editor_section_terms">Dictionary terms</string>
+    <string name="editor_term_add">Add a term</string>
+    <string name="editor_terms_empty">Terms you add here are saved with the post.</string>
+    <plurals name="editor_terms_pending">
+        <item quantity="one">%1$d term will be saved with the post</item>
+        <item quantity="other">%1$d terms will be saved with the post</item>
+    </plurals>
+
+    <!-- Post editor: references &amp; resources -->
     <string name="editor_resources_header">References</string>
     <string name="editor_resources_add">Add</string>
     <string name="editor_resources_empty">No references yet. Attach an article, a book or a video.</string>

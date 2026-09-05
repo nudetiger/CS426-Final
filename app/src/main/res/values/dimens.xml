@@ -19,6 +19,11 @@
     <dimen name="fab_list_inset">88dp</dimen>
     <dimen name="toolbar_btn_min_width">52dp</dimen>
     <dimen name="stroke_thin">1dp</dimen>
+    <dimen name="stroke_thick">2dp</dimen>
+    <!-- Theme cards on the Appearance screen: swatch height, its header bar, its accent dots. -->
+    <dimen name="theme_swatch_height">72dp</dimen>
+    <dimen name="theme_swatch_strip">18dp</dimen>
+    <dimen name="theme_swatch_dot">14dp</dimen>
     <dimen name="text_headline">24sp</dimen>
     <dimen name="text_title">20sp</dimen>
     <dimen name="text_section">16sp</dimen>
@@ -31,5 +36,22 @@
     <dimen name="content_gutter">16dp</dimen>
     <dimen name="reader_text">16sp</dimen>
     <dimen name="chat_bubble_max">280dp</dimen>
+    <!-- The colour rail down the leading edge of a Browse row. -->
+    <dimen name="accent_bar_width">4dp</dimen>
+    <dimen name="accent_bar_corner">2dp</dimen>
+    <!-- Status meter: the "disk space" bar that breaks a folder down by learning status. -->
+    <dimen name="meter_height">10dp</dimen>
+    <dimen name="meter_corner">5dp</dimen>
+    <dimen name="status_dot">10dp</dimen>
+    <dimen name="text_brand">30sp</dimen>
+    <dimen name="brand_mark">30dp</dimen>
+    <!-- Home's quick actions are a 2x2 grid, so each tile can be tapped without aiming. -->
+    <dimen name="quick_action_min_height">76dp</dimen>
+    <dimen name="quick_action_icon">28dp</dimen>
+    <dimen name="settings_group_icon">32dp</dimen>
+    <!-- YouTube poster frame on a reader resource card: 16:9, wide enough to recognise. -->
+    <dimen name="resource_thumb_width">104dp</dimen>
+    <dimen name="resource_thumb_height">58dp</dimen>
+    <dimen name="resource_thumb_corner">8dp</dimen>
     <dimen name="chat_bubble_gutter">56dp</dimen>
 </resources>

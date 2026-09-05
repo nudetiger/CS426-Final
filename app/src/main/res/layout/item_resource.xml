@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="@dimen/space_s"
@@ -9,6 +10,32 @@
     android:minHeight="@dimen/touch_target"
     android:orientation="horizontal"
     android:padding="@dimen/space_s">
+
+    <!-- A YouTube reference shows its poster frame; everything else shows a glyph. Only one of
+         the two is ever visible, and the frame falls back to the glyph when it cannot load. -->
+    <FrameLayout
+        android:id="@+id/resource_thumb_frame"
+        android:layout_width="@dimen/resource_thumb_width"
+        android:layout_height="@dimen/resource_thumb_height"
+        android:visibility="gone">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/resource_thumb"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="?attr/mochaCreamDark"
+            android:contentDescription="@string/reader_cd_thumbnail"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Mocha.Thumbnail" />
+
+        <ImageView
+            android:layout_width="@dimen/icon_small"
+            android:layout_height="@dimen/icon_small"
+            android:layout_gravity="center"
+            android:alpha="0.9"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_play_badge" />
+    </FrameLayout>
 
     <ImageView
         android:id="@+id/resource_icon"
@@ -31,7 +58,7 @@
             android:ellipsize="end"
             android:maxLines="2"
             android:textAppearance="@style/TextAppearance.Mocha.Section"
-            android:textColor="@color/mocha_brown" />
+            android:textColor="?attr/mochaBrown" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -50,7 +77,7 @@
                 android:paddingEnd="@dimen/space_s"
                 android:paddingBottom="@dimen/space_xs"
                 android:textAppearance="@style/TextAppearance.Mocha.Caption"
-                android:textColor="@color/mocha_brown" />
+                android:textColor="?attr/mochaBrown" />
 
             <TextView
                 android:id="@+id/resource_url"

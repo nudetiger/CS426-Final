@@ -279,6 +279,17 @@ sideways, so on a narrow screen swipe it left to reach **Term**.
   **×** on their chip — the way to remove one is to delete the URL from the
   body text.
 
+**Test 3.15b — YouTube cards show the video's thumbnail**
+
+- Do: with the device online, look at the reference cards from 3.14 and 3.15.
+- Expect: each YouTube card shows that video's own poster frame with a play
+  badge on it, not the generic play glyph. Two different videos show two
+  different frames.
+- Do: turn off wifi and mobile data, force-stop the app, reopen the post.
+- Expect: the frames still appear (they are cached on disk). Now clear the
+  app's cache in Android Settings and reopen while still offline — the cards
+  fall back to the plain play glyph rather than showing an empty grey box.
+
 **Test 3.16 — discard guard**
 
 - Do: edit a post, type something, then press system Back without saving.
@@ -370,6 +381,10 @@ gateway, type `http://<your-computer-LAN-IP>:8787/`, tap Save, then
 - Do: Chat tab → tap the **+** FAB.
 - Expect: an empty conversation opens with 4 mode chips: **Answer**,
   **Suggest**, **Modify**, **Organize**. Answer is selected.
+- Expect: each chip carries its own colour — green Answer, amber Suggest, blue
+  Modify, violet Organize — on the outline and the label even when unselected.
+  Selecting one fills it with the same colour, and it is the colour the replies
+  sent in that mode are drawn in.
 
 **Test 5.3 — Answer mode, plain question**
 
@@ -643,19 +658,29 @@ gateway, type `http://<your-computer-LAN-IP>:8787/`, tap Save, then
 
 **Test 9.1 — theme**
 
-- Do: Settings → Appearance → **Dark**.
+- Do: Settings → Appearance. Six theme cards, each showing its own colours.
+- Do: tap **Mocha Dark**.
 - Expect: the whole app turns dark immediately, including screens you visit
   afterwards. No unreadable dark-on-dark text anywhere — check Home, Browse,
   Reader, Chat, Graph.
-- Do: pick **Light**, then **Follow system**, and change the system theme.
+- Do: pick **Mocha Light**, then **Mocha**, and change the system theme.
 - Expect: the app follows each time.
 
-**Test 9.2 — theme survives restart**
+**Test 9.2 — named palettes**
 
-- Do: set Dark, force-stop the app (or swipe it away), reopen.
-- Expect: it opens dark, with no light flash on the first frame.
+- Do: pick **Rosé Pine**, then **Catppuccin**, then **Nord**.
+- Expect: each repaints the whole app — background, header, status bar, list
+  accents, chat bubbles, the status meter. The card you picked is the one with the
+  accent border and the tick. Walk Home, Browse, Reader and Chat after each and
+  check nothing kept the old palette's brown.
+- Expect: all three stay dark even if the phone is in light mode.
 
-**Test 9.3 — gateway URL validation**
+**Test 9.3 — theme survives restart**
+
+- Do: set Rosé Pine, force-stop the app (or swipe it away), reopen.
+- Expect: it opens in Rosé Pine, with no light flash on the first frame.
+
+**Test 9.4 — gateway URL validation**
 
 - Do: Settings → AI gateway → type `not a url` → Save.
 - Expect: a snackbar saying it cannot be used, and the field goes back to the
@@ -665,14 +690,14 @@ gateway, type `http://<your-computer-LAN-IP>:8787/`, tap Save, then
 - Do: tap **Reset**.
 - Expect: back to `http://10.0.2.2:8787/`.
 
-**Test 9.4 — backup reminder toggle**
+**Test 9.5 — backup reminder toggle**
 
 - Do: Settings → toggle **Remind me weekly** on. Android 13+ asks for
   notification permission — allow it.
 - Expect: the switch stays on. If you deny the permission instead, the switch
   goes back off rather than lying to you.
 
-**Test 9.5 — privacy text**
+**Test 9.6 — privacy text**
 
 - Do: scroll to the bottom of Settings.
 - Expect: a privacy paragraph explaining that data stays on the device and

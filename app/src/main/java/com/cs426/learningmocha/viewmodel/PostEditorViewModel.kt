@@ -35,6 +35,17 @@ data class EditorResource(
     val removable: Boolean get() = pending || storedId != 0L
 }
 
+/**
+ * A completed save. [storedTitle] can differ from what was typed: a new post whose title the
+ * library already holds is stored numbered ("Raft (2)") rather than refused, and the editor
+ * has to say so instead of letting the user believe their title was kept.
+ */
+data class EditorSaved(
+    val postId: Long,
+    val storedTitle: String,
+    val renamed: Boolean,
+)
+
 data class EditorUiState(
     val listState: ListState = ListState.LOADING,
     val title: String = "",
@@ -64,6 +75,9 @@ class PostEditorViewModel(
     private val parentId: Long? = savedStateHandle.get<Long>(ARG_PARENT_ID)
         ?.takeUnless { it == ROOT }
 
+    /** Title Browse already asked for, so a new post opens with it filled in. */
+    private val suggestedTitle: String = savedStateHandle.get<String>(ARG_TITLE).orEmpty()
+
     private var initialTitle = ""
     private var initialContent = ""
     private var initialTags = ""
@@ -75,7 +89,7 @@ class PostEditorViewModel(
     private val _uiState = MutableStateFlow(EditorUiState(isNew = postId == 0L))
     val uiState: StateFlow<EditorUiState> = _uiState.asStateFlow()
 
-    private val saved = Channel<Long>(Channel.BUFFERED)
+    private val saved = Channel<EditorSaved>(Channel.BUFFERED)
     val savedFlow = saved.receiveAsFlow()
 
     init {
@@ -189,20 +203,24 @@ class PostEditorViewModel(
                 state.resources.filter { it.pending }.forEach { item ->
                     app.postRepository.addResource(id, item.type, item.title, item.url)
                 }
-                id
-            }.onSuccess { id ->
+                // Read the title back rather than trusting the draft: createPost numbers a
+                // duplicate, and the editor has to show what was actually written.
+                val storedTitle = app.treeRepository.getNode(id)?.title ?: state.title
+                EditorSaved(id, storedTitle, renamed = storedTitle != state.title.trim())
+            }.onSuccess { result ->
                 removedResourceIds.clear()
-                initialTitle = state.title
+                initialTitle = result.storedTitle
                 initialContent = state.content
                 initialTags = state.tags
                 initialStatus = state.status
                 _uiState.update {
                     it.copy(
+                        title = result.storedTitle,
                         pendingTerms = emptyList(),
                         resources = it.resources.map { item -> item.copy(pending = false) },
                     )
                 }
-                saved.send(id)
+                saved.send(result)
             }.onFailure { error ->
                 _uiState.update {
                     it.copy(listState = ListState.CONTENT, errorMessage = error.message)
@@ -213,7 +231,7 @@ class PostEditorViewModel(
 
     private suspend fun load() {
         if (postId == 0L) {
-            publish("", "", "", LearningStatus.READING, emptyList(), isNew = true)
+            publish(suggestedTitle, "", "", LearningStatus.READING, emptyList(), isNew = true)
             return
         }
         val detail = app.postRepository.observeDetail(postId).first()
@@ -247,7 +265,7 @@ class PostEditorViewModel(
         resources: List<EditorResource>,
         isNew: Boolean,
     ) {
-        initialTitle = title
+        initialTitle = if (isNew) "" else title
         initialContent = content
         initialTags = tags
         initialStatus = status
@@ -291,6 +309,7 @@ class PostEditorViewModel(
     companion object {
         const val ARG_POST_ID = "postId"
         const val ARG_PARENT_ID = "parentId"
+        const val ARG_TITLE = "title"
         const val ROOT = -1L
         private const val KEY_DRAFT_TITLE = "draftTitle"
         private const val KEY_DRAFT_CONTENT = "draftContent"

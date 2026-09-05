@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 
+/** Outcome of a container create: [isNew] is false when an existing one was reused. */
+data class Created(val id: Long, val isNew: Boolean)
+
 class TreeRepository(private val db: AppDatabase) {
 
     private val dao = db.nodeDao()
@@ -46,22 +49,52 @@ class TreeRepository(private val db: AppDatabase) {
         return chain.asReversed()
     }
 
-    suspend fun create(parentId: Long?, type: NodeType, title: String): Long {
+    /**
+     * Creates a branch or folder. A container of the same name already sitting under the same
+     * parent is *reused* rather than duplicated: "create the Algorithms folder" twice — which is
+     * what an AI reorganize batch does when it re-derives a plan — should converge on one folder,
+     * not leave two the user has to merge by hand.
+     *
+     * @return the id of the new container, or of the one that was already there
+     */
+    suspend fun create(parentId: Long?, type: NodeType, title: String): Long =
+        createContainer(parentId, type, title).id
+
+    /**
+     * Creates a branch or folder. A container of the same name already sitting under the same
+     * parent is *reused* rather than duplicated: "create the Algorithms folder" twice — which is
+     * what an AI reorganize batch does when it re-derives a plan it partly already applied —
+     * should converge on one folder, not leave two the user has to merge by hand.
+     *
+     * [Created.isNew] is false for a reuse, which is what keeps undo from deleting a folder the
+     * user had all along.
+     */
+    suspend fun createContainer(parentId: Long?, type: NodeType, title: String): Created {
         val trimmed = title.trim()
         require(trimmed.isNotEmpty()) { "Title is required" }
-        requireContainer(parentId)
-        val order = nextOrder(parentId)
-        val now = System.currentTimeMillis()
-        return dao.insert(
-            Node(
-                parentId = parentId,
-                type = type,
-                title = trimmed,
-                orderIndex = order,
-                createdAt = now,
-                updatedAt = now,
-            ),
-        )
+        return db.withTransaction {
+            val siblings = if (parentId == null) dao.getRoots() else dao.getChildren(parentId)
+            val existing = siblings.firstOrNull {
+                it.type != NodeType.POST && it.title.equals(trimmed, ignoreCase = true)
+            }
+            if (existing != null) {
+                return@withTransaction Created(existing.id, isNew = false)
+            }
+            val now = System.currentTimeMillis()
+            Created(
+                dao.insert(
+                    Node(
+                        parentId = parentId,
+                        type = type,
+                        title = trimmed,
+                        orderIndex = nextOrder(parentId),
+                        createdAt = now,
+                        updatedAt = now,
+                    ),
+                ),
+                isNew = true,
+            )
+        }
     }
 
     /**
@@ -88,7 +121,6 @@ class TreeRepository(private val db: AppDatabase) {
 
     suspend fun move(id: Long, newParentId: Long?) {
         val node = dao.getById(id) ?: return
-        requireContainer(newParentId)
         val parentById = HashMap<Long, Long>()
         dao.getAll().forEach { item ->
             item.parentId?.let { parent -> parentById[item.id] = parent }
@@ -128,22 +160,20 @@ class TreeRepository(private val db: AppDatabase) {
         }
     }
 
+    /**
+     * Every node the caller could legally move [movingId] under: posts included, because a post
+     * nested under a post is a sub-post, which is a shape the library is meant to have. Only the
+     * item itself and its own descendants are excluded, since those would cycle.
+     */
     suspend fun possibleParents(movingId: Long): List<Node> {
         val all = dao.getAll()
         val parentById = HashMap<Long, Long>()
         all.forEach { item ->
             item.parentId?.let { parent -> parentById[item.id] = parent }
         }
-        return all.filter { it.type != NodeType.POST }
+        return all.filter { it.id != movingId }
             .filter { !TreeRules.wouldCreateCycle(movingId, it.id, parentById) }
-    }
-
-    /** Only branches and folders hold children — a child of a post is invisible in Browse. */
-    internal suspend fun requireContainer(parentId: Long?) {
-        if (parentId == null) return
-        require(dao.getById(parentId)?.type != NodeType.POST) {
-            "Posts cannot contain other items"
-        }
+            .sortedBy { it.title.lowercase() }
     }
 
     private suspend fun nextOrder(parentId: Long?): Int {

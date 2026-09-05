@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/space_l"
+    android:paddingTop="@dimen/space_s"
+    android:paddingEnd="@dimen/space_l">
+
+    <TextView
+        android:id="@+id/mode_switch_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.Mocha.Body" />
+
+    <com.google.android.material.checkbox.MaterialCheckBox
+        android:id="@+id/mode_switch_remember"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s"
+        android:minHeight="@dimen/touch_target"
+        android:text="@string/chat_mode_switch_remember"
+        android:textAppearance="@style/TextAppearance.Mocha.Caption" />
+</LinearLayout>
